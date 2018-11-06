@@ -7,7 +7,7 @@ The aim is to make it easy to develop performant distributed machine learning al
 ## Compile
 To use the current version you should compile the system manually, publish it to a local repository and include it in your project through sbt. Clone this repository and run:
 
-    sbt "+ compile" "+ assembly" "+ publish-local"
+    sbt "+ compile" "+ assembly" "+ publishLocal"
 
 The `+` indicates that it should compile for all scala versions defined in the `build.sbt` file. The command will compile, assemble and publish the library jar file to the local ivy2 repository, which means you can then use it in your project's `build.sbt` (on the same machine) as follows:
 

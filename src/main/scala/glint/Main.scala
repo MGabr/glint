@@ -3,7 +3,7 @@ package glint
 import java.io.File
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.scalalogging.slf4j.StrictLogging
+import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.ExecutionContext
 
