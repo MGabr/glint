@@ -10,7 +10,7 @@ fork in Test := true
 
 // Spark
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "1.4.0" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.2" % "provided"
 
 // Akka
 
