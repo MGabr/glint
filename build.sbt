@@ -9,6 +9,10 @@ scalaVersion := "2.11.11"
 
 fork in Test := true
 
+// Spark
+
+libraryDependencies += "org.apache.spark" %% "spark-core" % "1.4.0" % "provided"
+
 // Akka
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.4.12"
