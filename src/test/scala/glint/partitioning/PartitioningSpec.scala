@@ -1,5 +1,6 @@
 package glint.partitioning
 
+import glint.partitioning.by.PartitionBy
 import glint.partitioning.cyclic.CyclicPartitioner
 import glint.partitioning.range.RangePartitioner
 import org.scalatest.FlatSpec
@@ -68,11 +69,37 @@ class PartitioningSpec extends FlatSpec {
       val data = Array.fill[Boolean](173)(false)
       for (key <- 0 until 137) {
         if (partition.contains(key)) {
-          val index = partition.globalToLocal(key)
+          val index = partition.globalRowToLocal(key)
           assert(!data(index))
           data(index) = true
         }
       }
+    }
+  }
+
+  it should "support row partitioning by default" in {
+    val partitioner = CyclicPartitioner(5, 37)
+
+    // after first cycle local and global row indices should differ
+    for (key <- 5 until 37) {
+      val partition = partitioner.partition(key)
+      val rowIndex = partition.globalRowToLocal(key)
+      assert(rowIndex != key)
+      val colIndex = partition.globalColToLocal(key)
+      assert(colIndex == key)
+    }
+  }
+
+  it should "support column partitioning" in {
+    val partitioner = CyclicPartitioner(5, 37, PartitionBy.COL)
+
+    // after first cycle local and global column indices should differ
+    for (key <- 5 until 37) {
+      val partition = partitioner.partition(key)
+      val rowIndex = partition.globalRowToLocal(key)
+      assert(rowIndex == key)
+      val colIndex = partition.globalColToLocal(key)
+      assert(colIndex != key)
     }
   }
 
@@ -121,11 +148,37 @@ class PartitioningSpec extends FlatSpec {
       val data = Array.fill[Boolean](97)(false)
       for (key <- 0 until 97) {
         if (partition.contains(key)) {
-          val index = partition.globalToLocal(key)
+          val index = partition.globalRowToLocal(key)
           assert(!data(index))
           data(index) = true
         }
       }
+    }
+  }
+
+  it should "support row partitioning by default" in {
+    val partitioner = RangePartitioner(5, 100)
+
+    // after second partition local and global row indices should differ
+    for (key <- 20 until 100) {
+      val partition = partitioner.partition(key)
+      val rowIndex = partition.globalRowToLocal(key)
+      assert(rowIndex != key)
+      val colIndex = partition.globalColToLocal(key)
+      assert(colIndex == key)
+    }
+  }
+
+  it should "support column partitioning" in {
+    val partitioner = RangePartitioner(5, 100, PartitionBy.COL)
+
+    // after second partition local and global column indices should differ
+    for (key <- 20 until 100) {
+      val partition = partitioner.partition(key)
+      val rowIndex = partition.globalRowToLocal(key)
+      assert(rowIndex == key)
+      val colIndex = partition.globalColToLocal(key)
+      assert(colIndex != key)
     }
   }
 

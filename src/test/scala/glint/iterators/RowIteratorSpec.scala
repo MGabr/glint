@@ -21,7 +21,7 @@ class RowIteratorSpec extends FlatSpec with SystemTest with Matchers {
     val mockMatrix = new MockBigMatrix[Long](nrOfRows, nrOfCols, 0, _ + _)
 
     val rows   = Array(0L, 0L, 1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L)
-    val cols   = Array( 0,  1,  0,  1,  0,  1,  0,  1,  0,  1)
+    val cols   = Array(0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L)
     val values = Array(0L,  1,  2,  3,  4,  5,  6,  7,  8,  9)
 
     whenReady(mockMatrix.push(rows, cols, values)) { identity }
@@ -47,7 +47,7 @@ class RowIteratorSpec extends FlatSpec with SystemTest with Matchers {
     val mockMatrix = new MockBigMatrix[Long](nrOfRows, nrOfCols, 0, _ + _)
 
     val rows = Array(0L, 0L, 1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L)
-    val cols = Array(0, 1, 0, 1, 0, 1, 0, 1, 0, 1)
+    val cols = Array(0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L)
     val values = Array(0L, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
     whenReady(mockMatrix.push(rows, cols, values)) {

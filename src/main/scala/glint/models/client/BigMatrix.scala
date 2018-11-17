@@ -28,7 +28,7 @@ trait BigMatrix[V] extends Serializable {
   /**
     * The number of columns
     */
-  val cols: Int
+  val cols: Long
 
   /**
     * Pulls a set of rows
@@ -47,7 +47,7 @@ trait BigMatrix[V] extends Serializable {
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the values of the elements at given rows, columns
     */
-  def pull(rows: Array[Long], cols: Array[Int])(implicit ec: ExecutionContext): Future[Array[V]]
+  def pull(rows: Array[Long], cols: Array[Long])(implicit ec: ExecutionContext): Future[Array[V]]
 
   /**
     * Pushes a set of values
@@ -58,7 +58,7 @@ trait BigMatrix[V] extends Serializable {
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing either the success or failure of the operation
     */
-  def push(rows: Array[Long], cols: Array[Int], values: Array[V])(implicit ec: ExecutionContext): Future[Boolean]
+  def push(rows: Array[Long], cols: Array[Long], values: Array[V])(implicit ec: ExecutionContext): Future[Boolean]
 
 
   /**

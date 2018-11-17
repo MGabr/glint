@@ -35,7 +35,7 @@ private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag]
   def update(keys: Array[Long], values: Array[V]): Boolean = {
     var i = 0
     while (i < keys.length) {
-      val key = partition.globalToLocal(keys(i))
+      val key = partition.globalRowToLocal(keys(i))
       data(key) += values(i)
       i += 1
     }
@@ -52,7 +52,7 @@ private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag]
     var i = 0
     val a = new Array[V](keys.length)
     while (i < keys.length) {
-      val key = partition.globalToLocal(keys(i))
+      val key = partition.globalRowToLocal(keys(i))
       a(i) = data(key)
       i += 1
     }

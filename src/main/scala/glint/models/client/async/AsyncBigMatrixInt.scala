@@ -15,7 +15,7 @@ private[glint] class AsyncBigMatrixInt(partitioner: Partitioner,
                                        matrices: Array[ActorRef],
                                        config: Config,
                                        rows: Long,
-                                       cols: Int)
+                                       cols: Long)
   extends AsyncBigMatrix[Int, ResponseInt, PushMatrixInt](partitioner, matrices, config, rows, cols) {
 
   /**
@@ -45,7 +45,7 @@ private[glint] class AsyncBigMatrixInt(partitioner: Partitioner,
     * @return A PushMatrix message for type V
     */
   @inline
-  override protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Int], values: Array[Int]): PushMatrixInt = {
+  override protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Long], values: Array[Int]): PushMatrixInt = {
     PushMatrixInt(id, rows, cols, values)
   }
 

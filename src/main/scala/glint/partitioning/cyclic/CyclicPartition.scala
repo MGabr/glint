@@ -1,15 +1,19 @@
 package glint.partitioning.cyclic
 
+import glint.partitioning.by.PartitionBy.PartitionBy
+import glint.partitioning.by.{ColPartition, PartitionBy, RowPartition}
 import glint.partitioning.Partition
 
 /**
-  * A cyclic partitioner
+  * A cyclic partition
   *
   * @param index The index of this partition
   * @param numberOfPartitions The total number of partitions
   * @param numberOfKeys The total number of keys
   */
-class CyclicPartition(index: Int, val numberOfPartitions: Int, numberOfKeys: Long) extends Partition(index) {
+private[partitioning] class CyclicPartition(index: Int,
+                                            val numberOfPartitions: Int,
+                                            numberOfKeys: Long) extends Partition(index) {
 
   /**
     * Checks whether given global key falls within this partition
@@ -32,7 +36,11 @@ class CyclicPartition(index: Int, val numberOfPartitions: Int, numberOfKeys: Lon
     while (!contains(numberOfKeys - i)) {
       i += 1
     }
-    globalToLocal(numberOfKeys - i) + 1
+    globalKeyToLocal(numberOfKeys - i) + 1
+  }
+
+  private def globalKeyToLocal(key: Long): Int = {
+    (globalRowToLocal(key) + globalColToLocal(key) - key).toInt
   }
 
   /**
@@ -42,8 +50,30 @@ class CyclicPartition(index: Int, val numberOfPartitions: Int, numberOfKeys: Lon
     * @return The local index
     */
   @inline
-  override def globalToLocal(key: Long): Int = {
+  override def globalRowToLocal(key: Long): Int = {
     ((key - index) / numberOfPartitions).toInt
   }
 
+  /**
+    * Converts given global key to a continuous local array index [0, 1, ...]
+    *
+    * @param key The global key
+    * @return The local index
+    */
+  @inline
+  override def globalColToLocal(key: Long): Int = {
+    ((key - index) / numberOfPartitions).toInt
+  }
+
+}
+
+object CyclicPartition {
+
+  def apply(index: Int, numberOfPartitions: Int, numberOfKeys: Long, by: PartitionBy): CyclicPartition = {
+    if (by == PartitionBy.ROW) {
+      new CyclicPartition(index, numberOfPartitions, numberOfKeys) with RowPartition
+    } else {
+      new CyclicPartition(index, numberOfPartitions, numberOfKeys) with ColPartition
+    }
+  }
 }

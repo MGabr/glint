@@ -18,7 +18,10 @@ class ColumnIterator[V](val matrix: BigMatrix[V])(implicit ec: ExecutionContext)
   total = if (matrix.cols == 0 || matrix.rows == 0) {
     0
   } else {
-    matrix.cols
+    if (matrix.cols > Integer.MAX_VALUE) {
+      throw new UnsupportedOperationException("Cannot iterate over columns when the number of cols exceeds Integer.MAX_VALUE")
+    }
+    matrix.cols.toInt
   }
 
   override protected def fetchNextFuture(): Future[Array[V]] = {
@@ -26,7 +29,7 @@ class ColumnIterator[V](val matrix: BigMatrix[V])(implicit ec: ExecutionContext)
       return Future.failed[Array[V]](new UnsupportedOperationException("Cannot iterate over columns when the number of rows exceeds Integer.MAX_VALUE"))
     }
     val rows = (0L until matrix.rows).toArray
-    val cols = Array.fill[Int](matrix.rows.toInt)(index)
+    val cols = Array.fill[Long](matrix.rows.toInt)(index)
     matrix.pull(rows, cols)
   }
 

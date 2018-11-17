@@ -15,7 +15,7 @@ private[glint] class AsyncBigMatrixFloat(partitioner: Partitioner,
                                          matrices: Array[ActorRef],
                                          config: Config,
                                          rows: Long,
-                                         cols: Int)
+                                         cols: Long)
   extends AsyncBigMatrix[Float, ResponseFloat, PushMatrixFloat](partitioner, matrices, config, rows, cols) {
 
   /**
@@ -45,7 +45,7 @@ private[glint] class AsyncBigMatrixFloat(partitioner: Partitioner,
     * @return A PushMatrix message for type V
     */
   @inline
-  override protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Int], values: Array[Float]): PushMatrixFloat = {
+  override protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Long], values: Array[Float]): PushMatrixFloat = {
     PushMatrixFloat(id, rows, cols, values)
   }
 

@@ -26,10 +26,10 @@ import scala.reflect.ClassTag
 class BufferedBigMatrix[@specialized V: ClassTag](underlying: BigMatrix[V], bufferSize: Int) extends BigMatrix[V] {
 
   val rows: Long = underlying.rows
-  val cols: Int = underlying.cols
+  val cols: Long = underlying.cols
 
   private val bufferRows = new Array[Long](bufferSize)
-  private val bufferCols = new Array[Int](bufferSize)
+  private val bufferCols = new Array[Long](bufferSize)
   private val bufferValues = new Array[V](bufferSize)
   private var bufferIndex: Int = 0
 
@@ -62,7 +62,7 @@ class BufferedBigMatrix[@specialized V: ClassTag](underlying: BigMatrix[V], buff
     * @return A future containing either the success or failure of the operation
     */
   override def push(rows: Array[Long],
-                    cols: Array[Int],
+                    cols: Array[Long],
                     values: Array[V])(implicit ec: ExecutionContext): Future[Boolean] = {
     underlying.push(rows, cols, values)
   }
@@ -100,7 +100,7 @@ class BufferedBigMatrix[@specialized V: ClassTag](underlying: BigMatrix[V], buff
       }
     } else {
       val pushRows = new Array[Long](bufferIndex)
-      val pushCols = new Array[Int](bufferIndex)
+      val pushCols = new Array[Long](bufferIndex)
       val pushValues = new Array[V](bufferIndex)
       System.arraycopy(bufferRows, 0, pushRows, 0, bufferIndex)
       System.arraycopy(bufferCols, 0, pushCols, 0, bufferIndex)
@@ -131,7 +131,7 @@ class BufferedBigMatrix[@specialized V: ClassTag](underlying: BigMatrix[V], buff
     * @return A future containing the values of the elements at given rows, columns
     */
   override def pull(rows: Array[Long],
-                    cols: Array[Int])(implicit ec: ExecutionContext): Future[Array[V]] = {
+                    cols: Array[Long])(implicit ec: ExecutionContext): Future[Array[V]] = {
     underlying.pull(rows, cols)
   }
 }

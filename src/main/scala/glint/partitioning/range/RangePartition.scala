@@ -1,11 +1,13 @@
 package glint.partitioning.range
 
 import glint.partitioning.Partition
+import glint.partitioning.by.PartitionBy.PartitionBy
+import glint.partitioning.by.{ColPartition, PartitionBy, RowPartition}
 
 /**
   * A range partition
   */
-class RangePartition(index: Int, val start: Long, val end: Long) extends Partition(index) {
+private[partitioning] class RangePartition(index: Int, val start: Long, val end: Long) extends Partition(index) {
 
   /**
     * Checks whether given global key falls within this partition
@@ -24,12 +26,31 @@ class RangePartition(index: Int, val start: Long, val end: Long) extends Partiti
   override def size: Int = (end - start).toInt
 
   /**
-    * Converts given global key to a continuous local array index [0, 1, ...]
+    * Converts given global row key to a continuous local array index [0, 1, ...]
     *
-    * @param key The global key
+    * @param key The global row key
     * @return The local index
     */
   @inline
-  override def globalToLocal(key: Long): Int = (key - start).toInt
+  override def globalRowToLocal(key: Long): Int = (key - start).toInt
 
+  /**
+    * Converts given global column key to a continuous local array index [0, 1, ...]
+    *
+    * @param key The global column key
+    * @return The local index
+    */
+  @inline
+  override def globalColToLocal(key: Long): Int = (key - start).toInt
+}
+
+object RangePartition {
+
+  def apply(index: Int, start: Long, end: Long, by: PartitionBy): RangePartition = {
+    if (by == PartitionBy.ROW) {
+      new RangePartition(index, start, end) with RowPartition
+    } else {
+      new RangePartition(index, start, end) with ColPartition
+    }
+  }
 }

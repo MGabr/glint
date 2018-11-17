@@ -11,11 +11,14 @@ import spire.implicits._
   * A partial matrix holding doubles
   *
   * @param partition The partition
+  * @param rows The number of rows
   * @param cols The number of columns
   */
 private[glint] class PartialMatrixDouble(partition: Partition,
+                                         rows: Int,
                                          cols: Int,
-                                         aggregate: Aggregate) extends PartialMatrix[Double](partition, cols, aggregate) {
+                                         aggregate: Aggregate)
+  extends PartialMatrix[Double](partition, rows, cols, aggregate) {
 
   //DenseMatrix.zeros[Double](rows, cols)
   override val data: Array[Array[Double]] = Array.fill(rows)(Array.fill[Double](cols)(0.0))

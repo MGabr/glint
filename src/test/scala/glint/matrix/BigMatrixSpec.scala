@@ -5,7 +5,8 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, 
 import breeze.linalg.DenseVector
 import glint.SystemTest
 import glint.models.client.BigMatrix
-import glint.models.server.aggregate.{AggregateMin, AggregateMax, AggregateReplace}
+import glint.models.server.aggregate.{AggregateMax, AggregateMin, AggregateReplace}
+import glint.partitioning.by.PartitionBy
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -225,4 +226,33 @@ class BigMatrixSpec extends FlatSpec with SystemTest with Matchers {
     }
   }
 
+  it should "support pushing and pulling when partitioned by columns" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        val model = client.matrix[Double](49, 6, partitionBy = PartitionBy.COL)
+        val result = whenReady(model.push(Array(0L, 0L, 0L), Array(1, 3, 5), Array(0.1, 0.3, 0.5))) {
+          identity
+        }
+        assert(result)
+        val future = model.pull(Array(0L, 0L, 0L), Array(1, 3, 5))
+        val value = whenReady(future) {
+          identity
+        }
+        value should equal(Array(0.1, 0.3, 0.5))
+      }
+    }
+  }
+
+  it should "not support pulling rows when partitioned by columns" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        val model = client.matrix[Double](49, 6, partitionBy = PartitionBy.COL)
+
+        val future = model.pull(Array(0L))
+        whenReady(future.failed) { e =>
+          e shouldBe a [UnsupportedOperationException]
+        }
+      }
+    }
+  }
 }

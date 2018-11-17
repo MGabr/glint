@@ -1,11 +1,13 @@
 package glint.partitioning
 
+import glint.partitioning.by.HasGlobalToLocal
+
 /**
   * An abstract partition
   *
   * @param index The index of this partition
   */
-abstract class Partition(val index: Int) extends Serializable {
+abstract class Partition(val index: Int) extends Serializable with HasGlobalToLocal {
 
   /**
     * Checks whether given global key falls within this partition
@@ -15,15 +17,6 @@ abstract class Partition(val index: Int) extends Serializable {
     */
   @inline
   def contains(key: Long): Boolean
-
-  /**
-    * Converts given global key to a continuous local array index [0, 1, ...]
-    *
-    * @param key The global key
-    * @return The local index
-    */
-  @inline
-  def globalToLocal(key: Long): Int
 
   /**
     * Computes the size of this partition

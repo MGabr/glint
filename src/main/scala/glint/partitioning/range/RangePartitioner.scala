@@ -1,6 +1,8 @@
 package glint.partitioning.range
 
-import glint.partitioning.{Partition, Partitioner}
+import glint.partitioning.by.PartitionBy.PartitionBy
+import glint.partitioning._
+import glint.partitioning.by.PartitionBy
 
 /**
   * A partitioner that partitions keys according to continuous ranges
@@ -8,11 +10,14 @@ import glint.partitioning.{Partition, Partitioner}
   * @param partitions The partitions
   * @param numberOfSmallPartitions The number of small partitions
   * @param smallPartitionSize The size of a small partition
+  * @param size The number of keys
+  * @param partitionBy The key type by which the partitions are partitioned
   */
-class RangePartitioner(val partitions: Array[Partition],
-                       val numberOfSmallPartitions: Int,
-                       val smallPartitionSize: Int,
-                       val size: Long) extends Partitioner {
+private[partitioning] class RangePartitioner(val partitions: Array[Partition],
+                                             val numberOfSmallPartitions: Int,
+                                             val smallPartitionSize: Int,
+                                             val size: Long,
+                                             val partitionBy: PartitionBy) extends Partitioner {
 
   val numberOfSmallKeys: Long = numberOfSmallPartitions.toLong * smallPartitionSize.toLong
   val largePartitionSize: Int = smallPartitionSize + 1
@@ -28,7 +33,7 @@ class RangePartitioner(val partitions: Array[Partition],
 
     // Key must be within range
     if (key < 0 || key >= size) {
-      throw new IndexOutOfBoundsException()
+      throw new IndexOutOfBoundsException(key.toString)
     }
 
     // We use integer division to compute the index, which discards the remainder and is thus equivalent to a floor
@@ -53,13 +58,14 @@ class RangePartitioner(val partitions: Array[Partition],
 object RangePartitioner {
 
   /**
-    * Creates a CyclicPartitioner for given number of partitions and keys
+    * Creates a RangePartitioner for given number of partitions and keys
     *
     * @param numberOfPartitions The number of partitions
     * @param numberOfKeys The number of keys
-    * @return A CyclicPartitioner
+    * @param by The key type for partitioning
+    * @return A RangePartitioner
     */
-  def apply(numberOfPartitions: Int, numberOfKeys: Long): RangePartitioner = {
+  def apply(numberOfPartitions: Int, numberOfKeys: Long, by: PartitionBy = PartitionBy.ROW): RangePartitioner = {
     val partitions = new Array[Partition](numberOfPartitions)
     val numberOfLargePartitions = (numberOfKeys % numberOfPartitions).toInt
     val numberOfSmallPartitions = numberOfPartitions - numberOfLargePartitions
@@ -69,18 +75,18 @@ object RangePartitioner {
     var end: Long = start + keysPerSmallPartition
     while (i < numberOfPartitions) {
       if (i < numberOfSmallPartitions) {
-        partitions(i) = new RangePartition(i, start, end)
+        partitions(i) = RangePartition(i, start, end, by)
         start += keysPerSmallPartition
         end += keysPerSmallPartition
       } else {
         end += 1
-        partitions(i) = new RangePartition(i, start, end)
+        partitions(i) = RangePartition(i, start, end, by)
         start += keysPerSmallPartition + 1
         end += keysPerSmallPartition
       }
       i += 1
     }
-    new RangePartitioner(partitions, numberOfSmallPartitions, keysPerSmallPartition, numberOfKeys)
+    new RangePartitioner(partitions, numberOfSmallPartitions, keysPerSmallPartition, numberOfKeys, by)
   }
 
 }

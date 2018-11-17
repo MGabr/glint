@@ -17,12 +17,13 @@ import scala.reflect.ClassTag
   * @param aggregate Aggregation function for combining two values (typically addition)
   * @tparam V The type of values to store
   */
-class MockBigMatrix[V: ClassTag](nrOfRows: Int, val cols: Int, default: V,
+class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
                                  aggregate: (V, V) => V) extends BigMatrix[V] {
 
   val rows: Long = nrOfRows
+  val cols: Long = nrOfCols
 
-  private val data = Array.fill[Array[V]](nrOfRows)(Array.fill[V](cols)(default))
+  private val data = Array.fill[Array[V]](nrOfRows)(Array.fill[V](nrOfCols)(default))
   private var destroyed: Boolean = false
 
   /**
@@ -87,7 +88,7 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, val cols: Int, default: V,
     * @return A future containing either the success or failure of the operation
     */
   override def push(rows: Array[Long],
-                    cols: Array[Int],
+                    cols: Array[Long],
                     values: Array[V])(implicit ec: ExecutionContext): Future[Boolean] = {
     if (failNextPush || destroyed) {
       failNextPushes -= 1
@@ -97,7 +98,7 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, val cols: Int, default: V,
         var i = 0
         while (i < rows.length) {
           val row = rows(i).toInt
-          val col = cols(i)
+          val col = cols(i).toInt
           data(row)(col) = aggregate(data(row)(col), values(i))
           i += 1
         }
@@ -116,7 +117,7 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, val cols: Int, default: V,
     * @return A future containing the values of the elements at given rows, columns
     */
   override def pull(rows: Array[Long],
-                    cols: Array[Int])(implicit ec: ExecutionContext): Future[Array[V]] = {
+                    cols: Array[Long])(implicit ec: ExecutionContext): Future[Array[V]] = {
     if (failNextPull || destroyed) {
       failNextPulls -= 1
       fail()
@@ -125,7 +126,7 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, val cols: Int, default: V,
         val array = new Array[V](rows.length)
         var i = 0
         while (i < rows.length) {
-          array(i) = data(rows(i).toInt)(cols(i))
+          array(i) = data(rows(i).toInt)(cols(i).toInt)
           i += 1
         }
         array

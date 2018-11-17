@@ -3,10 +3,11 @@ package glint.matrix
 import akka.actor.ActorSystem
 import glint.SystemTest
 import glint.models.server.aggregate.AggregateAdd
-import glint.models.server.{PartialMatrixDouble, PartialMatrix}
+import glint.models.server.{PartialMatrix, PartialMatrixDouble}
 import glint.partitioning.cyclic.CyclicPartition
 import glint.partitioning.range.RangePartition
 import akka.testkit.TestActorRef
+import glint.partitioning.by.PartitionBy
 import org.scalameter.api._
 import org.scalameter.picklers.Implicits._
 import org.scalameter.{Bench, Gen}
@@ -23,26 +24,26 @@ class MatrixBenchmark extends Bench.OfflineReport {
   // Construct necessary data
   implicit val system = ActorSystem("MatrixBenchmark")
   val random = new scala.util.Random(42)
-  val rangePartition = new RangePartition(1, 10000, 20000) // 10000 elements
-  val cyclicPartition = new CyclicPartition(3, 10, 100000) // 10000 elements
+  val rangePartition = RangePartition(1, 10000, 20000, PartitionBy.ROW) // 10000 elements
+  val cyclicPartition = CyclicPartition(3, 10, 100000, PartitionBy.ROW) // 10000 elements
 
   // Construct matrices for range and cyclic partitions
-  val rangeMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(rangePartition, 300, AggregateAdd()))
+  val rangeMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(rangePartition, 10000, 300, AggregateAdd()))
   val rangeMatrixDouble = rangeMatrixDoubleRef.underlyingActor
-  val cyclicMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(cyclicPartition, 300, AggregateAdd()))
+  val cyclicMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(cyclicPartition, 10000, 300, AggregateAdd()))
   val cyclicMatrixDouble = cyclicMatrixDoubleRef.underlyingActor
 
   // Sizes and data
   val sizes = Gen.range("size")(4000, 10000, 2000)
   val rangeData = for (size <- sizes) yield {
     val rows = (0L until size).map { case x => x + 10000 }.toArray
-    val cols = (0 until size).map { case x => x % 300 }.toArray
+    val cols = (0L until size).map { case x => x % 300 }.toArray
     val values = (0 until size).map(_ => random.nextDouble()).toArray
     (rows, cols, values)
   }
   val cyclicData = for (size <- sizes) yield {
     val rows = (0L until size).map { case x => (x * 10) + 3 }.toArray
-    val cols = (0 until size).map { case x => x % 300 }.toArray
+    val cols = (0L until size).map { case x => x % 300 }.toArray
     val values = (0 until size).map(_ => random.nextDouble()).toArray
     (rows, cols, values)
   }

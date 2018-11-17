@@ -20,7 +20,7 @@ class RequestSerializer extends GlintSerializer {
         buf.put(SerializationConstants.pullMatrixByte)
         buf.putInt(x.rows.length)
         buf.putLongArray(x.rows)
-        buf.putIntArray(x.cols)
+        buf.putLongArray(x.cols)
 
       case x: PullMatrixRows =>
         buf.put(SerializationConstants.pullMatrixRowsByte)
@@ -37,7 +37,7 @@ class RequestSerializer extends GlintSerializer {
         buf.putInt(x.rows.length)
         buf.putInt(x.id)
         buf.putLongArray(x.rows)
-        buf.putIntArray(x.cols)
+        buf.putLongArray(x.cols)
         buf.putDoubleArray(x.values)
 
       case x: PushMatrixFloat =>
@@ -45,7 +45,7 @@ class RequestSerializer extends GlintSerializer {
         buf.putInt(x.rows.length)
         buf.putInt(x.id)
         buf.putLongArray(x.rows)
-        buf.putIntArray(x.cols)
+        buf.putLongArray(x.cols)
         buf.putFloatArray(x.values)
 
       case x: PushMatrixInt =>
@@ -53,7 +53,7 @@ class RequestSerializer extends GlintSerializer {
         buf.putInt(x.rows.length)
         buf.putInt(x.id)
         buf.putLongArray(x.rows)
-        buf.putIntArray(x.cols)
+        buf.putLongArray(x.cols)
         buf.putIntArray(x.values)
 
       case x: PushMatrixLong =>
@@ -61,7 +61,7 @@ class RequestSerializer extends GlintSerializer {
         buf.putInt(x.rows.length)
         buf.putInt(x.id)
         buf.putLongArray(x.rows)
-        buf.putIntArray(x.cols)
+        buf.putLongArray(x.cols)
         buf.putLongArray(x.values)
 
       case x: PushVectorDouble =>
@@ -101,7 +101,7 @@ class RequestSerializer extends GlintSerializer {
     objectType match {
       case SerializationConstants.pullMatrixByte =>
         val rows = buf.getLongArray(objectSize)
-        val cols = buf.getIntArray(objectSize)
+        val cols = buf.getLongArray(objectSize)
         PullMatrix(rows, cols)
 
       case SerializationConstants.pullMatrixRowsByte =>
@@ -115,28 +115,28 @@ class RequestSerializer extends GlintSerializer {
       case SerializationConstants.pushMatrixDoubleByte =>
         val id = buf.getInt()
         val rows = buf.getLongArray(objectSize)
-        val cols = buf.getIntArray(objectSize)
+        val cols = buf.getLongArray(objectSize)
         val values = buf.getDoubleArray(objectSize)
         PushMatrixDouble(id, rows, cols, values)
 
       case SerializationConstants.pushMatrixFloatByte =>
         val id = buf.getInt()
         val rows = buf.getLongArray(objectSize)
-        val cols = buf.getIntArray(objectSize)
+        val cols = buf.getLongArray(objectSize)
         val values = buf.getFloatArray(objectSize)
         PushMatrixFloat(id, rows, cols, values)
 
       case SerializationConstants.pushMatrixIntByte =>
         val id = buf.getInt()
         val rows = buf.getLongArray(objectSize)
-        val cols = buf.getIntArray(objectSize)
+        val cols = buf.getLongArray(objectSize)
         val values = buf.getIntArray(objectSize)
         PushMatrixInt(id, rows, cols, values)
 
       case SerializationConstants.pushMatrixLongByte =>
         val id = buf.getInt()
         val rows = buf.getLongArray(objectSize)
-        val cols = buf.getIntArray(objectSize)
+        val cols = buf.getLongArray(objectSize)
         val values = buf.getLongArray(objectSize)
         PushMatrixLong(id, rows, cols, values)
 

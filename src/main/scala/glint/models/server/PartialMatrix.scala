@@ -12,19 +12,16 @@ import scala.reflect.ClassTag
   * A partial model representing a part of some matrix
   *
   * @param partition The partition of data this partial matrix represents
+  * @param rows The number of rows
   * @param cols The number of columns
   * @param aggregate The type of aggregation to apply
   * @tparam V The type of value to store
   */
 private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : ClassTag](val partition: Partition,
+                                                                                         val rows: Int,
                                                                                          val cols: Int,
                                                                                          val aggregate: Aggregate)
   extends Actor with ActorLogging with PushLogic {
-
-  /**
-    * The size of this partial matrix in number of rows
-    */
-  val rows: Int = partition.size
 
   /**
     * The data matrix containing the elements
@@ -41,7 +38,7 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     var i = 0
     val a = new Array[Array[V]](rows.length)
     while (i < rows.length) {
-      val row = partition.globalToLocal(rows(i))
+      val row = partition.globalRowToLocal(rows(i))
       a(i) = data(row)
       i += 1
     }
@@ -55,12 +52,12 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     * @param cols The column indices
     * @return A sequence of values
     */
-  def get(rows: Array[Long], cols: Array[Int]): Array[V] = {
+  def get(rows: Array[Long], cols: Array[Long]): Array[V] = {
     var i = 0
     val a = new Array[V](rows.length)
     while (i < rows.length) {
-      val row = partition.globalToLocal(rows(i))
-      val col = cols(i)
+      val row = partition.globalRowToLocal(rows(i))
+      val col = partition.globalColToLocal(cols(i))
       a(i) = data(row)(col)
       i += 1
     }
@@ -74,11 +71,11 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     * @param cols The cols
     * @param values The values
     */
-  def update(rows: Array[Long], cols: Array[Int], values: Array[V]): Boolean = {
+  def update(rows: Array[Long], cols: Array[Long], values: Array[V]): Boolean = {
     var i = 0
     while (i < rows.length) {
-      val row = partition.globalToLocal(rows(i))
-      val col = cols(i)
+      val row = partition.globalRowToLocal(rows(i))
+      val col = partition.globalColToLocal(cols(i))
       data(row)(col) = aggregate.aggregate[V](data(row)(col), values(i))
       i += 1
     }

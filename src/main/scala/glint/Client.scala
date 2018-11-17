@@ -14,6 +14,8 @@ import glint.models.client.async._
 import glint.models.client.{BigMatrix, BigVector}
 import glint.models.server._
 import glint.models.server.aggregate.{Aggregate, AggregateAdd}
+import glint.partitioning.by.PartitionBy
+import glint.partitioning.by.PartitionBy.PartitionBy
 import glint.partitioning.range.RangePartitioner
 import glint.partitioning.{Partition, Partitioner}
 import glint.util.Numerical
@@ -104,14 +106,16 @@ class Client(val config: Config,
     * @param cols The number of columns
     * @param modelsPerServer The number of partial models to store per parameter server (default: 1)
     * @param aggregate The type of aggregation to perform on this model (default: AggregateAdd)
+    * @param partitionBy The key type for partitioning (row or column)
     * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
     * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
     */
   def matrix[V: Numerical : TypeTag](rows: Long,
-                                                cols: Int,
+                                                cols: Long,
                                                 modelsPerServer: Int = 1,
-                                                aggregate: Aggregate = AggregateAdd()): BigMatrix[V] = {
-    matrix[V](rows, cols, modelsPerServer, aggregate, (partitions: Int, keys: Long) => RangePartitioner(partitions, keys))
+                                                aggregate: Aggregate = AggregateAdd(),
+                                                partitionBy: PartitionBy = PartitionBy.ROW): BigMatrix[V] = {
+    matrix[V](rows, cols, modelsPerServer, aggregate, partitionBy, (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, partitionBy))
   }
 
   /**
@@ -122,20 +126,26 @@ class Client(val config: Config,
     * @param modelsPerServer The number of partial models to store per parameter server
     * @param createPartitioner A function that creates a [[glint.partitioning.Partitioner partitioner]] that partitions
     *                          keys
+    * @param partitionBy The key type for partitioning (row or column)
     * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
     * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
     */
   def matrix[V: Numerical : TypeTag](rows: Long,
-                                                cols: Int,
+                                                cols: Long,
                                                 modelsPerServer: Int,
                                                 aggregate: Aggregate,
+                                                partitionBy: PartitionBy,
                                                 createPartitioner: (Int, Long) => Partitioner): BigMatrix[V] = {
 
     val propFunction = Numerical.asString[V] match {
-      case "Int" => (partition: Partition) => Props(classOf[PartialMatrixInt], partition, cols, aggregate)
-      case "Long" => (partition: Partition) => Props(classOf[PartialMatrixLong], partition, cols, aggregate)
-      case "Float" => (partition: Partition) => Props(classOf[PartialMatrixFloat], partition, cols, aggregate)
-      case "Double" => (partition: Partition) => Props(classOf[PartialMatrixDouble], partition, cols, aggregate)
+      case "Int" => (partition: Partition) =>
+        props(classOf[PartialMatrixInt], partition, rows, cols, aggregate, partitionBy)
+      case "Long" => (partition: Partition) =>
+        props(classOf[PartialMatrixLong], partition, rows, cols, aggregate, partitionBy)
+      case "Float" => (partition: Partition) =>
+        props(classOf[PartialMatrixFloat], partition, rows, cols, aggregate, partitionBy)
+      case "Double" => (partition: Partition) =>
+        props(classOf[PartialMatrixDouble], partition, rows, cols, aggregate, partitionBy)
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
@@ -151,7 +161,24 @@ class Client(val config: Config,
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
-    create[BigMatrix[V]](rows, modelsPerServer, createPartitioner, propFunction, objFunction)
+    val keys = if (partitionBy == PartitionBy.ROW) rows else cols
+    create[BigMatrix[V]](keys, modelsPerServer, createPartitioner, propFunction, objFunction)
+  }
+
+  private def props[T](matrixClass: Class[T],
+                       partition: Partition,
+                       rows: Long,
+                       cols: Long,
+                       aggregate: Aggregate,
+                       partitionBy: PartitionBy): Props = {
+
+    require(
+      if (partitionBy == PartitionBy.ROW) cols <= Int.MaxValue else rows <= Int.MaxValue,
+      "The number of non-keys has to be an Int")
+
+    val rowsInt = if (partitionBy == PartitionBy.ROW) partition.size else rows.toInt
+    val colsInt = if (partitionBy == PartitionBy.COL) partition.size else cols.toInt
+    Props(matrixClass, partition, rowsInt, colsInt, aggregate)
   }
 
   /**

@@ -11,11 +11,14 @@ import spire.implicits._
   * A partial matrix holding floats
   *
   * @param partition The partition
+  * @param rows The number of rows
   * @param cols The number of columns
   */
 private[glint] class PartialMatrixFloat(partition: Partition,
-                                       cols: Int,
-                                       aggregate: Aggregate) extends PartialMatrix[Float](partition, cols, aggregate) {
+                                        rows: Int,
+                                        cols: Int,
+                                        aggregate: Aggregate)
+  extends PartialMatrix[Float](partition, rows, cols, aggregate) {
 
   //override val data: Matrix[Float] = DenseMatrix.zeros[Float](rows, cols)
   override val data: Array[Array[Float]] = Array.fill(rows)(Array.fill[Float](cols)(0.0f))

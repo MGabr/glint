@@ -10,6 +10,7 @@ import breeze.math.Semiring
 import com.typesafe.config.Config
 import glint.messages.server.request.{PullMatrix, PullMatrixRows}
 import glint.models.client.BigMatrix
+import glint.partitioning.by.PartitionBy
 import glint.partitioning.{Partition, Partitioner}
 import spire.implicits.cforRange
 
@@ -37,8 +38,12 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
                                                                                              matrices: Array[ActorRef],
                                                                                              config: Config,
                                                                                              val rows: Long,
-                                                                                             val cols: Int)
+                                                                                             val cols: Long)
   extends BigMatrix[V] {
+
+  require(
+    if (partitioner.partitionBy == PartitionBy.ROW) cols <= Int.MaxValue else rows <= Int.MaxValue,
+    "The number of non-keys has to be an Int")
 
   PullFSM.initialize(config)
   PushFSM.initialize(config)
@@ -51,6 +56,10 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     * @return A future containing the vectors representing the rows
     */
   override def pull(rows: Array[Long])(implicit ec: ExecutionContext): Future[Array[Vector[V]]] = {
+
+    if (partitioner.partitionBy != PartitionBy.ROW) {
+      return Future.failed(new UnsupportedOperationException("Cannot pull rows if the matrix is not partitioned by rows"))
+    }
 
     // Send pull request of the list of keys
     val pulls = rows.groupBy(partitioner.partition).map {
@@ -71,11 +80,12 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     def aggregateSuccess(responses: Iterable[R]): Array[Vector[V]] = {
       val result: Array[Vector[V]] = Array.fill[Vector[V]](rows.length)(DenseVector.zeros[V](0))
       val responsesArray = responses.toArray
+      val colsInt = cols.toInt
       cforRange(0 until responsesArray.length)(i => {
         val response = responsesArray(i)
         val idx = indices(i)
         cforRange(0 until idx.length)(i => {
-          result(idx(i)) = toVector(response, i * cols, (i + 1) * cols)
+          result(idx(i)) = toVector(response, i * colsInt, (i + 1) * colsInt)
         })
       })
       result
@@ -93,10 +103,10 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the values of the elements at given rows, columns
     */
-  override def pull(rows: Array[Long], cols: Array[Int])(implicit ec: ExecutionContext): Future[Array[V]] = {
+  override def pull(rows: Array[Long], cols: Array[Long])(implicit ec: ExecutionContext): Future[Array[V]] = {
 
     // Send pull request of the list of keys
-    val pulls = mapPartitions(rows) {
+    val pulls = mapPartitions(keys(rows, cols)) {
       case (partition, indices) =>
         val pullMessage = PullMatrix(indices.map(rows).toArray, indices.map(cols).toArray)
         val fsm = PullFSM[PullMatrix, R](pullMessage, matrices(partition.index))
@@ -104,7 +114,7 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     }
 
     // Obtain key indices after partitioning so we can place the results in a correctly ordered array
-    val indices = rows.zipWithIndex.groupBy {
+    val indices = keys(rows, cols).zipWithIndex.groupBy {
       case (k, i) => partitioner.partition(k)
     }.map {
       case (_, arr) => arr.map(_._2)
@@ -138,10 +148,10 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing either the success or failure of the operation
     */
-  override def push(rows: Array[Long], cols: Array[Int], values: Array[V])(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def push(rows: Array[Long], cols: Array[Long], values: Array[V])(implicit ec: ExecutionContext): Future[Boolean] = {
 
     // Send push requests
-    val pushes = mapPartitions(rows) {
+    val pushes = mapPartitions(keys(rows, cols)) {
       case (partition, indices) =>
         val rs = indices.map(rows).toArray
         val cs = indices.map(cols).toArray
@@ -156,17 +166,28 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
   }
 
   /**
-    * Groups indices of given rows into partitions according to this models partitioner and maps each partition to a
+    * Returns the indices of the rows or columns depending on which are the partitioning keys
+    *
+    * @param rows The indices of the rows
+    * @param cols The indices of the columns
+    * @return The partitioning keys
+    */
+  private def keys(rows: Array[Long], cols: Array[Long]): Array[Long] = {
+    if (partitioner.partitionBy == PartitionBy.ROW) rows else cols
+  }
+
+  /**
+    * Groups indices of given keys into partitions according to this models partitioner and maps each partition to a
     * type T
     *
-    * @param rows The rows to partition
+    * @param keys The keys to partition
     * @param func The function that takes a partition and corresponding indices and creates something of type T
     * @tparam T The type to map to
     * @return An iterable over the partitioned results
     */
   @inline
-  private def mapPartitions[T](rows: Seq[Long])(func: (Partition, Seq[Int]) => T): Iterable[T] = {
-    rows.indices.groupBy(i => partitioner.partition(rows(i))).map { case (a, b) => func(a, b) }
+  private def mapPartitions[T](keys: Seq[Long])(func: (Partition, Seq[Int]) => T): Iterable[T] = {
+    keys.indices.groupBy(i => partitioner.partition(keys(i))).map { case (a, b) => func(a, b) }
   }
 
   /**
@@ -219,7 +240,7 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     * @return A PushMatrix message for type V
     */
   @inline
-  protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Int], values: Array[V]): P
+  protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Long], values: Array[V]): P
 
   /**
     * Deserializes this instance. This starts an ActorSystem with appropriate configuration before attempting to

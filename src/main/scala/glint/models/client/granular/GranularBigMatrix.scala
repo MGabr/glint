@@ -27,7 +27,7 @@ class GranularBigMatrix[V: ClassTag](underlying: BigMatrix[V],
   require(maximumMessageSize > 0, "Max message size must be non-zero")
 
   val rows: Long = underlying.rows
-  val cols: Int = underlying.cols
+  val cols: Long = underlying.cols
 
   /**
     * Pulls a set of rows while attempting to keep individual network messages smaller than `maximumMessageSize`
@@ -42,7 +42,7 @@ class GranularBigMatrix[V: ClassTag](underlying: BigMatrix[V],
     } else {
       var i = 0
       var current = 0
-      val maxIncrement = Math.max(1, maximumMessageSize / cols)
+      val maxIncrement = Math.max(1, maximumMessageSize / cols).toInt
       val a = new Array[Future[Array[Vector[V]]]](Math.ceil(rows.length.toDouble / maxIncrement.toDouble).toInt)
       while (i < rows.length) {
         val end = Math.min(rows.length, i + maxIncrement)
@@ -78,7 +78,7 @@ class GranularBigMatrix[V: ClassTag](underlying: BigMatrix[V],
     * @return A future containing either the success or failure of the operation
     */
   override def push(rows: Array[Long],
-                    cols: Array[Int],
+                    cols: Array[Long],
                     values: Array[V])(implicit ec: ExecutionContext): Future[Boolean] = {
     if (rows.length <= maximumMessageSize) {
       underlying.push(rows, cols, values)
@@ -104,7 +104,7 @@ class GranularBigMatrix[V: ClassTag](underlying: BigMatrix[V],
     * @return A future containing the values of the elements at given rows, columns
     */
   override def pull(rows: Array[Long],
-                    cols: Array[Int])(implicit ec: ExecutionContext): Future[Array[V]] = {
+                    cols: Array[Long])(implicit ec: ExecutionContext): Future[Array[V]] = {
     if (rows.length <= maximumMessageSize) {
       underlying.pull(rows, cols)
     } else {

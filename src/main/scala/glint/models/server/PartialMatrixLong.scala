@@ -11,11 +11,14 @@ import spire.implicits._
   * A partial matrix holding longs
   *
   * @param partition The row start index
+  * @param rows The number of rows
   * @param cols The number of columns
   */
 private[glint] class PartialMatrixLong(partition: Partition,
+                                       rows: Int,
                                        cols: Int,
-                                       aggregate: Aggregate) extends PartialMatrix[Long](partition, cols, aggregate) {
+                                       aggregate: Aggregate)
+  extends PartialMatrix[Long](partition, rows, cols, aggregate) {
 
   //override val data: Matrix[Long] = DenseMatrix.zeros[Long](rows, cols)
   override val data: Array[Array[Long]] = Array.fill(rows)(Array.fill[Long](cols)(0L))

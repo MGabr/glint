@@ -1,9 +1,13 @@
 package glint.partitioning
 
+import glint.partitioning.by.PartitionBy.PartitionBy
+
 /**
   * Partitioners allocate a server id for each key
   */
 trait Partitioner extends Serializable {
+
+  val partitionBy: PartitionBy
 
   /**
     * Assign a server to the given key
