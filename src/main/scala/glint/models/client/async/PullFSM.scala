@@ -64,7 +64,7 @@ class PullFSM[T, R: ClassTag](message: T,
       attempts += 1
       request()
     } else {
-      promise.failure(new PullFailedException(s"Failed $attempts out of $maximumAttempts attempts to push data"))
+      promise.failure(new PullFailedException(s"Failed $attempts out of $maximumAttempts attempts to pull data"))
     }
   }
 

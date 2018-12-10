@@ -21,10 +21,15 @@ private[glint] object SerializationConstants {
   val pushVectorIntByte: Byte = 0x09
   val pushVectorLongByte: Byte = 0x0A
 
+  val pullDotProdByte: Byte = 0x0B
+  val pushAdjustByte: Byte = 0x0C
+
   val responseDoubleByte: Byte = 0x10
   val responseFloatByte: Byte = 0x11
   val responseIntByte: Byte = 0x12
   val responseLongByte: Byte = 0x13
+
+  val responseDotProd: Byte = 0x14
 
   // Byte identifiers for message types
   val masterClientList: Byte = 0x00

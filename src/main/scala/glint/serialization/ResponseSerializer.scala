@@ -73,6 +73,13 @@ class ResponseSerializer extends GlintSerializer {
           buf.putLongArray(x.values(i))
           i += 1
         }
+
+      case x: ResponseDotProd =>
+        buf.put(SerializationConstants.responseDotProd)
+        buf.putInt(x.fPlus.length)
+        buf.putInt(x.fMinus.length)
+        buf.putFloatArray(x.fPlus)
+        buf.putFloatArray(x.fMinus)
     }
   }
 
@@ -96,6 +103,12 @@ class ResponseSerializer extends GlintSerializer {
       case SerializationConstants.responseLongByte =>
         val values = buf.getLongArray(objectSize)
         ResponseLong(values)
+
+      case SerializationConstants.responseDotProd =>
+        val fMinusSize = buf.getInt()
+        val fPlus = buf.getFloatArray(objectSize)
+        val fMinus = buf.getFloatArray(fMinusSize)
+        ResponseDotProd(fPlus, fMinus)
     }
   }
 

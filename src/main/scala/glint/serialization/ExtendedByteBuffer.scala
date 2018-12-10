@@ -1,6 +1,7 @@
 package glint.serialization
 
 import java.nio.ByteBuffer
+import spire.implicits.cforRange
 
 class ExtendedByteBuffer(val buf: ByteBuffer) {
 
@@ -26,6 +27,15 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
     val typedBuffer = buf.asFloatBuffer()
     typedBuffer.put(values)
     buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfFloat)
+  }
+
+  def putIntArrayArray(values: Array[Array[Int]]): Unit = {
+    val typedBuffer = buf.asIntBuffer()
+    cforRange(values.indices) { i =>
+      typedBuffer.put(values(i).length)
+      typedBuffer.put(values(i))
+    }
+    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfInt)
   }
 
   def getLongArray(size: Int): Array[Long] = {
@@ -60,6 +70,16 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
     output
   }
 
+  def getIntArrayArray(sizeArray: Int): Array[Array[Int]] = {
+    val output = new Array[Array[Int]](sizeArray)
+    val typedBuffer = buf.asIntBuffer()
+    cforRange(0 until sizeArray) { i =>
+      output(i) = new Array[Int](typedBuffer.get())
+      typedBuffer.get(output(i))
+    }
+    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfInt)
+    output
+  }
 }
 
 object ExtendedByteBuffer {

@@ -16,6 +16,13 @@ class RequestSerializer extends GlintSerializer {
 
   override def toBinary(o: AnyRef, buf: ByteBuffer): Unit = {
     o match {
+      case x: PullDotProd =>
+        buf.put(SerializationConstants.pullDotProdByte)
+        buf.putInt(x.wInput.length)
+        buf.putIntArray(x.wInput)
+        buf.putIntArrayArray(x.wOutput)
+        buf.putLong(x.seed)
+
       case x: PullMatrix =>
         buf.put(SerializationConstants.pullMatrixByte)
         buf.putInt(x.rows.length)
@@ -31,6 +38,18 @@ class RequestSerializer extends GlintSerializer {
         buf.put(SerializationConstants.pullVectorByte)
         buf.putInt(x.keys.length)
         buf.putLongArray(x.keys)
+
+      case x: PushAdjust =>
+        buf.put(SerializationConstants.pushAdjustByte)
+        buf.putInt(x.wInput.length)
+        buf.putInt(x.gPlus.length)
+        buf.putInt(x.gMinus.length)
+        buf.putInt(x.id)
+        buf.putIntArray(x.wInput)
+        buf.putIntArrayArray(x.wOutput)
+        buf.putFloatArray(x.gPlus)
+        buf.putFloatArray(x.gMinus)
+        buf.putLong(x.seed)
 
       case x: PushMatrixDouble =>
         buf.put(SerializationConstants.pushMatrixDoubleByte)
@@ -99,6 +118,12 @@ class RequestSerializer extends GlintSerializer {
     val objectSize = buf.getInt()
 
     objectType match {
+      case SerializationConstants.pullDotProdByte =>
+        val wInput = buf.getIntArray(objectSize)
+        val wOutput = buf.getIntArrayArray(objectSize)
+        val seed = buf.getLong()
+        PullDotProd(wInput, wOutput, seed)
+
       case SerializationConstants.pullMatrixByte =>
         val rows = buf.getLongArray(objectSize)
         val cols = buf.getLongArray(objectSize)
@@ -111,6 +136,17 @@ class RequestSerializer extends GlintSerializer {
       case SerializationConstants.pullVectorByte =>
         val keys = buf.getLongArray(objectSize)
         PullVector(keys)
+
+      case SerializationConstants.pushAdjustByte =>
+        val gPlusSize = buf.getInt()
+        val gMinusSize = buf.getInt()
+        val id = buf.getInt()
+        val wInput = buf.getIntArray(objectSize)
+        val wOutput = buf.getIntArrayArray(objectSize)
+        val gPlus = buf.getFloatArray(gPlusSize)
+        val gMinus = buf.getFloatArray(gMinusSize)
+        val seed = buf.getLong()
+        PushAdjust(id, wInput, wOutput, gPlus, gMinus, seed)
 
       case SerializationConstants.pushMatrixDoubleByte =>
         val id = buf.getInt()

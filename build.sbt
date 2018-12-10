@@ -1,6 +1,6 @@
 name := "Glint"
 
-version := "0.2"
+version := "0.2-SNAPSHOT"
 
 organization := "ch.ethz.inf.da"
 
@@ -11,6 +11,10 @@ fork in Test := true
 // Spark
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.2" % "provided"
+
+// BLAS support
+
+libraryDependencies += "com.github.fommil.netlib" % "all" % "1.1.2" pomOnly()
 
 // Akka
 

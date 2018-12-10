@@ -6,12 +6,13 @@ import java.util.concurrent.TimeUnit
 import akka.actor._
 import akka.pattern.ask
 import akka.remote.RemoteScope
+import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import glint.exceptions.ModelCreationException
 import glint.messages.master.{RegisterClient, ServerList}
 import glint.models.client.async._
-import glint.models.client.{BigMatrix, BigVector}
+import glint.models.client.{BigMatrix, BigVector, BigWord2VecMatrix}
 import glint.models.server._
 import glint.models.server.aggregate.{Aggregate, AggregateAdd}
 import glint.partitioning.by.PartitionBy
@@ -21,6 +22,7 @@ import glint.partitioning.{Partition, Partitioner}
 import glint.util.Numerical
 import glint.util.terminateAndWait
 import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -100,7 +102,7 @@ class Client(val config: Config,
   }
 
   /**
-    * Constructs a distributed matrix (indexed by (row: Long, col: Int)) for specified type of values
+    * Constructs a distributed matrix (indexed by (row: Long, col: Long)) for specified type of values
     *
     * @param rows The number of rows
     * @param cols The number of columns
@@ -119,7 +121,7 @@ class Client(val config: Config,
   }
 
   /**
-    * Constructs a distributed matrix (indexed by (row: Long, col: Int)) for specified type of values
+    * Constructs a distributed matrix (indexed by (row: Long, col: Long)) for specified type of values
     *
     * @param rows The number of rows
     * @param cols The number of columns
@@ -179,6 +181,35 @@ class Client(val config: Config,
     val rowsInt = if (partitionBy == PartitionBy.ROW) partition.size else rows.toInt
     val colsInt = if (partitionBy == PartitionBy.COL) partition.size else cols.toInt
     Props(matrixClass, partition, rowsInt, colsInt, aggregate)
+  }
+
+  /**
+    * Constructs a distributed Word2Vec matrix
+    *
+    * This method for constructing the matrix has to send the vocabulary counts as serialized Akka props to remote
+    * actors and is mainly intended for testing outside of spark. To efficiently construct a Word2Vec matrix use
+    * [[glint.Client.runWithWord2VecMatrixOnSpark()]]
+    *
+    * @param vectorSize The (full) vector size
+    * @param n The number of negative examples to create per output word
+    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
+    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
+    */
+  def word2vecMatrix(vocabCns: Array[Int],
+                     vectorSize: Int,
+                     n: Int,
+                     unigramTableSize: Int = 100000000): BigWord2VecMatrix = {
+
+    val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
+
+    val propFunction = (partition: Partition) =>
+      Props(classOf[PartialMatrixWord2Vec], partition, vectorSize, AggregateAdd(), vocabCns, n, unigramTableSize)
+
+    val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
+      new AsyncBigWord2VecMatrix(partitioner, models, config, vocabCns.length, vectorSize, n)
+
+    create[BigWord2VecMatrix](vectorSize, 1, createPartitioner, propFunction, objFunction)
   }
 
   /**
@@ -343,6 +374,132 @@ object Client {
     // Construct client
     try {
       Client(config)
+    } catch {
+      case ex: Throwable =>
+        terminateAndWait(masterSystem, config)
+        throw ex
+    }
+  }
+
+  /**
+    * Starts a standalone glint cluster integrated in Spark and initialize a Word2Vec matrix on it.
+    *
+    * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
+    * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
+    * and avoids having to send them as serialized Akka props to remote actors.
+    *
+    * @param sc The spark context
+    * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
+    * @param vectorSize The (full) vector size
+    * @param n The number of negative examples to create per output word
+    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
+    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
+    */
+  def runWithWord2VecMatrixOnSpark(sc: SparkContext,
+                                   bcVocabCns: Broadcast[Array[Int]],
+                                   vectorSize: Int,
+                                   n: Int,
+                                   unigramTableSize: Int = 100000000): (Client, BigWord2VecMatrix) = {
+    runWithWord2VecMatrixOnSpark(sc, bcVocabCns, vectorSize, n, unigramTableSize)
+  }
+
+  /**
+    * Starts a standalone glint cluster integrated in Spark and initialize a Word2Vec matrix on it.
+    *
+    * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
+    * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
+    * and avoids having to send them as serialized Akka props to remote actors.
+    *
+    * @param sc The spark context
+    * @param host The master host name
+    * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
+    * @param vectorSize The (full) vector size
+    * @param n The number of negative examples to create per output word
+    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
+    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
+    */
+  def runWithWord2VecMatrixOnSpark(sc: SparkContext,
+                                   host: String,
+                                   bcVocabCns: Broadcast[Array[Int]],
+                                   vectorSize: Int,
+                                   n: Int,
+                                   unigramTableSize: Int): (Client, BigWord2VecMatrix) = {
+    val default = ConfigFactory.parseResourcesAnySyntax("glint").resolve()
+    val config = if (host.isEmpty) {
+      default.withValue("glint.master.host", ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress))
+    } else {
+      default.withValue("glint.master.host", ConfigValueFactory.fromAnyRef(host))
+    }
+    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize)
+  }
+
+  /**
+    * Starts a standalone glint cluster integrated in Spark and initialize a Word2Vec matrix on it.
+    *
+    * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
+    * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
+    * and avoids having to send them as serialized Akka props to remote actors.
+    *
+    * @param sc The spark context
+    * @param config The configuration
+    * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
+    * @param vectorSize The (full) vector size
+    * @param n The number of negative examples to create per output word
+    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
+    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
+    */
+  def runWithWord2VecMatrixOnSpark(sc: SparkContext,
+                                   config: Config,
+                                   bcVocabCns: Broadcast[Array[Int]],
+                                   vectorSize: Int,
+                                   n: Int,
+                                   unigramTableSize: Int): (Client, BigWord2VecMatrix) = {
+    @transient
+    implicit val ec = ExecutionContext.Implicits.global
+
+    // Start master
+    val (masterSystem, masterActor) = Await.result(Master.run(config), config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
+    sys.addShutdownHook {
+      terminateAndWait(masterSystem, config)
+    }
+
+    try {
+      // Construct client
+      val client = Client(config)
+
+      // Start parameter servers and create partial models on workers, return list of serialized partial model actorRefs
+      val nrOfExecutors = sc.getExecutorMemoryStatus.size
+      val partitioner = RangePartitioner(nrOfExecutors, vectorSize, PartitionBy.COL)
+      val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+
+      val models = sc.parallelize(partitioner.all(), numSlices = nrOfExecutors).mapPartitions {
+        iter =>
+          @transient
+          implicit val ec = ExecutionContext.Implicits.global
+
+          val partition = iter.next()
+          assert(!iter.hasNext)
+          val partialModel = Server.runOnce(config).get.map { case (serverSystem, serverRef) =>
+            val props = Props(classOf[PartialMatrixWord2Vec], partition, vectorSize, AggregateAdd(), bcVocabCns.value, n, unigramTableSize)
+            val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
+            Serialization.serializedActorPath(actorRef)
+          }
+          Iterator(Await.result(partialModel, clientTimeout))
+      }.collect()
+
+      // deserialize partial model actorRefs
+      val extendedActorSystem = SerializationExtension(client.system).system
+      val modelRefs = models.map { model =>
+        extendedActorSystem.provider.resolveActorRef(model)
+      }
+
+      // Construct a big model client object
+      val bigModel = new AsyncBigWord2VecMatrix(partitioner, modelRefs, config, bcVocabCns.value.length, vectorSize, n)
+
+      (client, bigModel)
     } catch {
       case ex: Throwable =>
         terminateAndWait(masterSystem, config)
