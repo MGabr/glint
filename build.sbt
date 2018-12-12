@@ -10,7 +10,7 @@ fork in Test := true
 
 // Spark
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.2" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.0" % "provided"
 
 // BLAS support
 
@@ -23,6 +23,8 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.3"
 libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.5.3"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.3"
+
+libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.5.3"
 
 
 // Retry
@@ -56,11 +58,11 @@ libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.8.2" % "provided
 libraryDependencies += "com.github.scopt" %% "scopt" % "3.6.0"
 
 
-// Logging
+// Logging, backend only as test dependency since the backend provided by spark is used otherwise
 
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
 
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
+libraryDependencies += "org.slf4j" % "slf4j-log4j12" % "1.7.25" % Test
 
 
 // Resolvers

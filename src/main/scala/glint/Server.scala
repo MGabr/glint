@@ -59,7 +59,9 @@ private[glint] object Server extends StrictLogging {
     val registration = master ? RegisterServer(server)
 
     registration.onFailure {
-      case _ => terminateAndWait(system, config)
+      case ex =>
+        logger.error(s"Shutting down actor system ${config.getString("glint.server.system")} on failure", ex)
+        terminateAndWait(system, config)
     }
     registration.map {
       case a =>
