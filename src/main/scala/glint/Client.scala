@@ -405,7 +405,7 @@ object Client {
                                    n: Int,
                                    unigramTableSize: Int = 100000000,
                                    numParameterServersOpt: Option[Int] = Option.empty[Int]): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServersOpt)
+    runWithWord2VecMatrixOnSpark(sc, "", bcVocabCns, vectorSize, n, unigramTableSize, numParameterServersOpt)
   }
 
   /**
@@ -436,9 +436,14 @@ object Client {
                                    numParameterServersOpt: Option[Int]): (Client, BigWord2VecMatrix) = {
     val default = ConfigFactory.parseResourcesAnySyntax("glint").resolve()
     val config = if (host.isEmpty) {
-      default.withValue("glint.master.host", ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress))
+      default
+        .withValue("glint.master.host", ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress))
+        .withValue("glint.master.akka.remote.artery.canonical.hostname",
+          ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress))
     } else {
-      default.withValue("glint.master.host", ConfigValueFactory.fromAnyRef(host))
+      default
+        .withValue("glint.master.host", ConfigValueFactory.fromAnyRef(host))
+        .withValue("glint.master.akka.remote.artery.canonical.hostname", ConfigValueFactory.fromAnyRef(host))
     }
     runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServersOpt)
   }
