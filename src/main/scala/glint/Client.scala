@@ -394,9 +394,8 @@ object Client {
     * @param n The number of negative examples to create per output word
     * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
     *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
-    * @param numParameterServersOpt The number of glint parameter servers to create on the cluster.
-    *                               The maximum possible number is the number of executors.
-    *                               If this parameter is not set it corresponds to the number of executors.
+    * @param numParameterServers The number of glint parameter servers to create on the cluster.
+    *                            The maximum possible number is the number of executors.
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext,
@@ -404,8 +403,8 @@ object Client {
                                    vectorSize: Int,
                                    n: Int,
                                    unigramTableSize: Int = 100000000,
-                                   numParameterServersOpt: Option[Int] = Option.empty[Int]): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, "", bcVocabCns, vectorSize, n, unigramTableSize, numParameterServersOpt)
+                                   numParameterServers: Int = 5): (Client, BigWord2VecMatrix) = {
+    runWithWord2VecMatrixOnSpark(sc, "", bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
   }
 
   /**
@@ -422,9 +421,8 @@ object Client {
     * @param n The number of negative examples to create per output word
     * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
     *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
-    * @param numParameterServersOpt The number of glint parameter servers to create on the cluster.
-    *                               The maximum possible number is the number of executors.
-    *                               If this parameter is not set it corresponds to the number of executors.
+    * @param numParameterServers The number of glint parameter servers to create on the cluster.
+    *                            The maximum possible number is the number of executors.
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext,
@@ -433,7 +431,7 @@ object Client {
                                    vectorSize: Int,
                                    n: Int,
                                    unigramTableSize: Int,
-                                   numParameterServersOpt: Option[Int]): (Client, BigWord2VecMatrix) = {
+                                   numParameterServers: Int): (Client, BigWord2VecMatrix) = {
     val default = ConfigFactory.parseResourcesAnySyntax("glint").resolve()
     val config = if (host.isEmpty) {
       default
@@ -445,7 +443,7 @@ object Client {
         .withValue("glint.master.host", ConfigValueFactory.fromAnyRef(host))
         .withValue("glint.master.akka.remote.artery.canonical.hostname", ConfigValueFactory.fromAnyRef(host))
     }
-    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServersOpt)
+    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
   }
 
   /**
@@ -462,9 +460,8 @@ object Client {
     * @param n The number of negative examples to create per output word
     * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
     *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
-    * @param numParameterServersOpt The number of glint parameter servers to create on the cluster.
-    *                               The maximum possible number is the number of executors.
-    *                               If this parameter is not set it corresponds to the number of executors.
+    * @param numParameterServers The number of glint parameter servers to create on the cluster.
+    *                            The maximum possible number is the number of executors.
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext,
@@ -473,7 +470,7 @@ object Client {
                                    vectorSize: Int,
                                    n: Int,
                                    unigramTableSize: Int,
-                                   numParameterServersOpt: Option[Int]): (Client, BigWord2VecMatrix) = {
+                                   numParameterServers: Int): (Client, BigWord2VecMatrix) = {
     @transient
     implicit val ec = ExecutionContext.Implicits.global
 
@@ -488,14 +485,13 @@ object Client {
       val client = Client(config)
 
       // Start parameter servers and create partial models on workers, return list of serialized partial model actorRefs
-      var numParameterServers = numParameterServersOpt.getOrElse(sc.getExecutorMemoryStatus.size)
-      if (numParameterServers > sc.getExecutorMemoryStatus.size) {
-        numParameterServers = sc.getExecutorMemoryStatus.size
-      }
-      val partitioner = RangePartitioner(numParameterServers, vectorSize, PartitionBy.COL)
+      val numPartitions =
+        if (numParameterServers < sc.getExecutorMemoryStatus.size) numParameterServers
+        else sc.getExecutorMemoryStatus.size
+      val partitioner = RangePartitioner(numPartitions, vectorSize, PartitionBy.COL)
       val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
 
-      val models = sc.parallelize(partitioner.all(), numSlices = numParameterServers).mapPartitions {
+      val models = sc.parallelize(partitioner.all(), numSlices = numPartitions).mapPartitions {
         iter =>
           @transient
           implicit val ec = ExecutionContext.Implicits.global
