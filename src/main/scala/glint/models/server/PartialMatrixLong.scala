@@ -20,8 +20,7 @@ private[glint] class PartialMatrixLong(partition: Partition,
                                        aggregate: Aggregate)
   extends PartialMatrix[Long](partition, rows, cols, aggregate) {
 
-  //override val data: Matrix[Long] = DenseMatrix.zeros[Long](rows, cols)
-  override val data: Array[Array[Long]] = Array.fill(rows)(Array.fill[Long](cols)(0L))
+  override val data: Array[Long] = Array.fill[Long](rows * cols)(0L)
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseLong(get(pull.rows, pull.cols))

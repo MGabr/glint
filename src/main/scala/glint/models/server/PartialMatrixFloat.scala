@@ -20,8 +20,7 @@ private[glint] class PartialMatrixFloat(partition: Partition,
                                         aggregate: Aggregate)
   extends PartialMatrix[Float](partition, rows, cols, aggregate) {
 
-  //override val data: Matrix[Float] = DenseMatrix.zeros[Float](rows, cols)
-  override val data: Array[Array[Float]] = Array.fill(rows)(Array.fill[Float](cols)(0.0f))
+  override val data: Array[Float] = Array.fill[Float](rows * cols)(0.0f)
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseFloat(get(pull.rows, pull.cols))

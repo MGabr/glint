@@ -20,8 +20,7 @@ private[glint] class PartialMatrixDouble(partition: Partition,
                                          aggregate: Aggregate)
   extends PartialMatrix[Double](partition, rows, cols, aggregate) {
 
-  //DenseMatrix.zeros[Double](rows, cols)
-  override val data: Array[Array[Double]] = Array.fill(rows)(Array.fill[Double](cols)(0.0))
+  override val data: Array[Double] = Array.fill[Double](rows * cols)(0.0)
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseDouble(get(pull.rows, pull.cols))

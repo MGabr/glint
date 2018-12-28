@@ -26,7 +26,7 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
   /**
     * The data matrix containing the elements
     */
-  val data: Array[Array[V]]
+  val data: Array[V]
 
   /**
     * Gets rows from the data matrix
@@ -39,7 +39,7 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     val a = new Array[Array[V]](rows.length)
     while (i < rows.length) {
       val row = partition.globalRowToLocal(rows(i))
-      a(i) = data(row)
+      a(i) = data.slice(row * cols, row * cols + cols)
       i += 1
     }
     a
@@ -58,7 +58,7 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     while (i < rows.length) {
       val row = partition.globalRowToLocal(rows(i))
       val col = partition.globalColToLocal(cols(i))
-      a(i) = data(row)(col)
+      a(i) = data(row * this.cols + col)
       i += 1
     }
     a
@@ -76,7 +76,7 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     while (i < rows.length) {
       val row = partition.globalRowToLocal(rows(i))
       val col = partition.globalColToLocal(cols(i))
-      data(row)(col) = aggregate.aggregate[V](data(row)(col), values(i))
+      data(row * this.cols + col) = aggregate.aggregate[V](data(row * this.cols + col), values(i))
       i += 1
     }
     true

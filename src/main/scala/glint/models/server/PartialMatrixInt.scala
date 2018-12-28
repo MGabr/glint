@@ -20,8 +20,7 @@ private[glint] class PartialMatrixInt(partition: Partition,
                                       aggregate: Aggregate)
   extends PartialMatrix[Int](partition, rows, cols, aggregate) {
 
-  //override val data: Matrix[Int] = DenseMatrix.zeros[Int](rows, cols)
-  override val data: Array[Array[Int]] = Array.fill(rows)(Array.fill[Int](cols)(0))
+  override val data: Array[Int] = Array.fill[Int](rows * cols)(0)
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseInt(get(pull.rows, pull.cols))

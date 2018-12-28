@@ -36,14 +36,14 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   /**
     * The input weights matrix
     */
-  val u: Array[Array[Float]] = Array.fill(rows)(Array.fill(cols)((random.nextFloat() - 0.5f) / vectorSize))
+  val u: Array[Float] = Array.fill(rows * cols)((random.nextFloat() - 0.5f) / vectorSize)
 
   /**
     * The output weights matrix
     */
-  val v: Array[Array[Float]] = Array.fill(rows)(new Array(cols))
+  val v: Array[Float] = new Array(rows * cols)
 
-  override val data: Array[Array[Float]] = u
+  override val data: Array[Float] = u
 
   /**
     * The unigram table for efficient generation of random negative words
@@ -148,11 +148,11 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
         val nOutput = negativeExamples(random, wOut)
 
         // compute partial dot products for positive and negative words
-        fPlus(pos) = blas.sdot(cols, u(wIn), 1, v(wOut), 1)
+        fPlus(pos) = blas.sdot(cols, u, wIn * cols, 1, v, wOut * cols, 1)
         pos += 1
         cforRange(nOutput.indices)(k => {
           val nOut = nOutput(k)
-          fMinus(neg) = blas.sdot(cols, u(wIn), 1, v(nOut), 1)
+          fMinus(neg) = blas.sdot(cols, u, wIn * cols, 1, v, nOut * cols, 1)
           neg += 1
         })
       })
@@ -200,8 +200,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
         }
 
         // add partial gradient updates for positive word
-        blas.saxpy(cols, gPlus(pos), v(wOut), 1, u_updates(wIn), 1)
-        blas.saxpy(cols, gPlus(pos), u(wIn), 1, v_updates(wOut), 1)
+        blas.saxpy(cols, gPlus(pos), v, wOut * cols, 1, u_updates(wIn), 0, 1)
+        blas.saxpy(cols, gPlus(pos), u, wIn * cols, 1, v_updates(wOut), 0, 1)
         pos += 1
 
         // generate n random negative examples for wOut
@@ -214,8 +214,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
           }
 
           // add partial gradient updates for negative word
-          blas.saxpy(cols, gMinus(neg), v(nOut), 1, u_updates(wIn), 1)
-          blas.saxpy(cols, gMinus(neg), u(wIn), 1, v_updates(nOut), 1)
+          blas.saxpy(cols, gMinus(neg), v, nOut, 1, u_updates(wIn), 0, 1)
+          blas.saxpy(cols, gMinus(neg), u, wIn, 1, v_updates(nOut), 0, 1)
           neg += 1
         })
       })
@@ -224,10 +224,10 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     // apply partial gradient updates if not already done immediately
     cforRange(u.indices)(i => {
       if (!u_updates(i).isEmpty) {
-        blas.saxpy(cols, 1.0f, u_updates(i), 1, u(i), 1)
+        blas.saxpy(cols, 1.0f, u_updates(i), 0, 1, u, i, 1)
       }
       if (!v_updates(i).isEmpty) {
-        blas.saxpy(cols, 1.0f, v_updates(i), 1, v(i), 1)
+        blas.saxpy(cols, 1.0f, v_updates(i), 0, 1, v, i, 1)
       }
     })
   }
