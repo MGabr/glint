@@ -128,7 +128,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * @param seed The seed for generating random negative words
     * @return The gradient updates
     */
-  def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long): (Array[Float], Array[Float]) = this.synchronized {
+  def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long): (Array[Float], Array[Float]) = {
 
     val random = new Random(seed)
 
@@ -175,7 +175,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
              wOutput: Array[Array[Int]],
              gPlus: Array[Float],
              gMinus: Array[Float],
-             seed: Long): Unit = this.synchronized {
+             seed: Long): Unit = {
 
     val random = new Random(seed)
 
