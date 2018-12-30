@@ -28,4 +28,12 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
                       seed: Long)(implicit ec: ExecutionContext): Future[Boolean] = {
     underlying.adjust(wInput, wOutput, gPlus, gMinus, seed)
   }
+
+  override def norms()(implicit ec: ExecutionContext): Future[Array[Float]] = {
+    underlying.norms()
+  }
+
+  override def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]] = {
+    underlying.multiply(vector)
+  }
 }

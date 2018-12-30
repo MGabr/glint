@@ -186,7 +186,7 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     * @return An iterable over the partitioned results
     */
   @inline
-  private def mapPartitions[T](keys: Seq[Long])(func: (Partition, Seq[Int]) => T): Iterable[T] = {
+  protected def mapPartitions[T](keys: Seq[Long])(func: (Partition, Seq[Int]) => T): Iterable[T] = {
     keys.indices.groupBy(i => partitioner.partition(keys(i))).map { case (a, b) => func(a, b) }
   }
 

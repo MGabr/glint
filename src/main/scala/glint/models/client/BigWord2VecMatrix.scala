@@ -50,4 +50,22 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
              gPlus: Array[Float],
              gMinus: Array[Float],
              seed: Long)(implicit ec: ExecutionContext): Future[Boolean]
+
+  /**
+    * Pulls the euclidean norm of each input weight vector
+    *
+    * @param ec The implicit execution context in which to execute the request
+    * @return The euclidean norms
+    */
+  def norms()(implicit ec: ExecutionContext): Future[Array[Float]]
+
+  /**
+    * Pulls the result of the matrix multiplication of the input weight matrix with the received vector
+    *
+    * @param vector The vector with which to multiply the matrix
+    * @param ec The implicit execution context in which to execute the request
+    * @return A future containing the matrix multiplication result
+    */
+  def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]]
+
 }

@@ -63,6 +63,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     case push: PushAdjust =>
       adjust(push.wInput, push.wOutput, push.gPlus, push.gMinus, push.seed)
       updateFinished(push.id)
+    case pull: PullNormDots => sender ! ResponseFloat(normDots())
+    case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector))
     case x => handleLogic(x, sender)
   }
 
@@ -222,7 +224,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     })
 
     // apply partial gradient updates if not already done immediately
-    cforRange(u.indices)(i => {
+    cforRange(u_updates.indices)(i => {
       if (!u_updates(i).isEmpty) {
         blas.saxpy(cols, 1.0f, u_updates(i), 0, 1, u, i, 1)
       }
@@ -232,5 +234,32 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     })
   }
 
+  /**
+    * Pulls the partial dot products of each partial input weight vector with itself.
+    * This can be used to then compute the euclidean norm on the client
+    *
+    * @return The partial dot products
+    */
+  def normDots(): Array[Float] = {
+    val results = new Array[Float](rows)
+    cforRange(0 until rows)(i => {
+      results(i) = blas.sdot(cols, u, i * cols, 1, u, i * cols, 1)
+    })
+    results
+  }
+
+  /**
+    * Pulls the result of the matrix multiplication of the partial input weight matrix with the received partial vector
+    *
+    * @param vector The partial vector with which to multiply the partial matrix
+    * @return The matrix multiplication result
+    */
+  def multiply(vector: Array[Float]): Array[Float] = {
+    val resultVector = new Array[Float](rows)
+    val alpha: Float = 1
+    val beta: Float = 0
+    blas.sgemv("T", cols, rows, alpha, u, cols, vector, 1, beta, resultVector, 1)
+    resultVector
+  }
 }
 

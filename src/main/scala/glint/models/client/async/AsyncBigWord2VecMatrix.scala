@@ -1,9 +1,10 @@
 package glint.models.client.async
 
 import akka.actor.ActorRef
+import breeze.numerics.sqrt
 import com.typesafe.config.Config
-import glint.messages.server.request.{PullDotProd, PushAdjust}
-import glint.messages.server.response.ResponseDotProd
+import glint.messages.server.request.{PullDotProd, PullMultiply, PullNormDots, PushAdjust}
+import glint.messages.server.response.{ResponseDotProd, ResponseFloat}
 import glint.models.client.BigWord2VecMatrix
 import glint.partitioning.Partitioner
 import spire.implicits.cforRange
@@ -83,5 +84,62 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
     // Combine and aggregate futures
     Future.sequence(pushes).transform(results => true, err => err)
 
+  }
+
+  override def norms()(implicit ec: ExecutionContext): Future[Array[Float]] = {
+
+    // Send norm dots pull requests to all partitions
+    val pulls = partitioner.all().toIterable.map { partition =>
+      val pullMessage = PullNormDots()
+      val fsm = PullFSM[PullNormDots, ResponseFloat](pullMessage, matrices(partition.index))
+      fsm.run()
+    }
+
+    // Define aggregator for computing euclidean norms
+    // by summing up partial dot products of successful responses and taking the square root
+    def aggregateSuccess(responses: Iterable[ResponseFloat]): Array[Float] = {
+      val lengthNorms = rows.toInt
+      val norms = new Array[Float](lengthNorms)
+
+      val responsesArray = responses.toArray
+      cforRange(responsesArray.indices)(i => {
+        blas.saxpy(lengthNorms, 1.0f, responsesArray(i).values, 1, norms, 1)
+      })
+
+      norms.map(x => sqrt(x))
+    }
+
+    // Combine and aggregate futures
+    Future.sequence(pulls).transform(aggregateSuccess, err => err)
+
+  }
+
+  override def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]] = {
+
+    val keys = 0L until cols.toInt
+
+    // Send pull request of the list of keys
+    val pulls = mapPartitions(keys) {
+      case (partition, indices) =>
+        val pullMessage = PullMultiply(indices.map(vector).toArray)
+        val fsm = PullFSM[PullMultiply, ResponseFloat](pullMessage, matrices(partition.index))
+        fsm.run()
+    }
+
+    // Define aggregator for computing multiplication by summing up partial multiplication results
+    def aggregateSuccess(responses: Iterable[ResponseFloat]): Array[Float] = {
+      val lengthResult = rows.toInt
+      val result = new Array[Float](lengthResult)
+
+      val responsesArray = responses.toArray
+      cforRange(responsesArray.indices)(i => {
+        blas.saxpy(lengthResult, 1.0f, responsesArray(i).values, 1, result, 1)
+      })
+
+      result
+    }
+
+    // Combine and aggregate futures
+    Future.sequence(pulls).transform(aggregateSuccess, err => err)
   }
 }
