@@ -1,7 +1,7 @@
 package glint.messages.server.request
 
 /**
-  * A pull dot products request
+  * A push adjust request
   *
   * @param id The push identification
   * @param wInput The indices of the input words

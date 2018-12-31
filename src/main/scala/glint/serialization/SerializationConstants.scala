@@ -23,6 +23,8 @@ private[glint] object SerializationConstants {
 
   val pullDotProdByte: Byte = 0x0B
   val pushAdjustByte: Byte = 0x0C
+  val pullMultiply: Byte = 0x0D
+  val pullNormDots: Byte = 0x0E
 
   val responseDoubleByte: Byte = 0x10
   val responseFloatByte: Byte = 0x11
