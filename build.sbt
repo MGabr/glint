@@ -4,7 +4,7 @@ version := "0.2-SNAPSHOT"
 
 organization := "ch.ethz.inf.da"
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.11.8"
 
 fork in Test := true
 
@@ -18,13 +18,13 @@ libraryDependencies += "com.github.fommil.netlib" % "all" % "1.1.2" pomOnly()
 
 // Akka
 
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.3"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.20"
 
-libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.5.3"
+libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.5.20"
 
-libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.3"
+libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.20"
 
-libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.5.3"
+libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.5.20"
 
 
 // Retry
@@ -87,6 +87,10 @@ logBuffered := false
 
 parallelExecution in Test := false
 
+// Lower Aeron buffer to prevent space on /dev/shm running out during local or CI tests
+
+javaOptions in Test += "-Daeron.term.buffer.length=1048576" // 1024 * 1024
+
 
 // Scala documentation
 scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/docs/root.txt")
@@ -95,7 +99,7 @@ scalacOptions in (Compile, doc) ++= Seq("-skip-packages", "akka")
 
 enablePlugins(GhpagesPlugin)
 
-git.remoteRepo := "git@github.com:rjagerman/glint.git"
+git.remoteRepo := "git@github.com:MGabr/glint.git"
 
 enablePlugins(SiteScaladocPlugin)
 
