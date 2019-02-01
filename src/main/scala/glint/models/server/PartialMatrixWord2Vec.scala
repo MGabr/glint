@@ -1,10 +1,10 @@
 package glint.models.server
 
+import com.github.fommil.netlib.F2jBLAS
 import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat, ResponseRowsFloat}
 import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
-import com.github.fommil.netlib.BLAS.{getInstance => blas}
 import spire.implicits.cforRange
 
 import scala.util.Random
@@ -27,6 +27,9 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
                                            val n: Int,
                                            val unigramTableSize: Int = 100000000)
   extends PartialMatrixFloat(partition, vocabCns.length, partition.size, aggregate) {
+
+  @transient
+  private val blas = new F2jBLAS
 
   /**
     * The random number generator used for initializing the input weights matrix

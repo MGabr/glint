@@ -2,13 +2,13 @@ package glint.models.client.async
 
 import akka.actor.ActorRef
 import breeze.numerics.sqrt
+import com.github.fommil.netlib.F2jBLAS
 import com.typesafe.config.Config
 import glint.messages.server.request.{PullDotProd, PullMultiply, PullNormDots, PushAdjust}
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat}
 import glint.models.client.BigWord2VecMatrix
 import glint.partitioning.Partitioner
 import spire.implicits.cforRange
-import com.github.fommil.netlib.BLAS.{getInstance => blas}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,6 +35,9 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
                              cols: Long,
                              val n: Int)
   extends AsyncBigMatrixFloat(partitioner, matrices, config, rows, cols) with BigWord2VecMatrix {
+
+  @transient
+  private val blas = new F2jBLAS
 
   override def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long)
                       (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float])] = {

@@ -1,11 +1,14 @@
 package glint.matrix
 
-import com.github.fommil.netlib.BLAS.{getInstance => blas}
+import com.github.fommil.netlib.F2jBLAS
 import glint.SystemTest
 import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.{FlatSpec, Matchers}
 
 class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with Matchers {
+
+  @transient
+  private val blas = new F2jBLAS
 
   implicit val tolerantFloatEq: Equality[Float] = TolerantNumerics.tolerantFloatEquality(0.0000001f)
 
