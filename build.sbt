@@ -62,7 +62,7 @@ libraryDependencies += "com.github.scopt" %% "scopt" % "3.6.0"
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
 
-libraryDependencies += "org.slf4j" % "slf4j-log4j12" % "1.7.25" % Test
+libraryDependencies += "org.slf4j" % "slf4j-log4j12" % "1.7.25" % "test"
 
 
 // Resolvers
