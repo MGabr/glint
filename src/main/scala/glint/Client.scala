@@ -9,7 +9,7 @@ import akka.remote.RemoteScope
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import glint.exceptions.ModelCreationException
+import glint.exceptions.{ModelCreationException, ServerCreationException}
 import glint.messages.master.{RegisterClient, ServerList}
 import glint.models.client.async._
 import glint.models.client.{BigMatrix, BigVector, BigWord2VecMatrix}
@@ -19,14 +19,13 @@ import glint.partitioning.by.PartitionBy
 import glint.partitioning.by.PartitionBy.PartitionBy
 import glint.partitioning.range.RangePartitioner
 import glint.partitioning.{Partition, Partitioner}
-import glint.util.Numerical
-import glint.util.terminateAndWait
+import glint.util.{Numerical, terminateAndWait}
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.runtime.universe.TypeTag
 
 /**
   * The client provides the functions needed to spawn large distributed matrices and vectors on the parameter servers.
@@ -326,10 +325,12 @@ object Client {
     * Starts a standalone glint cluster integrated in Spark
     *
     * @param sc The spark context
+    * @param numParameterServers The number of glint parameter servers to create on the cluster.
+    *                            The maximum possible number is the number of executors.
     * @return A future Glint client
     */
-  def runOnSpark(sc: SparkContext): Client = {
-    runOnSpark(sc, "")
+  def runOnSpark(sc: SparkContext)(numParameterServers: Int = sc.getExecutorMemoryStatus.size - 1): Client = {
+    runOnSpark(sc, "", numParameterServers)
   }
 
   /**
@@ -337,16 +338,13 @@ object Client {
     *
     * @param sc The spark context
     * @param host The master host name
+    * @param numParameterServers The number of glint parameter servers to create on the cluster.
+    *                            The maximum possible number is the number of executors.
     * @return A future Glint client
     */
-  def runOnSpark(sc: SparkContext, host: String): Client = {
-    val default = ConfigFactory.parseResourcesAnySyntax("glint").resolve()
-    val config = if (host.isEmpty) {
-      default.withValue("glint.master.host", ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress))
-    } else {
-      default.withValue("glint.master.host", ConfigValueFactory.fromAnyRef(host))
-    }
-    runOnSpark(sc, config)
+  def runOnSpark(sc: SparkContext, host: String, numParameterServers: Int): Client = {
+    val config = getConfig(host)
+    runOnSpark(sc, config, numParameterServers)
   }
 
   /**
@@ -354,26 +352,52 @@ object Client {
     *
     * @param sc The spark context
     * @param config The configuration
+    * @param numParameterServers The number of glint parameter servers to create on the cluster.
+    *                            The maximum possible number is the number of executors.
     * @return A future Glint client
     */
-  def runOnSpark(sc: SparkContext, config: Config): Client = {
+  def runOnSpark(sc: SparkContext, config: Config, numParameterServers: Int): Client = {
+    @transient
     implicit val ec = ExecutionContext.Implicits.global
 
+    val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+
     // Start master
-    val (masterSystem, masterActor) = Await.result(Master.run(config), config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
+    val (masterSystem, masterActor) = Await.result(Master.run(config), clientTimeout)
     sys.addShutdownHook {
       terminateAndWait(masterSystem, config)
     }
 
-    // Start parameter servers on workers
-    val nrOfExecutors = sc.getExecutorMemoryStatus.size
-    sc.range(0, nrOfExecutors).repartition(nrOfExecutors).foreachPartition {
-      case _ => Server.runOnce(config)
-    }
-
-    // Construct client
     try {
-      Client(config)
+      // Construct client
+      val client = Client(config)
+
+      // Start partition master
+      val nrOfExecutors = sc.getExecutorMemoryStatus.size - 1
+      val numParameterServers = nrOfExecutors
+      val partitioner = RangePartitioner(numParameterServers, numParameterServers)
+      val (partitionMasterSystem, partitionMasterActor) = Await.result(PartitionMaster.run(config, partitioner.all()),
+        clientTimeout)
+
+      // Start parameter servers on workers
+      val executorCores = Runtime.getRuntime.availableProcessors
+      val nrOfPartitions = nrOfExecutors * executorCores
+      sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition {
+        case _ => Await.result(Server.runOnce(config), clientTimeout)
+      }
+
+      // Shutdown partition master
+      partitionMasterSystem.stop(partitionMasterActor)
+
+      // Check if the requested number of parameter servers were started
+      val numStartedParameterServers = Await.result(client.serverList().map(_.length), clientTimeout)
+      if (numStartedParameterServers != numParameterServers) {
+        throw new ServerCreationException(
+          s"Could not start the requested number of parameter servers. " +
+          s"Requested $numParameterServers, started $numStartedParameterServers")
+      }
+
+      client
     } catch {
       case ex: Throwable =>
         terminateAndWait(masterSystem, config)
@@ -398,12 +422,12 @@ object Client {
     *                            The maximum possible number is the number of executors.
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def runWithWord2VecMatrixOnSpark(sc: SparkContext,
-                                   bcVocabCns: Broadcast[Array[Int]],
-                                   vectorSize: Int,
-                                   n: Int,
-                                   unigramTableSize: Int = 100000000,
-                                   numParameterServers: Int = 5): (Client, BigWord2VecMatrix) = {
+  def runWithWord2VecMatrixOnSpark(sc: SparkContext)(bcVocabCns: Broadcast[Array[Int]],
+                                                     vectorSize: Int,
+                                                     n: Int,
+                                                     unigramTableSize: Int = 100000000,
+                                                     numParameterServers: Int = sc.getExecutorMemoryStatus.size - 1):
+  (Client, BigWord2VecMatrix) = {
     runWithWord2VecMatrixOnSpark(sc, "", bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
   }
 
@@ -432,17 +456,7 @@ object Client {
                                    n: Int,
                                    unigramTableSize: Int,
                                    numParameterServers: Int): (Client, BigWord2VecMatrix) = {
-    val default = ConfigFactory.parseResourcesAnySyntax("glint").resolve()
-    val config = if (host.isEmpty) {
-      default
-        .withValue("glint.master.host", ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress))
-        .withValue("glint.master.akka.remote.artery.canonical.hostname",
-          ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress))
-    } else {
-      default
-        .withValue("glint.master.host", ConfigValueFactory.fromAnyRef(host))
-        .withValue("glint.master.akka.remote.artery.canonical.hostname", ConfigValueFactory.fromAnyRef(host))
-    }
+    val config = getConfig(host)
     runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
   }
 
@@ -474,8 +488,10 @@ object Client {
     @transient
     implicit val ec = ExecutionContext.Implicits.global
 
+    val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+
     // Start master
-    val (masterSystem, masterActor) = Await.result(Master.run(config), config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
+    val (masterSystem, masterActor) = Await.result(Master.run(config), clientTimeout)
     sys.addShutdownHook {
       terminateAndWait(masterSystem, config)
     }
@@ -484,33 +500,45 @@ object Client {
       // Construct client
       val client = Client(config)
 
-      // Start parameter servers and create partial models on workers, return list of serialized partial model actorRefs
-      val numPartitions =
-        if (numParameterServers < sc.getExecutorMemoryStatus.size) numParameterServers
-        else sc.getExecutorMemoryStatus.size
-      val partitioner = RangePartitioner(numPartitions, vectorSize, PartitionBy.COL)
-      val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+      // Start partition master
+      val partitioner = RangePartitioner(numParameterServers, vectorSize, PartitionBy.COL)
+      val (partitionMasterSystem, partitionMasterActor) = Await.result(PartitionMaster.run(config, partitioner.all()),
+        clientTimeout)
 
-      val models = sc.parallelize(partitioner.all(), numSlices = numPartitions).mapPartitions {
+      // Start parameter servers and create 'numParameterServers' partial models on workers
+      // Return list of serialized partial model actor references
+      val nrOfExecutors = sc.getExecutorMemoryStatus.size - 1
+      val executorCores = Runtime.getRuntime.availableProcessors
+      val nrOfPartitions = nrOfExecutors * executorCores
+      val models = sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).mapPartitions {
         iter =>
           @transient
           implicit val ec = ExecutionContext.Implicits.global
 
-          val partition = iter.next()
-          assert(!iter.hasNext)
-          val partialModel = Server.runOnce(config).get.map { case (serverSystem, serverRef) =>
-            val props = Props(classOf[PartialMatrixWord2Vec], partition, vectorSize, AggregateAdd(), bcVocabCns.value, n, unigramTableSize)
-            val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
-            Serialization.serializedActorPath(actorRef)
+          val partialModelFuture = Server.runOnce(config).map {
+            case Some((serverSystem, serverRef, partition)) =>
+              val props = Props(classOf[PartialMatrixWord2Vec], partition, vectorSize, AggregateAdd(), bcVocabCns.value, n, unigramTableSize)
+              val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
+              Some((Serialization.serializedActorPath(actorRef), partition.index))
+            case None => None
           }
-          Iterator(Await.result(partialModel, clientTimeout))
-      }.collect()
+          Await.result(partialModelFuture, clientTimeout).map(x => Iterator(x)).getOrElse(Iterator())
+      }.collect().sortBy(_._2).map(_._1)
 
-      // deserialize partial model actorRefs
-      val extendedActorSystem = SerializationExtension(client.system).system
-      val modelRefs = models.map { model =>
-        extendedActorSystem.provider.resolveActorRef(model)
+      // Shutdown partition master
+      partitionMasterSystem.stop(partitionMasterActor)
+
+      // Check if the requested number of parameter servers were started
+      val numStartedParameterServers = Await.result(client.serverList().map(_.length), clientTimeout)
+      if (numStartedParameterServers != numParameterServers) {
+        throw new ServerCreationException(
+          s"Could not start the requested number of parameter servers. " +
+            s"Requested $numParameterServers, started $numStartedParameterServers")
       }
+
+      // deserialize partial model actor references
+      val extendedActorSystem = SerializationExtension(client.system).system
+      val modelRefs = models.map(model => extendedActorSystem.provider.resolveActorRef(model))
 
       // Construct a big model client object
       val bigModel = new AsyncBigWord2VecMatrix(partitioner, modelRefs, config, bcVocabCns.value.length, vectorSize, n)
@@ -520,6 +548,31 @@ object Client {
       case ex: Throwable =>
         terminateAndWait(masterSystem, config)
         throw ex
+    }
+  }
+
+  /**
+    * Gets the default configuration with the given host or the local host as master and partition master host
+    *
+    * @param host The host for the master and partition master or the empty string
+    * @return The  default configuration with the given host or the local host
+    */
+  private def getConfig(host: String): Config = {
+    val default = ConfigFactory.parseResourcesAnySyntax("glint").resolve()
+    if (host.isEmpty) {
+      val localhost = ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress)
+      default
+        .withValue("glint.master.host", localhost)
+        .withValue("glint.master.akka.remote.artery.canonical.hostname", localhost)
+        .withValue("glint.partition-master.host", localhost)
+        .withValue("glint.partition-master.akka.remote.artery.canonical.hostname", localhost)
+    } else {
+      val hostConfigValue = ConfigValueFactory.fromAnyRef(host)
+      default
+        .withValue("glint.master.host", hostConfigValue)
+        .withValue("glint.master.akka.remote.artery.canonical.hostname", hostConfigValue)
+        .withValue("glint.partition-master.host", hostConfigValue)
+        .withValue("glint.partition-master.akka.remote.artery.canonical.hostname", hostConfigValue)
     }
   }
 

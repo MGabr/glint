@@ -7,4 +7,4 @@ import akka.actor.ActorRef
   *
   * @param server Reference to the server actor
   */
-private[glint] case class RegisterServer(val server: ActorRef)
+private[glint] case class RegisterServer(server: ActorRef)

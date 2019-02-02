@@ -8,6 +8,8 @@ import akka.util.Timeout
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.StrictLogging
 import glint.messages.master.RegisterServer
+import glint.messages.partitionmaster.{AcquirePartition, ReleasePartition}
+import glint.partitioning.Partition
 import glint.util.terminateAndWait
 
 import scala.concurrent.duration._
@@ -39,10 +41,17 @@ private[glint] object Server extends StrictLogging {
     * @return A future containing the started actor system and reference to the server actor
     */
   def run(config: Config): Future[(ActorSystem, ActorRef)] = {
+    implicit val ec = ExecutionContext.Implicits.global
+    val system = getActorSystem(config)
+    run(config, system).map(server => (system, server))
+  }
 
+  private def getActorSystem(config: Config): ActorSystem = {
     logger.debug(s"Starting actor system ${config.getString("glint.server.system")}")
-    val system = ActorSystem(config.getString("glint.server.system"), config.getConfig("glint.server"))
+    ActorSystem(config.getString("glint.server.system"), config.getConfig("glint.server"))
+  }
 
+  private def run(config: Config, system: ActorSystem)(implicit ec: ExecutionContext): Future[ActorRef] = {
     logger.debug("Starting server actor")
     val server = system.actorOf(Props[Server], config.getString("glint.server.name"))
 
@@ -53,7 +62,6 @@ private[glint] object Server extends StrictLogging {
     val masterSystem = config.getString("glint.master.system")
 
     logger.info(s"Registering with master ${masterSystem}@${masterHost}:${masterPort}/user/${masterName}")
-    implicit val ec = ExecutionContext.Implicits.global
     implicit val timeout = Timeout(config.getDuration("glint.server.registration-timeout", TimeUnit.MILLISECONDS) milliseconds)
     val master = system.actorSelection(s"akka://${masterSystem}@${masterHost}:${masterPort}/user/${masterName}")
     val registration = master ? RegisterServer(server)
@@ -66,29 +74,51 @@ private[glint] object Server extends StrictLogging {
     registration.map {
       case a =>
         logger.info("Server successfully registered with master")
-        (system, server)
+        server
     }
-
   }
 
   /**
     * Starts a parameter server once per JVM, even if this method is called multiple times
+    * and only if there is still a partition available from the partition master
     *
     * @param config The configuration
-    * @return A future containing the started actor system and reference to the server actor
+    * @return A future containing the started actor system, a reference to the server actor and the server partition
     */
-  def runOnce(config: Config): Option[Future[(ActorSystem, ActorRef)]] = {
+  def runOnce(config: Config): Future[Option[(ActorSystem, ActorRef, Partition)]] = {
     lock.acquire()
     implicit val ec = ExecutionContext.Implicits.global
+    implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
     val future = if (!started) {
       started = true
-      val future = run(config)
-      future.onFailure { case _ => started = false }
-      Option(future)
+      val system = getActorSystem(config)
+      val partitionMaster = getPartitionMaster(config, system)
+      (partitionMaster ? AcquirePartition()).flatMap {
+        case Some(partition: Partition) =>
+          // we acquired a partition, so we can start a parameter server actor on this JVM
+          val future = run(config, system)
+          future.onFailure { case _ => partitionMaster ! ReleasePartition(partition) }
+          future.map { server => Some((system, server, partition)) }
+        case None =>
+          // we could not acquire a partition, so we need to shut down the actor system on this JVM again
+          system.terminate()
+          Future.successful(None)
+      }
     } else {
-      Option.empty[Future[(ActorSystem, ActorRef)]]
+      Future.successful(None)
     }
+    future.onFailure { case _ => started = false }
     lock.release()
     future
   }
+
+  private def getPartitionMaster(config: Config, system: ActorSystem): ActorSelection = {
+    logger.debug("Reading partition master information from config")
+    val masterHost = config.getString("glint.partition-master.host")
+    val masterPort = config.getInt("glint.partition-master.port")
+    val masterName = config.getString("glint.partition-master.name")
+    val masterSystem = config.getString("glint.partition-master.system")
+    system.actorSelection(s"akka://${masterSystem}@${masterHost}:${masterPort}/user/${masterName}")
+  }
+
 }
