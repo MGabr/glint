@@ -59,7 +59,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
       val fMinusResults = new Array[Float](length * n)
 
       val responsesArray = responses.toArray
-      cforRange(responsesArray.indices)(i => {
+      cforRange(0 until responsesArray.length)(i => {
         blas.saxpy(length, 1.0f, responsesArray(i).fPlus, 1, fPlusResults, 1)
         blas.saxpy(length * n, 1.0f, responsesArray(i).fMinus, 1, fMinusResults, 1)
       })
@@ -105,7 +105,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
       val norms = new Array[Float](lengthNorms)
 
       val responsesArray = responses.toArray
-      cforRange(responsesArray.indices)(i => {
+      cforRange(0 until responsesArray.length)(i => {
         blas.saxpy(lengthNorms, 1.0f, responsesArray(i).values, 1, norms, 1)
       })
 
@@ -135,7 +135,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
       val result = new Array[Float](lengthResult)
 
       val responsesArray = responses.toArray
-      cforRange(responsesArray.indices)(i => {
+      cforRange(0 until responsesArray.length)(i => {
         blas.saxpy(lengthResult, 1.0f, responsesArray(i).values, 1, result, 1)
       })
 

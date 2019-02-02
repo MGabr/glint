@@ -31,7 +31,7 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
 
   def putIntArrayArray(values: Array[Array[Int]]): Unit = {
     val typedBuffer = buf.asIntBuffer()
-    cforRange(values.indices) { i =>
+    cforRange(0 until values.length) { i =>
       typedBuffer.put(values(i).length)
       typedBuffer.put(values(i))
     }

@@ -83,7 +83,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
     val table = new Array[Int](unigramTableSize)
 
-    cforRange(vocabCns.indices)(i => {
+    cforRange(0 until vocabCns.length)(i => {
       trainWordsPow += Math.pow(vocabCns(i), power)
     })
     var i = 0
@@ -144,9 +144,9 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     var pos = 0
     var neg = 0
 
-    cforRange(wInput.indices)(i => {
+    cforRange(0 until wInput.length)(i => {
       val wIn = wInput(i)
-      cforRange(wOutput(i).indices)(j => {
+      cforRange(0 until wOutput(i).length)(j => {
         val wOut = wOutput(i)(j)
 
         // generate n random negative examples for wOut
@@ -155,7 +155,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
         // compute partial dot products for positive and negative words
         fPlus(pos) = blas.sdot(cols, u, wIn * cols, 1, v, wOut * cols, 1)
         pos += 1
-        cforRange(nOutput.indices)(k => {
+        cforRange(0 until nOutput.length)(k => {
           val nOut = nOutput(k)
           fMinus(neg) = blas.sdot(cols, u, wIn * cols, 1, v, nOut * cols, 1)
           neg += 1
@@ -192,13 +192,13 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     val u_updates = Array.ofDim[Float](rows, 0)
     val v_updates = Array.ofDim[Float](rows, 0)
 
-    cforRange(wInput.indices)(i => {
+    cforRange(0 until wInput.length)(i => {
       val wIn = wInput(i)
       if (u_updates(wIn).isEmpty) {
         u_updates(wIn) = new Array[Float](cols)
       }
 
-      cforRange(wOutput(i).indices)(j => {
+      cforRange(0 until wOutput(i).length)(j => {
         val wOut = wOutput(i)(j)
         if (v_updates(wOut).isEmpty) {
           v_updates(wOut) = new Array[Float](cols)
@@ -212,7 +212,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
         // generate n random negative examples for wOut
         val nOutput = negativeExamples(random, wOut)
 
-        cforRange(nOutput.indices)(k => {
+        cforRange(0 until nOutput.length)(k => {
           val nOut = nOutput(k)
           if (v_updates(nOut).isEmpty) {
             v_updates(nOut) = new Array[Float](cols)
@@ -227,7 +227,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     })
 
     // apply partial gradient updates if not already done immediately
-    cforRange(u_updates.indices)(i => {
+    cforRange(0 until u_updates.length)(i => {
       if (!u_updates(i).isEmpty) {
         blas.saxpy(cols, 1.0f, u_updates(i), 0, 1, u, i, 1)
       }
