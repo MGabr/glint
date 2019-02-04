@@ -1,5 +1,6 @@
 package glint.serialization
 
+import glint.messages.server.logic._
 import glint.messages.server.request._
 import glint.messages.server.response._
 import org.scalatest.{FlatSpec, Matchers}
@@ -8,6 +9,49 @@ import org.scalatest.{FlatSpec, Matchers}
   * A serialization spec test
   */
 class SerializationSpec extends FlatSpec with Matchers {
+
+  "A LogicSerializer" should "serialize and deserialize a AcknowledgeReceipt" in {
+    val logicSerializer = new LogicSerializer()
+    val bytes = logicSerializer.toBinary(AcknowledgeReceipt(1))
+    val reconstruction = logicSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[AcknowledgeReceipt])
+    val acknowledgeReceipt = reconstruction.asInstanceOf[AcknowledgeReceipt]
+    acknowledgeReceipt.id should equal(1)
+  }
+
+  it should "serialize and deserialize a Forget" in {
+    val logicSerializer = new LogicSerializer()
+    val bytes = logicSerializer.toBinary(Forget(1))
+    val reconstruction = logicSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[Forget])
+    val forget = reconstruction.asInstanceOf[Forget]
+    forget.id should equal(1)
+  }
+
+  it should "serialize and deserialize a GetUniqueID" in {
+    val logicSerializer = new LogicSerializer()
+    val bytes = logicSerializer.toBinary(GetUniqueID())
+    val reconstruction = logicSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[GetUniqueID])
+  }
+
+  it should "serialize and deserialize a NotAcknowledgeReceipt" in {
+    val logicSerializer = new LogicSerializer()
+    val bytes = logicSerializer.toBinary(NotAcknowledgeReceipt(1))
+    val reconstruction = logicSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[NotAcknowledgeReceipt])
+    val notAcknowledgeReceipt = reconstruction.asInstanceOf[NotAcknowledgeReceipt]
+    notAcknowledgeReceipt.id should equal(1)
+  }
+
+  it should "serialize and deserialize a UniqueID" in {
+    val logicSerializer = new LogicSerializer()
+    val bytes = logicSerializer.toBinary(UniqueID(1))
+    val reconstruction = logicSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[UniqueID])
+    val uniqueID = reconstruction.asInstanceOf[UniqueID]
+    uniqueID.id should equal(1)
+  }
 
   "A RequestSerializer" should "serialize and deserialize a PullDotProd" in {
     val requestSerializer = new RequestSerializer()

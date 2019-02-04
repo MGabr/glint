@@ -121,7 +121,7 @@ class PushFSM[T](message: Int => T,
 
   /**
     * Forget state
-    * We keep sending forget messages until we receive a successfull reply
+    * We keep sending forget messages until we receive a successful reply
     */
   private def forget(): Unit = {
     val forgetFuture = actorRef ? Forget(id)
