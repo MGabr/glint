@@ -8,7 +8,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with Matchers {
 
   @transient
-  private val blas = new F2jBLAS
+  private lazy val blas = new F2jBLAS
 
   implicit val tolerantFloatEq: Equality[Float] = TolerantNumerics.tolerantFloatEquality(0.0000001f)
 

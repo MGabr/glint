@@ -37,7 +37,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
   extends AsyncBigMatrixFloat(partitioner, matrices, config, rows, cols) with BigWord2VecMatrix {
 
   @transient
-  private val blas = new F2jBLAS
+  private lazy val blas = new F2jBLAS
 
   override def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long)
                       (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float])] = {

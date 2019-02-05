@@ -29,7 +29,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   extends PartialMatrixFloat(partition, vocabCns.length, partition.size, aggregate) {
 
   @transient
-  private val blas = new F2jBLAS
+  private lazy val blas = new F2jBLAS
 
   /**
     * The random number generator used for initializing the input weights matrix
