@@ -329,7 +329,8 @@ object Client {
     *                            The maximum possible number is the number of executors.
     * @return A future Glint client
     */
-  def runOnSpark(sc: SparkContext)(numParameterServers: Int = sc.getExecutorMemoryStatus.size - 1): Client = {
+  def runOnSpark(sc: SparkContext)
+                (numParameterServers: Int = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)): Client = {
     runOnSpark(sc, "", numParameterServers)
   }
 
@@ -422,11 +423,12 @@ object Client {
     *                            The maximum possible number is the number of executors.
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def runWithWord2VecMatrixOnSpark(sc: SparkContext)(bcVocabCns: Broadcast[Array[Int]],
-                                                     vectorSize: Int,
-                                                     n: Int,
-                                                     unigramTableSize: Int = 100000000,
-                                                     numParameterServers: Int = sc.getExecutorMemoryStatus.size - 1):
+  def runWithWord2VecMatrixOnSpark(sc: SparkContext)
+                                  (bcVocabCns: Broadcast[Array[Int]],
+                                   vectorSize: Int,
+                                   n: Int,
+                                   unigramTableSize: Int = 100000000,
+                                   numParameterServers: Int = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)):
   (Client, BigWord2VecMatrix) = {
     runWithWord2VecMatrixOnSpark(sc, "", bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
   }
