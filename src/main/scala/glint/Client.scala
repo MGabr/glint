@@ -373,14 +373,14 @@ object Client {
       val client = Client(config)
 
       // Start partition master
-      val nrOfExecutors = sc.getConf.get("spark.executor.instances").toInt
+      val nrOfExecutors = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)
       val numParameterServers = nrOfExecutors
       val partitioner = RangePartitioner(numParameterServers, numParameterServers)
       val (partitionMasterSystem, partitionMasterActor) = Await.result(PartitionMaster.run(config, partitioner.all()),
         clientTimeout)
 
       // Start parameter servers on workers
-      val executorCores = sc.getConf.get("spark.executor.cores").toInt
+      val executorCores = sc.getConf.get("spark.executor.cores", "1").toInt
       val nrOfPartitions = nrOfExecutors * executorCores
       sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition {
         case _ => Await.result(Server.runOnce(config), clientTimeout)
@@ -507,8 +507,8 @@ object Client {
 
       // Start parameter servers and create 'numParameterServers' partial models on workers
       // Return list of serialized partial model actor references
-      val nrOfExecutors = sc.getConf.get("spark.executor.instances").toInt
-      val executorCores = sc.getConf.get("spark.executor.cores").toInt
+      val nrOfExecutors = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)
+      val executorCores = sc.getConf.get("spark.executor.cores", "1").toInt
       val nrOfPartitions = nrOfExecutors * executorCores
       val models = sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).mapPartitions {
         iter =>
