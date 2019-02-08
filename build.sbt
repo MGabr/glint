@@ -5,6 +5,7 @@ version := "0.2-SNAPSHOT"
 organization := "ch.ethz.inf.da"
 
 scalaVersion := "2.11.8"
+val scalaMajorMinorVersion = "2.11"
 
 fork in Test := true
 
@@ -43,9 +44,9 @@ libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.13.2"
 
 // Unit tests
 
-libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1"
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1" % "it,test"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "it,test"
 
 
 // Performance benchmarking
@@ -89,10 +90,58 @@ parallelExecution in Test := false
 
 // Lower Aeron buffer to prevent space on /dev/shm running out during local or CI tests
 
-javaOptions in Test += "-Daeron.term.buffer.length=1048576" // 1024 * 1024
+val aeronBufferLength = "-Daeron.term.buffer.length=1048576" // 1024 * 1024
+javaOptions in Test += aeronBufferLength
+
+// Add it:assembly task to build separate jar containing only the integration test sources
+
+Project.inConfig(IntegrationTest)(baseAssemblySettings)
+assemblyJarName in (IntegrationTest, assembly) := s"${name.value}-it-assembly-${version.value}.jar"
+test in (IntegrationTest, assembly) := {}
+fullClasspath in (IntegrationTest, assembly) := {
+  val cp = (fullClasspath in (IntegrationTest, assembly)).value
+  cp.filter({ x => Seq("it-classes", "scalatest", "scalactic").exists(x.data.getPath.contains(_)) })
+}
+
+// Override it:test task to execute integration tests in Spark docker container
+
+val sparkTestsMain = "glint.spark.Main"
+
+import scala.sys.process._
+
+test in IntegrationTest := {
+  val startSparkTestEnv = "./spark-test-env.sh"
+  val execSparkTests = 
+    s"""./spark-test-env.sh exec
+        spark-submit
+        --driver-java-options=$aeronBufferLength
+        --conf spark.executor.extraJavaOptions=$aeronBufferLength
+        --jars target/scala-$scalaMajorMinorVersion/${name.value}-assembly-${version.value}.jar
+        --class $sparkTestsMain
+        target/scala-$scalaMajorMinorVersion/${name.value}-it-assembly-${version.value}.jar
+    """
+  val stopSparkTestEnv = "./spark-test-env.sh stop"
+  val rmSparkTestEnv = "./spark-test-env.sh rm"
+  val exitCode = (startSparkTestEnv #&& execSparkTests #&& stopSparkTestEnv #&& rmSparkTestEnv !)
+  if (exitCode != 0) {
+    throw new RuntimeException(s"Integration tests failed with nonzero exit value: $exitCode")
+  }
+}
+
+test in IntegrationTest := (test in IntegrationTest).dependsOn(
+  assembly,
+  assembly in IntegrationTest
+).value
+
+// Add integration tests to sbt project
+
+lazy val root = (project in file("."))
+  .configs(IntegrationTest)
+  .settings(Defaults.itSettings)
 
 
 // Scala documentation
+
 scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/docs/root.txt")
 scalacOptions in (Compile, doc) ++= Seq("-doc-title", "Glint")
 scalacOptions in (Compile, doc) ++= Seq("-skip-packages", "akka")
