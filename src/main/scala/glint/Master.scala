@@ -77,15 +77,22 @@ private[glint] object Master extends StrictLogging {
     * @return A future containing the started actor system and reference to the master actor
     */
   def run(config: Config): Future[(ActorSystem, ActorRef)] = {
+    implicit val ec = ExecutionContext.Implicits.global
+    val system = startActorSystem(config)
+    try {
+      run(config, system).map(master => (system, master))
+    } catch {
+      case ex: Throwable =>
+        system.terminate()
+        throw ex
+    }
+  }
 
-    logger.debug("Starting master actor system")
-    val system = ActorSystem(config.getString("glint.master.system"), config.getConfig("glint.master"))
-
+  private def run(config: Config, system: ActorSystem)(implicit ec: ExecutionContext): Future[ActorRef] = {
     logger.debug("Starting master")
     val master = system.actorOf(Props[Master], config.getString("glint.master.name"))
 
     implicit val timeout = Timeout(config.getDuration("glint.master.startup-timeout", TimeUnit.MILLISECONDS) milliseconds)
-    implicit val ec = ExecutionContext.Implicits.global
 
     val address = Address("akka",
       config.getString("glint.master.system"),
@@ -95,8 +102,14 @@ private[glint] object Master extends StrictLogging {
     system.actorSelection(master.path.toSerializationFormat).resolveOne().map {
       case a: ActorRef =>
         logger.info("Master successfully started")
-        (system, master)
+        master
     }
+  }
 
+  private def startActorSystem(config: Config): ActorSystem = {
+    logger.debug("Starting master actor system")
+    val system = ActorSystem(config.getString("glint.master.system"), config.getConfig("glint.master"))
+    StartedActorSystems.add(system)
+    system
   }
 }

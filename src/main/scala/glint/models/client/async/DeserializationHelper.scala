@@ -2,6 +2,7 @@ package glint.models.client.async
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import glint.StartedActorSystems
 
 /**
   * Helper for deserialization of matrices and vectors
@@ -17,9 +18,10 @@ object DeserializationHelper {
     * @param config The configuration
     * @return The actor system
     */
-  def getActorSystem(config: Config): ActorSystem = {
+  def getActorSystem(config: Config): ActorSystem = synchronized {
     if (as == null) {
       as = ActorSystem("GlintClient", config)
+      StartedActorSystems.add(as)
     }
     as
   }

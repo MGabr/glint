@@ -42,13 +42,21 @@ private[glint] object Server extends StrictLogging {
     */
   def run(config: Config): Future[(ActorSystem, ActorRef)] = {
     implicit val ec = ExecutionContext.Implicits.global
-    val system = getActorSystem(config)
-    run(config, system).map(server => (system, server))
+    val system = startActorSystem(config)
+    try {
+      run(config, system).map(server => (system, server))
+    } catch {
+      case ex: Throwable =>
+        system.terminate()
+        throw ex
+    }
   }
 
-  private def getActorSystem(config: Config): ActorSystem = {
+  private def startActorSystem(config: Config): ActorSystem = {
     logger.debug(s"Starting actor system ${config.getString("glint.server.system")}")
-    ActorSystem(config.getString("glint.server.system"), config.getConfig("glint.server"))
+    val system = ActorSystem(config.getString("glint.server.system"), config.getConfig("glint.server"))
+    StartedActorSystems.add(system)
+    system
   }
 
   private def run(config: Config, system: ActorSystem)(implicit ec: ExecutionContext): Future[ActorRef] = {
@@ -91,7 +99,7 @@ private[glint] object Server extends StrictLogging {
     implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
     val future = if (!started) {
       started = true
-      val system = getActorSystem(config)
+      val system = startActorSystem(config)
       val partitionMaster = getPartitionMaster(config, system)
       (partitionMaster ? AcquirePartition()).flatMap {
         case Some(partition: Partition) =>

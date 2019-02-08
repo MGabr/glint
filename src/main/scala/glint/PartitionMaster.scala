@@ -50,19 +50,25 @@ private[glint] object PartitionMaster extends StrictLogging {
     * @return A future containing the started actor system and reference to the partition master actor
     */
   def run(config: Config, partitions: Seq[Partition]): Future[(ActorSystem, ActorRef)] = {
+    implicit val ec = ExecutionContext.Implicits.global
+    val system = startActorSystem(config)
+    try {
+      run(config, partitions, system).map(master => (system, master))
+    } catch {
+      case ex: Throwable =>
+        system.terminate()
+        throw ex
+    }
+  }
 
-    logger.debug("Starting partition master actor system")
-    val system = ActorSystem(
-      config.getString("glint.partition-master.system"),
-      config.getConfig("glint.partition-master"))
-
+  private def run(config: Config, partitions: Seq[Partition], system: ActorSystem)
+                 (implicit ec: ExecutionContext): Future[ActorRef] = {
     logger.debug("Starting partition master")
     val props = Props(classOf[PartitionMaster], mutable.Queue(partitions : _*))
     val master = system.actorOf(props, config.getString("glint.partition-master.name"))
 
     implicit val timeout = Timeout(
       config.getDuration("glint.partition-master.startup-timeout", TimeUnit.MILLISECONDS) milliseconds)
-    implicit val ec = ExecutionContext.Implicits.global
 
     val address = Address("akka",
       config.getString("glint.partition-master.system"),
@@ -72,7 +78,14 @@ private[glint] object PartitionMaster extends StrictLogging {
     system.actorSelection(master.path.toSerializationFormat).resolveOne().map {
       case a: ActorRef =>
         logger.info("Partition master successfully started")
-        (system, master)
+        master
     }
+  }
+
+  private def startActorSystem(config: Config): ActorSystem = {
+    logger.debug("Starting partition master actor system")
+    ActorSystem(
+      config.getString("glint.partition-master.system"),
+      config.getConfig("glint.partition-master"))
   }
 }
