@@ -108,8 +108,6 @@ private[glint] object Master extends StrictLogging {
 
   private def startActorSystem(config: Config): ActorSystem = {
     logger.debug("Starting master actor system")
-    val system = ActorSystem(config.getString("glint.master.system"), config.getConfig("glint.master"))
-    StartedActorSystems.add(system)
-    system
+    ActorSystem(config.getString("glint.master.system"), config.getConfig("glint.master"))
   }
 }

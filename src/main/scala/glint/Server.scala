@@ -54,9 +54,7 @@ private[glint] object Server extends StrictLogging {
 
   private def startActorSystem(config: Config): ActorSystem = {
     logger.debug(s"Starting actor system ${config.getString("glint.server.system")}")
-    val system = ActorSystem(config.getString("glint.server.system"), config.getConfig("glint.server"))
-    StartedActorSystems.add(system)
-    system
+    ActorSystem(config.getString("glint.server.system"), config.getConfig("glint.server"))
   }
 
   private def run(config: Config, system: ActorSystem)(implicit ec: ExecutionContext): Future[ActorRef] = {
@@ -100,6 +98,8 @@ private[glint] object Server extends StrictLogging {
     val future = if (!started) {
       started = true
       val system = startActorSystem(config)
+      StartedActorSystems.add(system)
+
       val partitionMaster = getPartitionMaster(config, system)
       (partitionMaster ? AcquirePartition()).flatMap {
         case Some(partition: Partition) =>

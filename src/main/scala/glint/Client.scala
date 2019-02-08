@@ -410,6 +410,9 @@ object Client {
           s"Requested $numParameterServers, started $numStartedParameterServers")
       }
 
+      StartedActorSystems.add(masterSystem.get)
+      StartedActorSystems.add(client.get.system)
+
       client.get
     } catch {
       case ex: Throwable =>
@@ -563,6 +566,9 @@ object Client {
       // Construct a big model client object
       val bigModel = new AsyncBigWord2VecMatrix(partitioner, modelRefs, config, bcVocabCns.value.length, vectorSize, n)
 
+      StartedActorSystems.add(masterSystem.get)
+      StartedActorSystems.add(client.get.system)
+
       (client.get, bigModel)
     } catch {
       case ex: Throwable =>
@@ -638,8 +644,6 @@ object Client {
     // Construct system and reference to master
     val system = ActorSystem(config.getString("glint.client.system"), config.getConfig("glint.client"))
     val master = system.actorSelection(s"akka://${masterSystem}@${masterHost}:${masterPort}/user/${masterName}")
-
-    StartedActorSystems.add(system)
 
     // Set up implicit values for concurrency
     implicit val ec = ExecutionContext.Implicits.global
