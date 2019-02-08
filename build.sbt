@@ -92,6 +92,7 @@ parallelExecution in Test := false
 
 val aeronBufferLength = "-Daeron.term.buffer.length=1048576" // 1024 * 1024
 javaOptions in Test += aeronBufferLength
+javaOptions in IntegrationTest += aeronBufferLength
 
 // Add it:assembly task to build separate jar containing only the integration test sources
 
