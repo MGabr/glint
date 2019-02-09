@@ -117,6 +117,7 @@ test in IntegrationTest := {
         spark-submit
         --driver-java-options=$aeronBufferLength
         --conf spark.executor.extraJavaOptions=$aeronBufferLength
+        --total-executor-cores 2
         --jars target/scala-$scalaMajorMinorVersion/${name.value}-assembly-${version.value}.jar
         --class $sparkTestsMain
         target/scala-$scalaMajorMinorVersion/${name.value}-it-assembly-${version.value}.jar
@@ -125,6 +126,7 @@ test in IntegrationTest := {
   val rmSparkTestEnv = "./spark-test-env.sh rm"
   val exitCode = (startSparkTestEnv #&& execSparkTests #&& stopSparkTestEnv #&& rmSparkTestEnv !)
   if (exitCode != 0) {
+    (stopSparkTestEnv ### rmSparkTestEnv !)
     throw new RuntimeException(s"Integration tests failed with nonzero exit value: $exitCode")
   }
 }

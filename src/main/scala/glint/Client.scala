@@ -339,7 +339,7 @@ object Client {
     * @return A future Glint client
     */
   def runOnSpark(sc: SparkContext)
-                (numParameterServers: Int = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)): Client = {
+                (numParameterServers: Int = getNumExecutors(sc)): Client = {
     runOnSpark(sc, "", numParameterServers)
   }
 
@@ -371,6 +371,7 @@ object Client {
     implicit val ec = ExecutionContext.Implicits.global
 
     val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+    val shutdownTimeout = config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS) milliseconds
 
     // Defined upfront for easier error handling
     var masterSystem: Option[ActorSystem] = None
@@ -389,15 +390,12 @@ object Client {
       client = Some(Client(config))
 
       // Start partition master
-      val nrOfExecutors = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)
-      val numParameterServers = nrOfExecutors
       val partitioner = RangePartitioner(numParameterServers, numParameterServers)
       val (ps, _) = Await.result(PartitionMaster.run(config, partitioner.all()), clientTimeout)
       partitionMasterSystem = Some(ps)
 
       // Start parameter servers on workers
-      val executorCores = sc.getConf.get("spark.executor.cores", "1").toInt
-      val nrOfPartitions = nrOfExecutors * executorCores
+      val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
       sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition {
         case _ => Await.result(Server.runOnce(config), clientTimeout)
       }
@@ -418,6 +416,7 @@ object Client {
       case ex: Throwable =>
         masterSystem.foreach(_.terminate())
         client.foreach(_.system.terminate())
+        StartedActorSystems.terminateAndWait(shutdownTimeout)
         throw ex
     } finally {
       // Shutdown partition master
@@ -447,8 +446,7 @@ object Client {
                                    vectorSize: Int,
                                    n: Int,
                                    unigramTableSize: Int = 100000000,
-                                   numParameterServers: Int = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)):
-  (Client, BigWord2VecMatrix) = {
+                                   numParameterServers: Int = getNumExecutors(sc)): (Client, BigWord2VecMatrix) = {
     runWithWord2VecMatrixOnSpark(sc, "", bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
   }
 
@@ -510,6 +508,7 @@ object Client {
     implicit val ec = ExecutionContext.Implicits.global
 
     val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+    val shutdownTimeout = config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS) milliseconds
 
     // Defined upfront for easier error handling
     var masterSystem: Option[ActorSystem] = None
@@ -534,9 +533,7 @@ object Client {
 
       // Start parameter servers and create 'numParameterServers' partial models on workers
       // Return list of serialized partial model actor references
-      val nrOfExecutors = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)
-      val executorCores = sc.getConf.get("spark.executor.cores", "1").toInt
-      val nrOfPartitions = nrOfExecutors * executorCores
+      val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
       val models = sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).mapPartitions { _ =>
         @transient
         implicit val ec = ExecutionContext.Implicits.global
@@ -574,6 +571,7 @@ object Client {
       case ex: Throwable =>
         masterSystem.foreach(_.terminate())
         client.foreach(_.system.terminate())
+        StartedActorSystems.terminateAndWait(shutdownTimeout)
         throw ex
     } finally {
       // Shutdown partition master
@@ -607,12 +605,48 @@ object Client {
   }
 
   /**
+    * Gets the number of (worker) executors in a way which is portable across yarn, standalone and local mode
+    *
+    * @param sc The spark context
+    * @return The number of executors
+    */
+  private def getNumExecutors(sc: SparkContext): Int = {
+    // if --num-executors is set for yarn
+    sc.getConf.getOption("spark.executor.instances").map(_.toInt)
+      // if --total-executor-cores is set for standalone
+      .orElse(sc.getConf.getOption("spark.cores.max").map(_.toInt / getExecutorCores(sc)))
+      // if no config is set
+      .getOrElse {
+
+      var nrOfExecutors = sc.getExecutorMemoryStatus.size
+      if (nrOfExecutors == 1) {
+        // For a short period at startup we get only 1 executor, so to be safe we wait a bit
+        // See https://stackoverflow.com/a/52516704
+        Thread.sleep(5000)
+        nrOfExecutors = sc.getExecutorMemoryStatus.size
+      }
+      // Subtract driver executor if not in local mode
+      Math.max(nrOfExecutors - 1, 1)
+    }
+  }
+
+  /**
+    * Gets the number of cores per executors
+    *
+    * @param sc The spark context
+    * @return The number of cores per executor
+    */
+  private def getExecutorCores(sc: SparkContext): Int = {
+    sc.getConf.get("spark.executor.cores", "1").toInt
+  }
+
+  /**
     * Terminates a standalone glint cluster integrated in Spark
     *
     * @param sc The spark context
     */
   def terminateOnSpark(sc: SparkContext, shutdownTimeout: Duration): Unit = {
-    val nrOfExecutors = Math.max(sc.getExecutorMemoryStatus.size - 1, 1)
+    val nrOfExecutors = getNumExecutors(sc)
     val executorCores = sc.getConf.get("spark.executor.cores", "1").toInt
     val nrOfPartitions = nrOfExecutors * executorCores
     sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition { case _ =>
