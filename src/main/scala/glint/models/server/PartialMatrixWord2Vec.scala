@@ -219,20 +219,20 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
           }
 
           // add partial gradient updates for negative word
-          blas.saxpy(cols, gMinus(neg), v, nOut, 1, u_updates(wIn), 0, 1)
-          blas.saxpy(cols, gMinus(neg), u, wIn, 1, v_updates(nOut), 0, 1)
+          blas.saxpy(cols, gMinus(neg), v, nOut * cols, 1, u_updates(wIn), 0, 1)
+          blas.saxpy(cols, gMinus(neg), u, wIn * cols, 1, v_updates(nOut), 0, 1)
           neg += 1
         })
       })
     })
 
-    // apply partial gradient updates if not already done immediately
+    // apply partial gradient updates
     cforRange(0 until u_updates.length)(i => {
       if (!u_updates(i).isEmpty) {
-        blas.saxpy(cols, 1.0f, u_updates(i), 0, 1, u, i, 1)
+        blas.saxpy(cols, 1.0f, u_updates(i), 0, 1, u, i * cols, 1)
       }
       if (!v_updates(i).isEmpty) {
-        blas.saxpy(cols, 1.0f, v_updates(i), 0, 1, v, i, 1)
+        blas.saxpy(cols, 1.0f, v_updates(i), 0, 1, v, i * cols, 1)
       }
     })
   }
