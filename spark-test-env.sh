@@ -21,7 +21,7 @@ create_test_environment() {
   -v /`pwd`/src/it/resources/log4j.properties:/opt/spark-2.3.0-bin-hadoop2.6/conf/log4j.properties \
   -v /`pwd`:`pwd` \
   -it \
-  --shm-size=256m \
+  --shm-size=512m \
   --workdir="/`pwd`" \
   uncharted/sparklet:2.3.0 bash
 }

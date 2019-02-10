@@ -2,6 +2,7 @@ package glint.spark
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{TestData, fixture}
 import org.scalatest.time.{Millis, Seconds, Span}
 
 import scala.concurrent.ExecutionContext
@@ -9,7 +10,7 @@ import scala.concurrent.ExecutionContext
 /**
   * Provides basic functions for Spark tests
   */
-trait SparkTest extends ScalaFutures {
+trait SparkTest extends ScalaFutures { this: fixture.TestDataFixture =>
 
   implicit val ec = ExecutionContext.Implicits.global
 
@@ -21,8 +22,8 @@ trait SparkTest extends ScalaFutures {
     *
     * @param testCode The test code to run
     */
-  def withContext(testCode: SparkContext => Any): Unit = {
-    val conf = new SparkConf().setAppName("Glint SparkTest")
+  def withContext(testCode: SparkContext => Any): TestData => Any = { td =>
+    val conf = new SparkConf().setAppName(td.name)
     val sc = new SparkContext(conf)
     try {
       testCode(sc)

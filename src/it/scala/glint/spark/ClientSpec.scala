@@ -2,11 +2,9 @@ package glint.spark
 
 import glint.Client
 import glint.exceptions.ServerCreationException
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{Matchers, fixture}
 
-import scala.concurrent.duration._
-
-class ClientSpec extends FlatSpec with SparkTest with Matchers {
+class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with SparkTest with Matchers {
 
   "A client" should "run on Spark" in withContext { sc =>
     val client = Client.runOnSpark(sc)()
