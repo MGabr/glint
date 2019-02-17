@@ -1,8 +1,8 @@
 site_name: Glint 
-site_url: "http://rjagerman.github.com/glint/"
+site_url: "http://mgabr.github.com/glint/"
 site_description: "Glint: A high-performance parameter server in Scala"
 site_author: "Rolf Jagerman"
-repo_url: "https://github.com/rjagerman/glint/"
+repo_url: "https://github.com/MGabr/glint/"
 pages:
 - Home: index.md
 - 'Getting Started':

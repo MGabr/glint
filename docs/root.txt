@@ -1,4 +1,4 @@
-This is the documentation for the [[https://github.com/rjagerman/glint Glint]] project.
+This is the documentation for the [[https://github.com/MGabr/glint Glint]] project.
 
 To learn more about how to start Glint parameter servers and master nodes check out [[glint.Main]]
 

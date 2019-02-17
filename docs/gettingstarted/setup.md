@@ -16,9 +16,9 @@ Add a `build.sbt` file with the following contents:
     
     version := "0.1-SNAPSHOT"
     
-    scalaVersion := "2.10.6"
+    scalaVersion := "2.11.8"
     
-    libraryDependencies += "ch.ethz.inf.da" %% "glint" % "0.1-SNAPSHOT"
+    libraryDependencies += "at.mgabr" %% "glint" % "0.2-SNAPSHOT"
 
 ## Adding Glint dependency
 
@@ -27,7 +27,7 @@ The listed glint dependency is not publicly available on a central repository ye
 Grab the latest version of glint from the github repository:
     
     cd ../
-    git clone git@github.com:rjagerman/glint.git
+    git clone git@github.com:MGabr/glint.git
     cd glint
     sbt compile assembly publish-local
 

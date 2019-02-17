@@ -16,7 +16,7 @@ This will construct a client object that acts as an interface to the parameter s
 object to construct distributed matrices and vectors on the parameter server.
 
 If you need to change the default configuration (for example if your master node is not on localhost but has a 
-different hostname or IP), you can create a `glint.conf` file. See [src/main/resources/glint.conf](https://github.com/rjagerman/glint/blob/master/src/main/resources/glint.conf)
+different hostname or IP), you can create a `glint.conf` file. See [src/main/resources/glint.conf](https://github.com/MGabr/glint/blob/master/src/main/resources/glint.conf)
 for a comprehensive example. To load a custom configuration file, use the following:
 
     import com.typesafe.config.ConfigFactory

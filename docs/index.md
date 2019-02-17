@@ -16,26 +16,24 @@ The software is currently still in alpha. Refer to the compile section in order 
 
 Glint uses [sbt](http://www.scala-sbt.org/) as a package manager. To compile, run the following commands from a command-line
 
-    git clone git@github.com:rjagerman/glint.git
+    git clone git@github.com:MGabr/glint.git
     cd glint
     sbt compile assembly
 
-This will (by default) compile for Scala version 2.10. If you wish to compile binaries for both 2.10 and 2.11, use:
+This will compile for Scala version 2.11.
 
-    sbt "+ compile" "+ assembly"
-
-A binary jar file is produced in `target/scala-2.10/Glint-assembly-0.1-SNAPSHOT.jar`.
+A binary jar file is produced in `target/scala-2.11/Glint-assembly-0.2-SNAPSHOT.jar`.
 
 ## Run
 
 To run the parameter server on your localhost, you have two options: Either compile and run the .jar file or use `sbt run`. To start a master node, use one of the following commands:
 
-  * `java -jar target/scala-2.10/Glint-assembly-0.1-SNAPSHOT.jar master`
+  * `java -jar target/scala-2.11/Glint-assembly-0.2-SNAPSHOT.jar master`
   * `sbt "run master"` 
 
 To start a parameter server node, use one of the following commands:
 
-  * `java -jar target/scala-2.10/Glint-assembly-0.1-SNAPSHOT.jar server`
+  * `java -jar target/scala-2.11/Glint-assembly-0.2-SNAPSHOT.jar server`
   * `sbt "run server"`
 
 ## Where to go next?

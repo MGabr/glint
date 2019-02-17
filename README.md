@@ -4,6 +4,10 @@
 Glint is a high performance [Scala](http://www.scala-lang.org/) parameter server built using [Akka](http://akka.io/).
 The aim is to make it easy to develop performant distributed machine learning algorithms using the parameter server architecture. One of the major goals is compatibility with [Spark](http://spark.apache.org/).
 
+This fork adds support for column partitioning, running a Glint cluster on Spark and a specific Word2Vec matrix with server side operations for network-efficient distributed Word2Vec training for large vocabularies.
+[Glint-word2vec](https://github.com/MGabr/glint-word2vec) is a Spark ML package using this fork.
+
+
 ## Compile
 To use the current version you should compile the system manually, publish it to a local repository and include it in your project through sbt. Clone this repository and run:
 
@@ -11,7 +15,7 @@ To use the current version you should compile the system manually, publish it to
 
 The `+` indicates that it should compile for all scala versions defined in the `build.sbt` file. The command will compile, assemble and publish the library jar file to the local ivy2 repository, which means you can then use it in your project's `build.sbt` (on the same machine) as follows:
 
-    libraryDependencies += "ch.ethz.inf.da" %% "glint" % "0.1-SNAPSHOT"
+    libraryDependencies += "at.mgabr" %% "glint" % "0.2-SNAPSHOT"
 
 ## Documentation
 

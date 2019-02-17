@@ -14,7 +14,7 @@ In this example we will have an RDD that contains tuples of (Int, Double). The I
 vector and the Double represents the corresponding value. We want to add these values to a distributed vector that is 
 stored on the parameter servers. First, let's open the spark-shell and add the Glint jar dependency:
 
-    $ spark-shell --jars ./target/scala-2.10/Glint-assembly-0.1-SNAPSHOT.jar
+    $ spark-shell --jars ./target/scala-2.11/Glint-assembly-0.2-SNAPSHOT.jar
     
 Meanwhile, make sure the parameter servers are up and running in separate terminal windows:
  

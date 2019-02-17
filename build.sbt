@@ -2,7 +2,7 @@ name := "Glint"
 
 version := "0.2-SNAPSHOT"
 
-organization := "ch.ethz.inf.da"
+organization := "at.mgabr"
 
 scalaVersion := "2.11.8"
 val scalaMajorMinorVersion = "2.11"
