@@ -3,9 +3,10 @@ package glint.models.client.retry
 import akka.util.Timeout
 import breeze.linalg.Vector
 import glint.models.client.BigMatrix
+import org.apache.hadoop.conf.Configuration
 import retry.Success
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * A big matrix that can retry failed requests automatically
@@ -79,4 +80,18 @@ class RetryBigMatrix[@specialized V](underlying: BigMatrix[V], val attempts: Int
     }
   }
 
+  /**
+    * Saves the matrix to HDFS
+    *
+    * @param hdfsPath     The HDFS base path where the matrix should be saved
+    * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+    * @param ec           The implicit execution context in which to execute the request
+    * @return A future whether the matrix was successfully saved
+    */
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    implicit val success = Success[Boolean](identity)
+    retry.Directly(attempts) { () =>
+      underlying.save(hdfsPath, hadoopConfig)
+    }
+  }
 }

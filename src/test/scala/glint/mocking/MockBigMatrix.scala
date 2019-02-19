@@ -4,6 +4,7 @@ import akka.pattern.AskTimeoutException
 import akka.util.Timeout
 import breeze.linalg.{DenseVector, Vector}
 import glint.models.client.BigMatrix
+import org.apache.hadoop.conf.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -135,7 +136,20 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
   }
 
   /**
+    * Saves the matrix to HDFS
+    *
+    * @param hdfsPath     The HDFS base path where the matrix should be saved
+    * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+    * @param ec           The implicit execution context in which to execute the request
+    * @return A future whether the matrix was successfully saved
+    */
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    Future { true }
+  }
+
+  /**
     * Intentionally fails a future
+    *
     * @tparam T The return type of the future
     * @return A future that intentionally fails with an AskTimeoutException
     */

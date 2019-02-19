@@ -28,9 +28,9 @@ class MatrixBenchmark extends Bench.OfflineReport {
   val cyclicPartition = CyclicPartition(3, 10, 100000, PartitionBy.ROW) // 10000 elements
 
   // Construct matrices for range and cyclic partitions
-  val rangeMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(rangePartition, 10000, 300, AggregateAdd()))
+  val rangeMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(rangePartition, 10000, 300, AggregateAdd(), None, None))
   val rangeMatrixDouble = rangeMatrixDoubleRef.underlyingActor
-  val cyclicMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(cyclicPartition, 10000, 300, AggregateAdd()))
+  val cyclicMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(cyclicPartition, 10000, 300, AggregateAdd(), None, None))
   val cyclicMatrixDouble = cyclicMatrixDoubleRef.underlyingActor
 
   // Sizes and data

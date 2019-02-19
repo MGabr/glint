@@ -19,7 +19,9 @@ import glint.partitioning.by.PartitionBy
 import glint.partitioning.by.PartitionBy.PartitionBy
 import glint.partitioning.range.RangePartitioner
 import glint.partitioning.{Partition, Partitioner}
-import glint.util.{Numerical, terminateAndWait, getNumExecutors, getExecutorCores}
+import glint.serialization.SerializableHadoopConfiguration
+import glint.util._
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 
@@ -75,9 +77,14 @@ class Client(val config: Config,
       }
 
       // Construct a partitioner
-      val numberOfPartitions = Math.min(keys, modelsPerServer * servers.length).toInt
+      var numberOfPartitions = Math.min(keys, modelsPerServer * servers.length).toInt
       val partitioner = createPartitioner(numberOfPartitions, keys)
       val partitions = partitioner.all()
+
+      // Correct number of partitions in case we loaded a model with a different number of partitions
+      if (partitions.length != numberOfPartitions) {
+        numberOfPartitions = partitions.length
+      }
 
       // Spawn models that are deployed on the parameter servers according to the partitioner
       val models = new Array[ActorRef](numberOfPartitions)
@@ -100,65 +107,38 @@ class Client(val config: Config,
 
   }
 
-  /**
-    * Constructs a distributed matrix (indexed by (row: Long, col: Long)) for specified type of values
-    *
-    * @param rows The number of rows
-    * @param cols The number of columns
-    * @param modelsPerServer The number of partial models to store per parameter server (default: 1)
-    * @param aggregate The type of aggregation to perform on this model (default: AggregateAdd)
-    * @param partitionBy The key type for partitioning (row or column)
-    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
-    * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
-    */
-  def matrix[V: Numerical : TypeTag](rows: Long,
-                                                cols: Long,
-                                                modelsPerServer: Int = 1,
-                                                aggregate: Aggregate = AggregateAdd(),
-                                                partitionBy: PartitionBy = PartitionBy.ROW): BigMatrix[V] = {
-    matrix[V](rows, cols, modelsPerServer, aggregate, partitionBy, (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, partitionBy))
-  }
+  private def matrix[V: Numerical : TypeTag](rows: Long,
+                                             cols: Long,
+                                             modelsPerServer: Int,
+                                             aggregate: Aggregate,
+                                             partitionBy: PartitionBy,
+                                             createPartitioner: (Int, Long) => Partitioner,
+                                             hdfsPath: Option[String],
+                                             hadoopConfig: Option[Configuration]): BigMatrix[V] = {
 
-  /**
-    * Constructs a distributed matrix (indexed by (row: Long, col: Long)) for specified type of values
-    *
-    * @param rows The number of rows
-    * @param cols The number of columns
-    * @param modelsPerServer The number of partial models to store per parameter server
-    * @param createPartitioner A function that creates a [[glint.partitioning.Partitioner partitioner]] that partitions
-    *                          keys
-    * @param partitionBy The key type for partitioning (row or column)
-    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
-    * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
-    */
-  def matrix[V: Numerical : TypeTag](rows: Long,
-                                                cols: Long,
-                                                modelsPerServer: Int,
-                                                aggregate: Aggregate,
-                                                partitionBy: PartitionBy,
-                                                createPartitioner: (Int, Long) => Partitioner): BigMatrix[V] = {
+    val serHadoopConfig = hadoopConfig.map(new SerializableHadoopConfiguration(_))
 
     val propFunction = Numerical.asString[V] match {
       case "Int" => (partition: Partition) =>
-        props(classOf[PartialMatrixInt], partition, rows, cols, aggregate, partitionBy)
+        props(classOf[PartialMatrixInt], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case "Long" => (partition: Partition) =>
-        props(classOf[PartialMatrixLong], partition, rows, cols, aggregate, partitionBy)
+        props(classOf[PartialMatrixLong], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case "Float" => (partition: Partition) =>
-        props(classOf[PartialMatrixFloat], partition, rows, cols, aggregate, partitionBy)
+        props(classOf[PartialMatrixFloat], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case "Double" => (partition: Partition) =>
-        props(classOf[PartialMatrixDouble], partition, rows, cols, aggregate, partitionBy)
+        props(classOf[PartialMatrixDouble], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
     val objFunction = Numerical.asString[V] match {
       case "Int" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixInt(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixInt(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case "Long" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixLong(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixLong(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case "Float" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixFloat(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixFloat(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case "Double" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixDouble(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixDouble(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
@@ -171,7 +151,9 @@ class Client(val config: Config,
                        rows: Long,
                        cols: Long,
                        aggregate: Aggregate,
-                       partitionBy: PartitionBy): Props = {
+                       partitionBy: PartitionBy,
+                       hdfsPath: Option[String],
+                       hadoopConfig: Option[SerializableHadoopConfiguration]): Props = {
 
     require(
       if (partitionBy == PartitionBy.ROW) cols <= Int.MaxValue else rows <= Int.MaxValue,
@@ -179,7 +161,65 @@ class Client(val config: Config,
 
     val rowsInt = if (partitionBy == PartitionBy.ROW) partition.size else rows.toInt
     val colsInt = if (partitionBy == PartitionBy.COL) partition.size else cols.toInt
-    Props(matrixClass, partition, rowsInt, colsInt, aggregate)
+    Props(matrixClass, partition, rowsInt, colsInt, aggregate, hdfsPath, hadoopConfig)
+  }
+
+  /**
+    * Constructs a distributed matrix (indexed by (row: Long, col: Long)) for specified type of values
+    *
+    * @param rows The number of rows
+    * @param cols The number of columns
+    * @param modelsPerServer The number of partial models to store per parameter server (default: 1)
+    * @param aggregate The type of aggregation to perform on this model (default: AggregateAdd)
+    * @param partitionBy The key type for partitioning (row or column)
+    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
+    * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
+    */
+  def matrix[V: Numerical : TypeTag](rows: Long,
+                                     cols: Long,
+                                     modelsPerServer: Int = 1,
+                                     aggregate: Aggregate = AggregateAdd(),
+                                     partitionBy: PartitionBy = PartitionBy.ROW): BigMatrix[V] = {
+
+    matrix[V](rows, cols, modelsPerServer, aggregate, partitionBy, (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, partitionBy))
+  }
+
+  /**
+    * Constructs a distributed matrix (indexed by (row: Long, col: Long)) for specified type of values
+    *
+    * @param rows The number of rows
+    * @param cols The number of columns
+    * @param modelsPerServer The number of partial models to store per parameter server
+    * @param partitionBy The key type for partitioning (row or column)
+    * @param createPartitioner A function that creates a [[glint.partitioning.Partitioner partitioner]] that partitions
+    *                          keys
+    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
+    * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
+    */
+  def matrix[V: Numerical : TypeTag](rows: Long,
+                                     cols: Long,
+                                     modelsPerServer: Int,
+                                     aggregate: Aggregate,
+                                     partitionBy: PartitionBy,
+                                     createPartitioner: (Int, Long) => Partitioner): BigMatrix[V] = {
+
+    matrix(rows, cols, modelsPerServer, aggregate, partitionBy, createPartitioner, None, None)
+  }
+
+  /**
+    * Loads a saved distributed matrix (indexed by (row: Long, col: Long)) for specified type of values.
+    * Keep in mind that there will be no error thrown when specifying a wrong type
+    * but the loaded matrix will not work as intended.
+    *
+    * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
+    * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
+    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
+    * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
+    */
+  def loadMatrix[V: Numerical : TypeTag](hdfsPath: String, hadoopConfig: Configuration): BigMatrix[V] = {
+
+    val m = hdfs.loadMetadata(hdfsPath, hadoopConfig)
+    matrix(m.rows, m.cols, 1, m.aggregate, m.partitionBy, m.createPartitioner, Some(hdfsPath), Some(hadoopConfig))
   }
 
   /**
@@ -203,10 +243,10 @@ class Client(val config: Config,
     val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
 
     val propFunction = (partition: Partition) =>
-      Props(classOf[PartialMatrixWord2Vec], partition, vectorSize, AggregateAdd(), vocabCns, n, unigramTableSize)
+      Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), None, None, vectorSize, vocabCns, n, unigramTableSize)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigWord2VecMatrix(partitioner, models, config, vocabCns.length, vectorSize, n)
+      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabCns.length, vectorSize, n)
 
     create[BigWord2VecMatrix](vectorSize, 1, createPartitioner, propFunction, objFunction)
   }
@@ -540,7 +580,7 @@ object Client {
 
         val partialModelFuture = Server.runOnce(config).map {
           case Some((serverSystem, serverRef, partition)) =>
-            val props = Props(classOf[PartialMatrixWord2Vec], partition, vectorSize, AggregateAdd(), bcVocabCns.value, n, unigramTableSize)
+            val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), None, None, vectorSize, bcVocabCns.value, n, unigramTableSize)
             val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
             Some((Serialization.serializedActorPath(actorRef), partition.index))
           case None => None
@@ -561,7 +601,7 @@ object Client {
       val modelRefs = models.map(model => extendedActorSystem.provider.resolveActorRef(model))
 
       // Construct a big model client object
-      val bigModel = new AsyncBigWord2VecMatrix(partitioner, modelRefs, config, bcVocabCns.value.length, vectorSize, n)
+      val bigModel = new AsyncBigWord2VecMatrix(partitioner, modelRefs, config, AggregateAdd(), bcVocabCns.value.length, vectorSize, n)
 
       StartedActorSystems.add(masterSystem.get)
       StartedActorSystems.add(client.get.system)

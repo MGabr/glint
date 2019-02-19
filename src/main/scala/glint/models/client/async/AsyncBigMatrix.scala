@@ -8,10 +8,15 @@ import akka.serialization.JavaSerializer
 import breeze.linalg.{DenseVector, Vector}
 import breeze.math.Semiring
 import com.typesafe.config.Config
-import glint.messages.server.request.{PullMatrix, PullMatrixRows}
+import glint.messages.server.request.{PullMatrix, PullMatrixRows, PushSave}
 import glint.models.client.BigMatrix
+import glint.models.server.aggregate.Aggregate
 import glint.partitioning.by.PartitionBy
 import glint.partitioning.{Partition, Partitioner}
+import glint.serialization.SerializableHadoopConfiguration
+import glint.util.hdfs
+import glint.util.hdfs.MatrixMetadata
+import org.apache.hadoop.conf.Configuration
 import spire.implicits.cforRange
 
 import scala.concurrent.duration._
@@ -28,6 +33,7 @@ import scala.reflect.ClassTag
   * @param partitioner A partitioner to map rows to partitions
   * @param matrices The references to the partial matrices on the parameter servers
   * @param config The glint configuration (used for serialization/deserialization construction of actorsystems)
+  * @param aggregate The type of aggregation to perform on this model (used only for saving this parameter)
   * @param rows The number of rows
   * @param cols The number of columns
   * @tparam V The type of values to store
@@ -37,6 +43,7 @@ import scala.reflect.ClassTag
 abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, P: ClassTag](partitioner: Partitioner,
                                                                                              matrices: Array[ActorRef],
                                                                                              config: Config,
+                                                                                             aggregate: Aggregate,
                                                                                              val rows: Long,
                                                                                              val cols: Long)
   extends BigMatrix[V] {
@@ -188,6 +195,28 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
   @inline
   protected def mapPartitions[T](keys: Seq[Long])(func: (Partition, Seq[Int]) => T): Iterable[T] = {
     keys.indices.groupBy(i => partitioner.partition(keys(i))).map { case (a, b) => func(a, b) }
+  }
+
+  /**
+    * Saves the matrix to HDFS
+    *
+    * @param hdfsPath The HDFS base path where the matrix should be saved
+    * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+    * @param ec The implicit execution context in which to execute the request
+    * @return A future whether the matrix was successfully saved
+    */
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    val meta = MatrixMetadata(rows, cols, aggregate, partitioner.partitionBy, (_, _) => partitioner)
+    hdfs.saveMetadata(hdfsPath, hadoopConfig, meta)
+
+    val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
+
+    val pushes = partitioner.all().map {
+      case partition =>
+        val fsm = PushFSM[PushSave](id => PushSave(id, hdfsPath, serHadoopConfig), matrices(partition.index))
+        fsm.run()
+    }.toIterator
+    Future.sequence(pushes).transform(results => true, err => err)
   }
 
   /**

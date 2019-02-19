@@ -1,6 +1,7 @@
 package glint.models.client.granular
 
 import glint.models.client.BigWord2VecMatrix
+import org.apache.hadoop.conf.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,5 +36,9 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
 
   override def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]] = {
     underlying.multiply(vector)
+  }
+
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    underlying.save(hdfsPath, hadoopConfig)
   }
 }

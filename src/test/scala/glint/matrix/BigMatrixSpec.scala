@@ -3,16 +3,18 @@ package glint.matrix
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
 import breeze.linalg.DenseVector
-import glint.SystemTest
+import glint.exceptions.ModelCreationException
 import glint.models.client.BigMatrix
 import glint.models.server.aggregate.{AggregateMax, AggregateMin, AggregateReplace}
 import glint.partitioning.by.PartitionBy
-import org.scalatest.{FlatSpec, Matchers}
+import glint.{HdfsTest, SystemTest}
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 /**
   * BigMatrix test specification
   */
-class BigMatrixSpec extends FlatSpec with SystemTest with Matchers {
+class BigMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Matchers with Inspectors {
 
   "A BigMatrix" should "store Double values" in withMaster { _ =>
     withServer { _ =>
@@ -252,6 +254,88 @@ class BigMatrixSpec extends FlatSpec with SystemTest with Matchers {
         whenReady(future.failed) { e =>
           e shouldBe a [UnsupportedOperationException]
         }
+      }
+    }
+  }
+
+  it should "save data to file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        val model = client.matrix[Long](23, 10)
+
+        var result = whenReady(model.push(Array(1L, 5L, 20L), Array(0, 8, 1), Array(0L, -789300200100L, 987100200300L))) {
+          identity
+        }
+        assert(result)
+        result = whenReady(model.save("testdata", hadoopConfig)) {
+          identity
+        }
+        assert(result)
+
+        val fs = FileSystem.get(hadoopConfig)
+        val paths = Seq(
+          "testdata",
+          "testdata/glint",
+          "testdata/glint/metadata",
+          "testdata/glint/data/0",
+          "testdata/glint/data/1",
+          "testdata/glint/data/2"
+        )
+        forAll (paths) {path => fs.exists(new Path(path)) shouldBe true }
+      }
+    }
+  }
+
+  it should "load data from file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata"))) {
+          pending
+        }
+
+        val loadedModel = client.loadMatrix[Long]("testdata", hadoopConfig)
+
+        val future = loadedModel.pull(Array(1L, 5L, 20L), Array(0, 8, 1))
+        val value = whenReady(future) {
+          identity
+        }
+        value should equal(Array(0L, -789300200100L, 987100200300L))
+      }
+    }
+  }
+
+  it should "load data from file to a lower number of servers" in withMaster { _ =>
+    withServers(2) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata"))) {
+          pending
+        }
+
+        val loadedModel = client.loadMatrix[Long]("testdata", hadoopConfig)
+
+        val future = loadedModel.pull(Array(1L, 5L, 20L), Array(0, 8, 1))
+        val value = whenReady(future) {
+          identity
+        }
+        value should equal(Array(0L, -789300200100L, 987100200300L))
+      }
+    }
+  }
+
+  it should "load data from file to a higher number of servers" in withMaster { _ =>
+    withServers(4) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata"))) {
+          pending
+        }
+
+        val loadedModel = client.loadMatrix[Long]("testdata", hadoopConfig)
+
+        val future = loadedModel.pull(Array(1L, 5L, 20L), Array(0, 8, 1))
+        val value = whenReady(future) {
+          identity
+        }
+        value should equal(Array(0L, -789300200100L, 987100200300L))
       }
     }
   }

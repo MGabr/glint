@@ -1,8 +1,8 @@
 package glint.models.client.buffered
 
-import akka.util.Timeout
 import breeze.linalg.Vector
 import glint.models.client.BigMatrix
+import org.apache.hadoop.conf.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -133,5 +133,17 @@ class BufferedBigMatrix[@specialized V: ClassTag](underlying: BigMatrix[V], buff
   override def pull(rows: Array[Long],
                     cols: Array[Long])(implicit ec: ExecutionContext): Future[Array[V]] = {
     underlying.pull(rows, cols)
+  }
+
+  /**
+    * Saves the matrix to HDFS using the underlying BigMatrix implementation
+    *
+    * @param hdfsPath The HDFS base path where the matrix should be saved
+    * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+    * @param ec The implicit execution context in which to execute the request
+    * @return A future whether the matrix was successfully saved
+    */
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    underlying.save(hdfsPath, hadoopConfig)
   }
 }

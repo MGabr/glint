@@ -5,6 +5,7 @@ import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat, ResponseRowsFloat}
 import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
+import glint.serialization.SerializableHadoopConfiguration
 import spire.implicits.cforRange
 
 import scala.util.Random
@@ -13,20 +14,24 @@ import scala.util.Random
   * A partial matrix holding floats and supporting specific messages for efficient distributed Word2Vec computation
   *
   * @param partition The partition
-  * @param vectorSize The (full) vector size
   * @param aggregate The type of aggregation to apply
+  * @param hdfsPath The HDFS base path from which the partial matrix' initial data should be loaded from
+  * @param hadoopConfig The serializable Hadoop configuration to use for loading the initial data from HDFS
+  * @param vectorSize The (full) vector size
   * @param vocabCns The array of all word counts
   * @param n The number of negative examples to create per output word
   * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
   *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
   */
 private[glint] class PartialMatrixWord2Vec(partition: Partition,
-                                           vectorSize: Int,
                                            aggregate: Aggregate,
+                                           hdfsPath: Option[String],
+                                           hadoopConfig: Option[SerializableHadoopConfiguration],
+                                           val vectorSize: Int,
                                            val vocabCns: Array[Int],
                                            val n: Int,
                                            val unigramTableSize: Int = 100000000)
-  extends PartialMatrixFloat(partition, vocabCns.length, partition.size, aggregate) {
+  extends PartialMatrixFloat(partition, vocabCns.length, partition.size, aggregate, hdfsPath, hadoopConfig) {
 
   @transient
   private lazy val blas = new F2jBLAS
@@ -39,12 +44,12 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   /**
     * The input weights matrix
     */
-  val u: Array[Float] = Array.fill(rows * cols)((random.nextFloat() - 0.5f) / vectorSize)
+  val u: Array[Float] = loadOrInitialize(() => Array.fill(rows * cols)((random.nextFloat() - 0.5f) / vectorSize))
 
   /**
     * The output weights matrix
     */
-  val v: Array[Float] = new Array(rows * cols)
+  val v: Array[Float] = new Array(rows * cols) // TODO?
 
   override val data: Array[Float] = u
 
@@ -59,6 +64,9 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     case pull: PullMatrixRows => sender ! ResponseRowsFloat(getRows(pull.rows), cols)
     case push: PushMatrixFloat =>
       update(push.rows, push.cols, push.values)
+      updateFinished(push.id)
+    case push: PushSave =>
+      save(push.path, push.hadoopConfig)
       updateFinished(push.id)
     case pull: PullDotProd =>
       val (fPlus, fMinus) = dotprod(pull.wInput, pull.wOutput, pull.seed)
