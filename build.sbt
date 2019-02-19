@@ -13,6 +13,11 @@ fork in Test := true
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.0" % "provided"
 
+libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.6.5" % "provided"
+
+libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.6.5" % "provided"
+
+
 // BLAS support
 
 libraryDependencies += "com.github.fommil.netlib" % "all" % "1.1.2" pomOnly()
