@@ -6,6 +6,8 @@ import glint.messages.server.response.{ResponseDotProd, ResponseFloat, ResponseR
 import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
+import glint.util.hdfs
+import glint.util.hdfs.Word2VecMatrixMetadata
 import spire.implicits.cforRange
 
 import scala.util.Random
@@ -44,19 +46,27 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   /**
     * The input weights matrix
     */
-  val u: Array[Float] = loadOrInitialize(() => Array.fill(rows * cols)((random.nextFloat() - 0.5f) / vectorSize))
+  var u: Array[Float] = _
 
   /**
     * The output weights matrix
     */
-  val v: Array[Float] = new Array(rows * cols) // TODO?
-
-  override val data: Array[Float] = u
+  var v: Array[Float] = _
 
   /**
     * The unigram table for efficient generation of random negative words
     */
-  val table: Array[Int] = unigramTable()
+  var table: Array[Int] = _
+
+  override def preStart(): Unit = {
+    u = loadOrInitialize(
+      () => Array.fill(rows * cols)((random.nextFloat() - 0.5f) / vectorSize),
+      pathPostfix = "/glint/data/u/")
+    v = loadOrInitialize(() => new Array(rows * cols), pathPostfix = "/glint/data/v/")
+    data = u
+
+    table = unigramTable()
+  }
 
 
   override def receive: Receive = {
@@ -77,6 +87,18 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     case pull: PullNormDots => sender ! ResponseFloat(normDots())
     case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector))
     case x => handleLogic(x, sender)
+  }
+
+  override def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration): Unit = {
+
+    // the partial matrix holding the first partition also saves metadata
+    if (partition.index == 0) {
+      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, n, unigramTableSize)
+      hdfs.saveWord2VecMatrixMetadata(hdfsPath, hadoopConfig.conf, meta)
+    }
+
+    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, u, pathPostfix = "/glint/data/u/")
+    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, v, pathPostfix = "/glint/data/v/")
   }
 
   /**

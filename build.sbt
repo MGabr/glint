@@ -121,7 +121,7 @@ import scala.sys.process._
 
 test in IntegrationTest := {
   val startSparkTestEnv = "./spark-test-env.sh"
-  val execSparkTests = 
+  val execSparkTests =
     s"""./spark-test-env.sh exec
         spark-submit
         --driver-java-options=$aeronBufferLength

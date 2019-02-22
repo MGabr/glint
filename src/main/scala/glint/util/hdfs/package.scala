@@ -10,37 +10,63 @@ import org.apache.hadoop.fs.{FileSystem, Path}
   */
 package object hdfs {
 
-  def saveMetadata(path: String, config: Configuration, metadata: MatrixMetadata): Unit = {
+  private def save(path: String, config: Configuration, data: Object): Unit = {
     val fs = FileSystem.get(config)
-    val dataPath = path + "/glint/metadata"
-    val dataStream = new ObjectOutputStream(fs.create(new Path(dataPath)))
-    dataStream.writeObject(metadata)
+    val dataStream = new ObjectOutputStream(fs.create(new Path(path)))
+    dataStream.writeObject(data)
     dataStream.close()
   }
 
-  def loadMetadata(path: String, config: Configuration): MatrixMetadata = {
+  private def load(path: String, config: Configuration): Object = {
     val fs = FileSystem.get(config)
-    val dataPath = path + "/glint/metadata"
-    val dataStream = new ObjectInputStream(fs.open(new Path(dataPath)))
-    val data = dataStream.readObject().asInstanceOf[MatrixMetadata]
+    val dataStream = new ObjectInputStream(fs.open(new Path(path)))
+    val data = dataStream.readObject()
     dataStream.close()
     data
   }
 
-  def savePartitionData[V](path: String, config: Configuration, partitionIndex: Int, partitionData: Array[V]): Unit = {
-    val fs = FileSystem.get(config)
-    val dataPath = path + "/glint/data/" + partitionIndex
-    val dataStream = new ObjectOutputStream(fs.create(new Path(dataPath)))
-    dataStream.writeObject(partitionData)
-    dataStream.close()
+  def saveMatrixMetadata(path: String,
+                         config: Configuration,
+                         metadata: MatrixMetadata,
+                         pathPostfix: String = "/glint/metadata"): Unit = {
+    save(path + pathPostfix, config, metadata)
   }
 
-  def loadPartitionData[V](path: String, config: Configuration, partitionIndex: Int): Array[V] = {
-    val fs = FileSystem.get(config)
-    val dataPath = path + "/glint/data/" + partitionIndex
-    val dataStream = new ObjectInputStream(fs.open(new Path(dataPath)))
-    val data = dataStream.readObject().asInstanceOf[Array[V]]
-    dataStream.close()
-    data
+  def loadMatrixMetadata(path: String,
+                         config: Configuration,
+                         pathPostfix: String = "/glint/metadata"): MatrixMetadata = {
+    load(path + pathPostfix, config).asInstanceOf[MatrixMetadata]
+  }
+
+  def saveWord2VecMatrixMetadata(path: String,
+                                 config: Configuration,
+                                 metadata: Word2VecMatrixMetadata,
+                                 pathPostfix: String = "/glint/metadata"): Unit = {
+    save(path + pathPostfix, config, metadata)
+  }
+
+  def loadWord2VecMatrixMetadata(path: String,
+                                 config: Configuration,
+                                 pathPostfix: String = "/glint/metadata"): Word2VecMatrixMetadata = {
+    load(path + pathPostfix, config).asInstanceOf[Word2VecMatrixMetadata]
+  }
+
+  def savePartitionData[V](path: String,
+                           config: Configuration,
+                           partitionIndex: Int,
+                           partitionData: Array[V],
+                           pathPostfix: String = "/glint/data/"): Unit = {
+    save(path + pathPostfix + partitionIndex, config, partitionData)
+  }
+
+  def loadPartitionData[V](path: String,
+                           config: Configuration,
+                           partitionIndex: Int,
+                           pathPostfix: String = "/glint/data/"): Array[V] = {
+    load(path + pathPostfix + partitionIndex, config).asInstanceOf[Array[V]]
+  }
+
+  def countPartitionData(path: String, config: Configuration, pathPostfix: String = "/glint/data/"): Int = {
+    FileSystem.get(config).getContentSummary(new Path(path + pathPostfix)).getFileCount.toInt
   }
 }

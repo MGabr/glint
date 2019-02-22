@@ -207,7 +207,7 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     */
   override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
     val meta = MatrixMetadata(rows, cols, aggregate, partitioner.partitionBy, (_, _) => partitioner)
-    hdfs.saveMetadata(hdfsPath, hadoopConfig, meta)
+    hdfs.saveMatrixMetadata(hdfsPath, hadoopConfig, meta)
 
     val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
 

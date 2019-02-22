@@ -25,7 +25,11 @@ private[glint] class PartialMatrixInt(partition: Partition,
                                       hadoopConfig: Option[SerializableHadoopConfiguration])
   extends PartialMatrix[Int](partition, rows, cols, aggregate, hdfsPath, hadoopConfig) {
 
-  override val data: Array[Int] = loadOrInitialize(() => Array.fill[Int](rows * cols)(0))
+  override var data: Array[Int] = _
+
+  override def preStart(): Unit = {
+    data = loadOrInitialize(() => Array.fill[Int](rows * cols)(0))
+  }
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseInt(get(pull.rows, pull.cols))

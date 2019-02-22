@@ -1,14 +1,15 @@
 package glint.matrix
 
 import com.github.fommil.netlib.F2jBLAS
-import glint.SystemTest
+import glint.{HdfsTest, SystemTest}
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalactic.{Equality, TolerantNumerics}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 /**
   * BigWord2VecMatrix test specification
   */
-class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with Matchers {
+class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Matchers with Inspectors {
 
   @transient
   private lazy val blas = new F2jBLAS
@@ -367,6 +368,57 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with Matchers {
         blas.sgemv("T", cols, rows, alpha, matrix, cols, vector, 1, beta, resultVector, 1)
 
         values should equal(resultVector)
+      }
+    }
+  }
+
+  it should "save data to file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+
+        val vocabCns = Array(3, 1, 4, 2)
+        val model = client.word2vecMatrix(vocabCns, 3, 0)
+
+        var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
+          identity
+        }
+        assert(result)
+        result = whenReady(model.save("testdata", hadoopConfig)) {
+          identity
+        }
+        assert(result)
+
+        val fs = FileSystem.get(hadoopConfig)
+        val paths = Seq(
+          "testdata",
+          "testdata/glint",
+          "testdata/glint/metadata",
+          "testdata/glint/data/u/0",
+          "testdata/glint/data/u/1",
+          "testdata/glint/data/u/2",
+          "testdata/glint/data/v/0",
+          "testdata/glint/data/v/1",
+          "testdata/glint/data/v/2"
+        )
+        forAll (paths) {path => fs.exists(new Path(path)) shouldBe true }
+      }
+    }
+  }
+
+  it should "load data from file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata"))) {
+          pending
+        }
+
+        val loadedModel = client.loadWord2vecMatrix("testdata", hadoopConfig)
+
+        val values = whenReady(loadedModel.pull(Array(0, 0, 0, 3, 3), Array(0, 1, 2, 0, 1))) {
+          identity
+        }
+
+        values should equal(Array(init(0)(0) + 0.1f, init(0)(1) + 0.3f, init(0)(2) + 0.5f, init(3)(0), init(3)(1)))
       }
     }
   }

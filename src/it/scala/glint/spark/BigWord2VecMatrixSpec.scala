@@ -1,14 +1,16 @@
 package glint.spark
 
 import glint.Client
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalactic.{Equality, TolerantNumerics}
-import org.scalatest.{Matchers, fixture}
+import org.scalatest.{Inspectors, Matchers, fixture}
 
 /**
   * BigWord2Vec matrix integration test specification
   * Similar to BigWord2Vec matrix system test specification
   */
-class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixture with SparkTest with Matchers {
+class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixture with SparkTest
+  with Matchers with Inspectors {
 
   implicit val tolerantFloatEq: Equality[Float] = TolerantNumerics.tolerantFloatEquality(0.0000001f)
 
@@ -132,4 +134,53 @@ class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixtur
     }
   }
 
+  it should "save data to file" in withContext { sc =>
+    val vocabCns = (1 to 1000).toArray
+    val bcVocabCns = sc.broadcast(vocabCns)
+    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 2, 1000000)
+
+    try {
+
+      var result = whenReady(matrix.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
+        identity
+      }
+      assert(result)
+      result = whenReady(matrix.save("testdata", sc.hadoopConfiguration)) {
+        identity
+      }
+      assert(result)
+
+      val fs = FileSystem.get(sc.hadoopConfiguration)
+      val paths = Seq(
+        "testdata",
+        "testdata/glint",
+        "testdata/glint/metadata",
+        "testdata/glint/data/u/0",
+        "testdata/glint/data/u/1",
+        "testdata/glint/data/v/0",
+        "testdata/glint/data/v/1"
+      )
+      forAll (paths) {path => fs.exists(new Path(path)) shouldBe true }
+    } finally {
+      client.terminateOnSpark(sc)
+    }
+  }
+
+  it should "load data from file" in withContext { sc =>
+    if (!FileSystem.get(sc.hadoopConfiguration).exists(new Path("testdata"))) {
+      pending
+    }
+
+    val (client, loadedMatrix) = Client.runWithLoadedWord2VecMatrixOnSpark(sc, "testdata")
+
+    try {
+      val values = whenReady(loadedMatrix.pull(Array(0, 0, 0, 999, 999), Array(0, 1, 2, 0, 1))) {
+        identity
+      }
+
+      values should equal(Array(init(0)(0) + 0.1f, init(0)(1) + 0.3f, init(0)(2) + 0.5f, init(999)(0), init(999)(1)))
+    } finally {
+      client.terminateOnSpark(sc)
+    }
+  }
 }

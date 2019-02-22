@@ -25,7 +25,11 @@ private[glint] class PartialMatrixFloat(partition: Partition,
                                         hadoopConfig: Option[SerializableHadoopConfiguration])
   extends PartialMatrix[Float](partition, rows, cols, aggregate, hdfsPath, hadoopConfig) {
 
-  override val data: Array[Float] = loadOrInitialize(() => Array.fill[Float](rows * cols)(0.0f))
+  override var data: Array[Float] = _
+
+  override def preStart(): Unit = {
+    data = loadOrInitialize(() => Array.fill[Float](rows * cols)(0.0f))
+  }
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseFloat(get(pull.rows, pull.cols))

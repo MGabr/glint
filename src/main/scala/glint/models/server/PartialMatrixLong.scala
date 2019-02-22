@@ -25,7 +25,11 @@ private[glint] class PartialMatrixLong(partition: Partition,
                                        hadoopConfig: Option[SerializableHadoopConfiguration])
   extends PartialMatrix[Long](partition, rows, cols, aggregate, hdfsPath, hadoopConfig) {
 
-  override val data: Array[Long] = loadOrInitialize(() => Array.fill[Long](rows * cols)(0L))
+  override var data: Array[Long] = _
+
+  override def preStart(): Unit = {
+    data = loadOrInitialize (() => Array.fill[Long](rows * cols)(0L))
+  }
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseLong(get(pull.rows, pull.cols))

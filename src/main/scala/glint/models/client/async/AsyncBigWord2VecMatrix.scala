@@ -4,11 +4,13 @@ import akka.actor.ActorRef
 import breeze.numerics.sqrt
 import com.github.fommil.netlib.F2jBLAS
 import com.typesafe.config.Config
-import glint.messages.server.request.{PullDotProd, PullMultiply, PullNormDots, PushAdjust}
+import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat}
 import glint.models.client.BigWord2VecMatrix
 import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partitioner
+import glint.serialization.SerializableHadoopConfiguration
+import org.apache.hadoop.conf.Configuration
 import spire.implicits.cforRange
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,6 +43,19 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   @transient
   private lazy val blas = new F2jBLAS
+
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+
+    // we don't have the metadata here
+    // so the partial matrix which holds the first partition saves it
+    val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
+    val pushes = partitioner.all().map {
+      case partition =>
+        val fsm = PushFSM[PushSave](id => PushSave(id, hdfsPath, serHadoopConfig), matrices(partition.index))
+        fsm.run()
+    }.toIterator
+    Future.sequence(pushes).transform(results => true, err => err)
+  }
 
   override def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long)
                       (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float])] = {

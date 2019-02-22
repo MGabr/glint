@@ -31,7 +31,7 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
   /**
     * The data matrix containing the elements
     */
-  val data: Array[V]
+  var data: Array[V]
 
   /**
     * Gets rows from the data matrix
@@ -101,11 +101,12 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     * Otherwise initializes a new data matrix
     *
     * @param initialize The function to initialize the data matrix
+    * @param pathPostfix The path postfix added when loading the data matrix. Use the same postfix used for saving
     * @return The data matrix
     */
-  def loadOrInitialize(initialize: () => Array[V]): Array[V] = {
+  def loadOrInitialize(initialize: () => Array[V], pathPostfix: String = "/glint/data/"): Array[V] = {
     if (hdfsPath.isDefined && hadoopConfig.isDefined) {
-      hdfs.loadPartitionData(hdfsPath.get, hadoopConfig.get.conf, partition.index)
+      hdfs.loadPartitionData(hdfsPath.get, hadoopConfig.get.conf, partition.index, pathPostfix)
     } else {
       initialize()
     }

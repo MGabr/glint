@@ -25,7 +25,11 @@ private[glint] class PartialMatrixDouble(partition: Partition,
                                          hadoopConfig: Option[SerializableHadoopConfiguration])
   extends PartialMatrix[Double](partition, rows, cols, aggregate, hdfsPath, hadoopConfig) {
 
-  override val data: Array[Double] = loadOrInitialize(() => Array.fill[Double](rows * cols)(0.0))
+  override var data: Array[Double] = _
+
+  override def preStart(): Unit = {
+    data = loadOrInitialize(() => Array.fill[Double](rows * cols)(0.0))
+  }
 
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseDouble(get(pull.rows, pull.cols))
