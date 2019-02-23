@@ -65,6 +65,27 @@ private[partitioning] class CyclicPartition(index: Int,
     ((key - index) / numberOfPartitions).toInt
   }
 
+  /**
+    * Converts given row index in a continuous local array [0, 1, ...] to a global key
+    *
+    * @param index The local row index
+    * @return The global key
+    */
+  @inline
+  override def localRowToGlobal(index: Int): Long = {
+    index * numberOfPartitions + this.index
+  }
+
+  /**
+    * Converts given column index in a continuous local array [0, 1, ...] to a global key
+    *
+    * @param index The local column index
+    * @return The global key
+    */
+  @inline
+  override def localColToGlobal(index: Int): Long = {
+    index * numberOfPartitions + this.index
+  }
 }
 
 object CyclicPartition {

@@ -1,13 +1,13 @@
 package glint.partitioning
 
-import glint.partitioning.by.HasGlobalToLocal
+import glint.partitioning.by.GlobalLocalConversion
 
 /**
   * An abstract partition
   *
   * @param index The index of this partition
   */
-abstract class Partition(val index: Int) extends Serializable with HasGlobalToLocal {
+abstract class Partition(val index: Int) extends Serializable with GlobalLocalConversion {
 
   /**
     * Checks whether given global key falls within this partition

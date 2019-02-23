@@ -30,6 +30,25 @@ class PartitioningSpec extends FlatSpec {
     }
   }
 
+  /**
+    * Function that asserts whether the given keys are same as before after being partitioned and inversed
+    *
+    * @param keys The keys
+    * @param partitioner The partitioner
+    */
+  private def assertPartitionedAndInversedKeysSame(keys: Range, partitioner: Partitioner): Unit = {
+    val partitions = keys.map(partitioner.partition(_))
+
+    val localRowIndices = keys.zip(partitions).map { case (k, p) => p.globalRowToLocal(k) }
+    val localColIndices = keys.zip(partitions).map { case (k, p) => p.globalColToLocal(k) }
+
+    val globalRowIndices = localRowIndices.zip(partitions).map { case (i, p) => p.localRowToGlobal(i) }
+    val globalColIndices = localColIndices.zip(partitions).map { case (i, p) => p.localColToGlobal(i) }
+
+    globalRowIndices should equal(keys)
+    globalColIndices should equal(keys)
+  }
+
   "A CyclicPartitioner" should "partition all its keys to partitions that contain it" in {
     val partitioner = CyclicPartitioner(5, 37)
     for (key <- 0 until 37) {
@@ -77,7 +96,7 @@ class PartitioningSpec extends FlatSpec {
     }
   }
 
-  it should "support row partitioning by default" in {
+  it should "row partition by default" in {
     val partitioner = CyclicPartitioner(5, 37)
 
     // after first cycle local and global row indices should differ
@@ -90,7 +109,7 @@ class PartitioningSpec extends FlatSpec {
     }
   }
 
-  it should "support column partitioning" in {
+  it should "column partition when specified" in {
     val partitioner = CyclicPartitioner(5, 37, PartitionBy.COL)
 
     // after first cycle local and global column indices should differ
@@ -101,6 +120,20 @@ class PartitioningSpec extends FlatSpec {
       val colIndex = partition.globalColToLocal(key)
       assert(colIndex != key)
     }
+  }
+
+  it should "provide inverse row partitioning function" in {
+    val partitioner = CyclicPartitioner(5, 37, PartitionBy.ROW)
+    val keys = 0 until 37
+
+    assertPartitionedAndInversedKeysSame(keys, partitioner)
+  }
+
+  it should "provide inverse column partitioning function" in {
+    val partitioner = CyclicPartitioner(5, 37, PartitionBy.COL)
+    val keys = 0 until 37
+
+    assertPartitionedAndInversedKeysSame(keys, partitioner)
   }
 
   it should "fail when attempting to partition keys outside its key space" in {
@@ -169,7 +202,7 @@ class PartitioningSpec extends FlatSpec {
     }
   }
 
-  it should "support column partitioning" in {
+  it should "column partition when specified" in {
     val partitioner = RangePartitioner(5, 100, PartitionBy.COL)
 
     // after second partition local and global column indices should differ
@@ -180,6 +213,20 @@ class PartitioningSpec extends FlatSpec {
       val colIndex = partition.globalColToLocal(key)
       assert(colIndex != key)
     }
+  }
+
+  it should "provide inverse row partitioning function" in {
+    val partitioner = RangePartitioner(5, 100, PartitionBy.ROW)
+    val keys = 5 until 100
+
+    assertPartitionedAndInversedKeysSame(keys, partitioner)
+  }
+
+  it should "provide inverse column partitioning function" in {
+    val partitioner = RangePartitioner(5, 100, PartitionBy.COL)
+    val keys = 5 until 100
+
+    assertPartitionedAndInversedKeysSame(keys, partitioner)
   }
 
   it should "fail when attempting to partition keys outside its key space" in {

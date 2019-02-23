@@ -42,6 +42,28 @@ private[partitioning] class RangePartition(index: Int, val start: Long, val end:
     */
   @inline
   override def globalColToLocal(key: Long): Int = (key - start).toInt
+
+  /**
+    * Converts given row index in a continuous local array [0, 1, ...] to a global key
+    *
+    * @param index The local row index
+    * @return The global key
+    */
+  @inline
+  override def localRowToGlobal(index: Int): Long = {
+    index + start
+  }
+
+  /**
+    * Converts given column index in a continuous local array [0, 1, ...] to a global key
+    *
+    * @param index The local column index
+    * @return The global key
+    */
+  @inline
+  override def localColToGlobal(index: Int): Long = {
+    index + start
+  }
 }
 
 object RangePartition {

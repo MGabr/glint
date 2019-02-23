@@ -64,10 +64,13 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     */
   override def pull(rows: Array[Long])(implicit ec: ExecutionContext): Future[Array[Vector[V]]] = {
 
-    if (partitioner.partitionBy != PartitionBy.ROW) {
-      return Future.failed(new UnsupportedOperationException("Cannot pull rows if the matrix is not partitioned by rows"))
+    partitioner.partitionBy match {
+      case PartitionBy.ROW => pullRowPartitioned(rows)
+      case PartitionBy.COL => pullColPartitioned(rows)
     }
+  }
 
+  private def pullRowPartitioned(rows: Array[Long])(implicit ec: ExecutionContext): Future[Array[Vector[V]]] = {
     // Send pull request of the list of keys
     val pulls = rows.groupBy(partitioner.partition).map {
       case (partition, partitionKeys) =>
@@ -95,6 +98,34 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
           result(idx(i)) = toVector(response, i * colsInt, (i + 1) * colsInt)
         })
       })
+      result
+    }
+
+    // Combine and aggregate futures
+    Future.sequence(pulls).transform(aggregateSuccess, err => err)
+  }
+
+  private def pullColPartitioned(rows: Array[Long])(implicit ec: ExecutionContext): Future[Array[Vector[V]]] = {
+    // Send pull request to all partitions
+    val pulls = partitioner.all().toIterable.map { partition =>
+      val pullMessage = PullMatrixRows(rows)
+      val fsm = PullFSM[PullMatrixRows, R](pullMessage, matrices(partition.index))
+      fsm.run().map(response => (response, partition))
+    }
+
+    // Define aggregator for successful responses
+    def aggregateSuccess(responses: Iterable[(R, Partition)]): Array[Vector[V]] = {
+      val result: Array[Vector[V]] = Array.fill[Vector[V]](rows.length)(DenseVector.zeros[V](cols.toInt))
+      responses.foreach {
+        case (response, partition) =>
+          val partitionCols = partition.size
+          cforRange(0 until rows.length)(i => {
+            val resultRow = result(i)
+            cforRange(0 until partitionCols)(j => {
+              resultRow(partition.localColToGlobal(j).toInt) = toValue(response, i * partitionCols + j)
+            })
+          })
+      }
       result
     }
 

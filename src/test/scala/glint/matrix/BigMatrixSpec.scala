@@ -3,7 +3,6 @@ package glint.matrix
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
 import breeze.linalg.DenseVector
-import glint.exceptions.ModelCreationException
 import glint.models.client.BigMatrix
 import glint.models.server.aggregate.{AggregateMax, AggregateMin, AggregateReplace}
 import glint.partitioning.by.PartitionBy
@@ -228,7 +227,7 @@ class BigMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Matchers
     }
   }
 
-  it should "support pushing and pulling when partitioned by columns" in withMaster { _ =>
+  it should "partition by column when specified" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
         val model = client.matrix[Double](49, 6, partitionBy = PartitionBy.COL)
@@ -245,15 +244,23 @@ class BigMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Matchers
     }
   }
 
-  it should "not support pulling rows when partitioned by columns" in withMaster { _ =>
+  it should "pull rows also when partitioned by columns" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
         val model = client.matrix[Double](49, 6, partitionBy = PartitionBy.COL)
-
-        val future = model.pull(Array(0L))
-        whenReady(future.failed) { e =>
-          e shouldBe a [UnsupportedOperationException]
+        val result = whenReady(model.push(
+          Array(0L, 0L, 0L, 40L, 40L, 40L),
+          Array(1, 3, 5, 1, 3, 5),
+          Array(0.1, 0.3, 0.5, 0.2, 0.6, 1.0))) {
+          identity
         }
+        val values = whenReady(model.pull(Array(0L, 40L))) {
+          identity
+        }
+        values should equal(Array(
+          DenseVector(0.0, 0.1, 0.0, 0.3, 0.0, 0.5),
+          DenseVector(0.0, 0.2, 0.0, 0.6, 0.0, 1.0)
+        ))
       }
     }
   }
