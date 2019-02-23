@@ -348,10 +348,8 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "compute multiplication of matrix with vector" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
-
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(vocabCns, 3, 0)
-
         val vector = Array(0.1f, 0.2f, 0.3f)
 
         val values = whenReady(model.multiply(vector)) {
@@ -359,7 +357,6 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         }
 
         val matrix = init.flatten
-
         val rows = 4
         val cols = 3
         val resultVector = new Array[Float](rows)
@@ -372,10 +369,24 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
     }
   }
 
+  it should "pull average of rows" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        val vocabCns = Array(3, 1, 4, 2)
+        val model = client.word2vecMatrix(vocabCns, 3, 0)
+
+        val values = whenReady(model.pullAverage(Array(0L, 2L, 3L))) {
+          identity
+        }
+
+        values.toArray should equal((init(0), init(2), init(3)).zipped.map((x, y, z) => (x + y + z) / 3))
+      }
+    }
+  }
+
   it should "save data to file" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
-
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(vocabCns, 3, 0)
 

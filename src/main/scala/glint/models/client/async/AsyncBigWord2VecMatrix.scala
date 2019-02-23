@@ -1,6 +1,7 @@
 package glint.models.client.async
 
 import akka.actor.ActorRef
+import breeze.linalg.{DenseVector, Vector}
 import breeze.numerics.sqrt
 import com.github.fommil.netlib.F2jBLAS
 import com.typesafe.config.Config
@@ -8,7 +9,7 @@ import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat}
 import glint.models.client.BigWord2VecMatrix
 import glint.models.server.aggregate.Aggregate
-import glint.partitioning.Partitioner
+import glint.partitioning.{Partition, Partitioner}
 import glint.serialization.SerializableHadoopConfiguration
 import org.apache.hadoop.conf.Configuration
 import spire.implicits.cforRange
@@ -157,6 +158,32 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
         blas.saxpy(lengthResult, 1.0f, responsesArray(i).values, 1, result, 1)
       })
 
+      result
+    }
+
+    // Combine and aggregate futures
+    Future.sequence(pulls).transform(aggregateSuccess, err => err)
+  }
+
+  override def pullAverage(rows: Array[Long])(implicit ec: ExecutionContext): Future[Vector[Float]] = {
+
+    // Send dotprod pull requests to all partitions
+    val pulls = partitioner.all().toIterable.map { partition =>
+      val pullMessage = PullAverageRow(rows)
+      val fsm = PullFSM[PullAverageRow, ResponseFloat](pullMessage, matrices(partition.index))
+      fsm.run().map(response => (response, partition))
+    }
+
+    // Define aggregator for successful responses
+    def aggregateSuccess(responses: Iterable[(ResponseFloat, Partition)]): Vector[Float] = {
+      val result: Vector[Float] = DenseVector.zeros[Float](cols.toInt)
+      responses.foreach {
+        case (response, partition) =>
+          val partitionCols = partition.size
+          cforRange(0 until partitionCols)(j => {
+            result(partition.localColToGlobal(j).toInt) = toValue(response, j)
+          })
+      }
       result
     }
 

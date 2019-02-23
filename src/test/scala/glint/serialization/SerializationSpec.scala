@@ -53,7 +53,16 @@ class SerializationSpec extends FlatSpec with Matchers {
     uniqueID.id should equal(1)
   }
 
-  "A RequestSerializer" should "serialize and deserialize a PullDotProd" in {
+  "A RequestSerializer" should "serialize and deserialize a PullAverageRows" in {
+    val requestSerializer = new RequestSerializer()
+    val bytes = requestSerializer.toBinary(PullAverageRow(Array(0L, 1L, 2L)))
+    val reconstruction = requestSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[PullAverageRow])
+    val pullAverageRow = reconstruction.asInstanceOf[PullAverageRow]
+    pullAverageRow.rows should equal(Array(0L, 1L, 2L))
+  }
+
+  it should "serialize and deserialize a PullDotProd" in {
     val requestSerializer = new RequestSerializer()
     val bytes = requestSerializer.toBinary(PullDotProd(Array(0, 1, 2), Array(Array(0, 1), Array(0, 1, 2), Array(1, 2)), 1L))
     val reconstruction = requestSerializer.fromBinary(bytes)

@@ -1,5 +1,7 @@
 package glint.models.client
 
+import breeze.linalg.Vector
+
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -68,4 +70,12 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
     */
   def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]]
 
+  /**
+    * Pulls the average of a set of rows
+    *
+    * @param rows The indices of the rows
+    * @param ec The implicit execution context in which to execute the request
+    * @return A future containing the average vector
+    */
+  def pullAverage(rows: Array[Long])(implicit ec: ExecutionContext): Future[Vector[Float]]
 }

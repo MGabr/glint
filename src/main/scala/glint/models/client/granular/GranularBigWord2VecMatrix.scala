@@ -1,5 +1,6 @@
 package glint.models.client.granular
 
+import breeze.linalg
 import glint.models.client.BigWord2VecMatrix
 import org.apache.hadoop.conf.Configuration
 
@@ -40,5 +41,9 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
 
   override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
     underlying.save(hdfsPath, hadoopConfig)
+  }
+
+  override def pullAverage(rows: Array[Long])(implicit ec: ExecutionContext): Future[linalg.Vector[Float]] = {
+    underlying.pullAverage(rows)
   }
 }
