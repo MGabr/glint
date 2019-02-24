@@ -11,6 +11,15 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
     buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfLong)
   }
 
+  def putLongArrayArray(values: Array[Array[Long]]): Unit = {
+    val typedBuffer = buf.asLongBuffer()
+    cforRange(0 until values.length) { i =>
+      typedBuffer.put(values(i).length)
+      typedBuffer.put(values(i))
+    }
+    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfLong)
+  }
+
   def putIntArray(values: Array[Int]): Unit = {
     val typedBuffer = buf.asIntBuffer()
     typedBuffer.put(values)
@@ -78,6 +87,17 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
       typedBuffer.get(output(i))
     }
     buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfInt)
+    output
+  }
+
+  def getLongArrayArray(sizeArray: Int): Array[Array[Long]] = {
+    val output = new Array[Array[Long]](sizeArray)
+    val typedBuffer = buf.asLongBuffer()
+    cforRange(0 until sizeArray) { i =>
+      output(i) = new Array[Long](typedBuffer.get().toInt)
+      typedBuffer.get(output(i))
+    }
+    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfLong)
     output
   }
 }

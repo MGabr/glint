@@ -71,11 +71,11 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
   def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]]
 
   /**
-    * Pulls the average of a set of rows
+    * Pulls the average of each set of rows
     *
-    * @param rows The indices of the rows
+    * @param rows The array of row indices to average
     * @param ec The implicit execution context in which to execute the request
-    * @return A future containing the average vector
+    * @return A future containing the average vectors
     */
-  def pullAverage(rows: Array[Long])(implicit ec: ExecutionContext): Future[Vector[Float]]
+  def pullAverage(rows: Array[Array[Long]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]]
 }

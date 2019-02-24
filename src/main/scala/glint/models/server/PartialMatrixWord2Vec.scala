@@ -86,7 +86,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
       updateFinished(push.id)
     case pull: PullNormDots => sender ! ResponseFloat(normDots())
     case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector))
-    case pull: PullAverageRow => sender ! ResponseFloat(pullAverage(pull.rows))
+    case pull: PullAverageRows => sender ! ResponseFloat(pullAverage(pull.rows))
     case x => handleLogic(x, sender)
   }
 
@@ -297,17 +297,22 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   }
 
   /**
-    * Pulls the partial average of a set of rows
+    * Pulls the partial average of each set of rows
     *
     * @param rows The indices of the rows
-    * @return The average values
+    * @return The average rows
     */
-  def pullAverage(rows: Array[Long]): Array[Float] = {
-    val result = new Array[Float](cols)
+  def pullAverage(rows: Array[Array[Long]]): Array[Float] = {
+    val result = new Array[Float](rows.length * cols)
     cforRange(0 until rows.length)(i => {
-      blas.saxpy(cols, 1.0f, u, rows(i).toInt * cols, 1, result, 0, 1)
+      val row = rows(i)
+      cforRange(0 until row.length)(j => {
+        blas.saxpy(cols, 1.0f, u, row(j).toInt * cols, 1, result, i * cols, 1)
+      })
+      if (row.length != 0) {
+        blas.sscal(cols, 1.0f / row.length, result, i * cols, 1)
+      }
     })
-    blas.sscal(cols, 1.0f / rows.length, result, 1)
     result
   }
 }

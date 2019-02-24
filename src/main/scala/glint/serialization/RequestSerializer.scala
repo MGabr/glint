@@ -16,10 +16,10 @@ class RequestSerializer extends GlintSerializer {
 
   override def toBinary(o: AnyRef, buf: ByteBuffer): Unit = {
     o match {
-      case x: PullAverageRow =>
-        buf.put(SerializationConstants.pullAverageRow)
+      case x: PullAverageRows =>
+        buf.put(SerializationConstants.pullAverageRows)
         buf.putInt(x.rows.length)
-        buf.putLongArray(x.rows)
+        buf.putLongArrayArray(x.rows)
 
       case x: PullDotProd =>
         buf.put(SerializationConstants.pullDotProdByte)
@@ -132,9 +132,9 @@ class RequestSerializer extends GlintSerializer {
     val objectSize = buf.getInt()
 
     objectType match {
-      case SerializationConstants.pullAverageRow =>
-        val keys = buf.getLongArray(objectSize)
-        PullAverageRow(keys)
+      case SerializationConstants.`pullAverageRows` =>
+        val keys = buf.getLongArrayArray(objectSize)
+        PullAverageRows(keys)
 
       case SerializationConstants.pullDotProdByte =>
         val wInput = buf.getIntArray(objectSize)

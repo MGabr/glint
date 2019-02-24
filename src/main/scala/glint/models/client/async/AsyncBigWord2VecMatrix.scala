@@ -165,23 +165,25 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
     Future.sequence(pulls).transform(aggregateSuccess, err => err)
   }
 
-  override def pullAverage(rows: Array[Long])(implicit ec: ExecutionContext): Future[Vector[Float]] = {
+  override def pullAverage(rows: Array[Array[Long]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]] = {
 
     // Send dotprod pull requests to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
-      val pullMessage = PullAverageRow(rows)
-      val fsm = PullFSM[PullAverageRow, ResponseFloat](pullMessage, matrices(partition.index))
+      val pullMessage = PullAverageRows(rows)
+      val fsm = PullFSM[PullAverageRows, ResponseFloat](pullMessage, matrices(partition.index))
       fsm.run().map(response => (response, partition))
     }
 
     // Define aggregator for successful responses
-    def aggregateSuccess(responses: Iterable[(ResponseFloat, Partition)]): Vector[Float] = {
-      val result: Vector[Float] = DenseVector.zeros[Float](cols.toInt)
+    def aggregateSuccess(responses: Iterable[(ResponseFloat, Partition)]): Array[Vector[Float]] = {
+      val result = Array.fill(rows.length)(DenseVector.zeros[Float](cols.toInt).asInstanceOf[Vector[Float]])
       responses.foreach {
         case (response, partition) =>
           val partitionCols = partition.size
-          cforRange(0 until partitionCols)(j => {
-            result(partition.localColToGlobal(j).toInt) = toValue(response, j)
+          cforRange(0 until result.length)(i => {
+            cforRange(0 until partitionCols)(j => {
+              result(i)(partition.localColToGlobal(j).toInt) = toValue(response, i * partitionCols + j)
+            })
           })
       }
       result

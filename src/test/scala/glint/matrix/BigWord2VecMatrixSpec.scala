@@ -1,5 +1,6 @@
 package glint.matrix
 
+import breeze.linalg.Vector
 import com.github.fommil.netlib.F2jBLAS
 import glint.{HdfsTest, SystemTest}
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -21,6 +22,21 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       case br: Array[Float] =>
         a.length == br.length && a.zip(br).forall { case (ax, bx) => tolerantFloatEq.areEqual(ax, bx) }
       case brr: Array[_] => a.deep == brr.deep
+      case _ => a == b
+    }
+  }
+
+  implicit val tolerantFloatVectorEq: Equality[Vector[Float]] = new Equality[Vector[Float]] {
+    override def areEqual(a: Vector[Float], b: Any): Boolean = b match {
+      case br: Vector[Float] => tolerantFloatArrayEq.areEqual(a.toArray, br.toArray)
+      case _ => a == b
+    }
+  }
+
+  implicit val tolerantFloatVectorArrayEq: Equality[Array[Vector[Float]]] = new Equality[Array[Vector[Float]]]{
+    override def areEqual(a: Array[Vector[Float]], b: Any): Boolean = b match {
+      case br: Array[Vector[Float]] =>
+        a.length == br.length && a.zip(br).forall { case (ax, bx) => tolerantFloatVectorEq.areEqual(ax, bx) }
       case _ => a == b
     }
   }
@@ -375,11 +391,16 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(vocabCns, 3, 0)
 
-        val values = whenReady(model.pullAverage(Array(0L, 2L, 3L))) {
+        val values = whenReady(model.pullAverage(Array(Array(0L, 2L, 3L), Array(), Array(0L, 2L), Array(0L)))) {
           identity
         }
 
-        values.toArray should equal((init(0), init(2), init(3)).zipped.map((x, y, z) => (x + y + z) / 3))
+        values should equal(Array(
+          Vector((init(0), init(2), init(3)).zipped.map((x, y, z) => (x + y + z) / 3)),
+          Vector(0f, 0f, 0f),
+          Vector((init(0), init(2)).zipped.map((x, y) => (x + y) / 2)),
+          Vector(init(0))
+        ))
       }
     }
   }
