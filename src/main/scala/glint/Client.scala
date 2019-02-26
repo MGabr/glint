@@ -247,7 +247,7 @@ class Client(val config: Config,
     *
     * This method for constructing the matrix has to send the vocabulary counts as serialized Akka props to remote
     * actors and is mainly intended for testing outside of spark. To efficiently construct a Word2Vec matrix use
-    * [[glint.Client.runWithWord2VecMatrixOnSpark()]]
+    * [[glint.Client.runWithWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext)* runWithWord2VecMatrixOnSpark]]
     *
     * @param vectorSize The (full) vector size
     * @param n The number of negative examples to create per output word
@@ -268,7 +268,7 @@ class Client(val config: Config,
     *
     * This method for loading the matrix has to send the vocabulary counts as serialized Akka props to remote
     * actors and is mainly intended for testing outside of spark. To efficiently construct a Word2Vec matrix use
-    * [[glint.Client.runWithWord2VecMatrixOnSpark()]]
+    * [[glint.Client.runWithLoadedWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext,hdfsPath* runWithLoadedWord2VecMatrixOnSpark]]
     *
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
@@ -771,7 +771,7 @@ object Client {
     */
   def terminateOnSpark(sc: SparkContext, shutdownTimeout: Duration): Unit = {
     val nrOfExecutors = getNumExecutors(sc)
-    val executorCores = sc.getConf.get("spark.executor.cores", "1").toInt
+    val executorCores = getExecutorCores(sc)
     val nrOfPartitions = nrOfExecutors * executorCores
     sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition { case _ =>
       @transient
