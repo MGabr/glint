@@ -45,6 +45,8 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
   @transient
   private lazy val blas = new F2jBLAS
 
+  private[glint] val numPartitions: Int = partitioner.all().length
+
   override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
 
     // we don't have the metadata here
@@ -108,11 +110,11 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   }
 
-  override def norms()(implicit ec: ExecutionContext): Future[Array[Float]] = {
+  override def norms(startRow: Long = 0, endRow: Long = rows)(implicit ec: ExecutionContext): Future[Array[Float]] = {
 
     // Send norm dots pull requests to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
-      val pullMessage = PullNormDots()
+      val pullMessage = PullNormDots(startRow, endRow)
       val fsm = PullFSM[PullNormDots, ResponseFloat](pullMessage, matrices(partition.index))
       fsm.run()
     }
@@ -120,7 +122,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
     // Define aggregator for computing euclidean norms
     // by summing up partial dot products of successful responses and taking the square root
     def aggregateSuccess(responses: Iterable[ResponseFloat]): Array[Float] = {
-      val lengthNorms = rows.toInt
+      val lengthNorms = (endRow - startRow).toInt
       val norms = new Array[Float](lengthNorms)
 
       val responsesArray = responses.toArray

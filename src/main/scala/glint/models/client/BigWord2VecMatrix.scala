@@ -23,6 +23,11 @@ import scala.concurrent.{ExecutionContext, Future}
 trait BigWord2VecMatrix extends BigMatrix[Float] {
 
   /**
+    * The number of partitions
+    */
+  private[glint] val numPartitions: Int
+
+  /**
     * Computes the dot products to be used as gradient updates
     * for the input and output word as well as the input and random negative words combinations
     *
@@ -54,12 +59,14 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
              seed: Long)(implicit ec: ExecutionContext): Future[Boolean]
 
   /**
-    * Pulls the euclidean norm of each input weight vector
+    * Pulls the euclidean norm of each input weight row
     *
+    * @param startRow The start index of the range of rows whose euclidean norms to get
+    * @param endRow The exclusive end index of the range of rows whose euclidean norms to get
     * @param ec The implicit execution context in which to execute the request
     * @return The euclidean norms
     */
-  def norms()(implicit ec: ExecutionContext): Future[Array[Float]]
+  def norms(startRow: Long = 0, endRow: Long = rows)(implicit ec: ExecutionContext): Future[Array[Float]]
 
   /**
     * Pulls the result of the matrix multiplication of the input weight matrix with the received vector

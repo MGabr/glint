@@ -84,7 +84,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     case push: PushAdjust =>
       adjust(push.wInput, push.wOutput, push.gPlus, push.gMinus, push.seed)
       updateFinished(push.id)
-    case pull: PullNormDots => sender ! ResponseFloat(normDots())
+    case pull: PullNormDots => sender ! ResponseFloat(normDots(pull.startRow, pull.endRow))
     case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector))
     case pull: PullAverageRows => sender ! ResponseFloat(pullAverage(pull.rows))
     case x => handleLogic(x, sender)
@@ -272,12 +272,14 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * Pulls the partial dot products of each partial input weight vector with itself.
     * This can be used to then compute the euclidean norm on the client
     *
+    * @param startRow The start index of the range of rows whose partial dot products to get
+    * @param endRow The exclusive end index of the range of rows whose partial dot products to get
     * @return The partial dot products
     */
-  def normDots(): Array[Float] = {
-    val results = new Array[Float](rows)
-    cforRange(0 until rows)(i => {
-      results(i) = blas.sdot(cols, u, i * cols, 1, u, i * cols, 1)
+  def normDots(startRow: Long, endRow: Long): Array[Float] = {
+    val results = new Array[Float](endRow.toInt - startRow.toInt)
+    cforRange(startRow.toInt until endRow.toInt)(i => {
+      results(i - startRow.toInt) = blas.sdot(cols, u, i * cols, 1, u, i * cols, 1)
     })
     results
   }
