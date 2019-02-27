@@ -6,8 +6,8 @@ import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.{Inspectors, Matchers, fixture}
 
 /**
-  * BigWord2Vec matrix integration test specification
-  * Similar to BigWord2Vec matrix system test specification
+  * BigWord2VecMatrix integration test specification
+  * Similar to BigWord2VecMatrix system test specification
   */
 class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixture with SparkTest
   with Matchers with Inspectors {

@@ -85,7 +85,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
       adjust(push.wInput, push.wOutput, push.gPlus, push.gMinus, push.seed)
       updateFinished(push.id)
     case pull: PullNormDots => sender ! ResponseFloat(normDots(pull.startRow, pull.endRow))
-    case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector))
+    case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector, pull.startRow, pull.endRow))
     case pull: PullAverageRows => sender ! ResponseFloat(pullAverage(pull.rows))
     case x => handleLogic(x, sender)
   }
@@ -288,13 +288,16 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * Pulls the result of the matrix multiplication of the partial input weight matrix with the received partial vector
     *
     * @param vector The partial vector with which to multiply the partial matrix
+    * @param startRow The start row index of the matrix, to support multiplication with only part of the partial matrix
+    * @param endRow The exclusive end row index of the matrix
     * @return The matrix multiplication result
     */
-  def multiply(vector: Array[Float]): Array[Float] = {
+  def multiply(vector: Array[Float], startRow: Long, endRow: Long): Array[Float] = {
+    val rows = (endRow - startRow).toInt
     val resultVector = new Array[Float](rows)
     val alpha: Float = 1
     val beta: Float = 0
-    blas.sgemv("T", cols, rows, alpha, u, cols, vector, 1, beta, resultVector, 1)
+    blas.sgemv("T", cols, rows, alpha, u, startRow.toInt * cols, cols, vector, 0, 1, beta, resultVector, 0, 1)
     resultVector
   }
 

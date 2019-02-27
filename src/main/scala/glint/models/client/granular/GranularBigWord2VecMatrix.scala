@@ -75,15 +75,35 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     * @return The euclidean norms
     */
   override def norms(startRow: Long = 0, endRow: Long = rows)(implicit ec: ExecutionContext): Future[Array[Float]] = {
+    pullStartToEndRow(underlying.norms, startRow, endRow)
+  }
+
+  /**
+    * Pulls the result of the matrix multiplication of the input weight matrix with the received vector
+    * while keeping individual network messages smaller than `maximumMessageSize`
+    *
+    * @param vector The vector with which to multiply the matrix
+    * @param startRow The start row index of the matrix, to support multiplication with only a part of the matrix
+    * @param endRow The exclusive end row index of the matrix
+    * @param ec The implicit execution context in which to execute the request
+    * @return A future containing the matrix multiplication result
+    */
+  override def multiply(vector: Array[Float], startRow: Long = 0, endRow: Long = rows)
+                       (implicit ec: ExecutionContext): Future[Array[Float]] = {
+    pullStartToEndRow((start, end) => underlying.multiply(vector, start, end), startRow, endRow)
+  }
+
+  private def pullStartToEndRow(pull: (Long, Long) => Future[Array[Float]], startRow: Long, endRow: Long)
+                               (implicit ec: ExecutionContext): Future[Array[Float]] = {
     val rows = (endRow - startRow).toInt
     if (rows  <= maximumMessageSize) {
-      underlying.norms(startRow, endRow)
+      pull(startRow, endRow)
     } else {
       var i = startRow
       var current = 0
       val a = new Array[Future[Array[Float]]](Math.ceil(rows.toDouble / maximumMessageSize.toDouble).toInt)
       while (i < endRow) {
-        val future = underlying.norms(i, Math.min(endRow, i + maximumMessageSize))
+        val future = pull(i, Math.min(endRow, i + maximumMessageSize))
         a(current) = future
         current += 1
         i += maximumMessageSize
@@ -95,17 +115,6 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
           finalValues.toArray
       }
     }
-  }
-
-  /**
-    * Pulls the result of the matrix multiplication of the input weight matrix with the received vector
-    *
-    * @param vector The vector with which to multiply the matrix
-    * @param ec The implicit execution context in which to execute the request
-    * @return A future containing the matrix multiplication result
-    */
-  override def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]] = {
-    underlying.multiply(vector)
   }
 
   /**
@@ -121,7 +130,7 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     val partialCols = Math.ceil(underlying.cols.toDouble / underlying.numPartitions.toDouble).toInt
     val maxLengths = rows.map(_.length).map(l => if (l > partialCols) l else partialCols)
 
-    if (maxLengths.sum < maximumMessageSize) {
+    if (maxLengths.sum <= maximumMessageSize) {
       underlying.pullAverage(rows)
     } else {
       var current = 0

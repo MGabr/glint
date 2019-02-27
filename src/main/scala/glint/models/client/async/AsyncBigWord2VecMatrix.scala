@@ -138,21 +138,22 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   }
 
-  override def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]] = {
+  override def multiply(vector: Array[Float], startRow: Long = 0, endRow: Long = rows)
+                       (implicit ec: ExecutionContext): Future[Array[Float]] = {
 
     val keys = 0L until cols.toInt
 
     // Send pull request of the list of keys
     val pulls = mapPartitions(keys) {
       case (partition, indices) =>
-        val pullMessage = PullMultiply(indices.map(vector).toArray)
+        val pullMessage = PullMultiply(indices.map(vector).toArray, startRow, endRow)
         val fsm = PullFSM[PullMultiply, ResponseFloat](pullMessage, matrices(partition.index))
         fsm.run()
     }
 
     // Define aggregator for computing multiplication by summing up partial multiplication results
     def aggregateSuccess(responses: Iterable[ResponseFloat]): Array[Float] = {
-      val lengthResult = rows.toInt
+      val lengthResult = (endRow - startRow).toInt
       val result = new Array[Float](lengthResult)
 
       val responsesArray = responses.toArray

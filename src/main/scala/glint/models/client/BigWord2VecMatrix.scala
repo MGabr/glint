@@ -72,10 +72,13 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
     * Pulls the result of the matrix multiplication of the input weight matrix with the received vector
     *
     * @param vector The vector with which to multiply the matrix
+    * @param startRow The start row index of the matrix, to support multiplication with only a part of the matrix
+    * @param endRow The exclusive end row index of the matrix
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the matrix multiplication result
     */
-  def multiply(vector: Array[Float])(implicit ec: ExecutionContext): Future[Array[Float]]
+  def multiply(vector: Array[Float], startRow: Long = 0, endRow: Long = rows)
+              (implicit ec: ExecutionContext): Future[Array[Float]]
 
   /**
     * Pulls the average of each set of rows

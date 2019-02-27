@@ -94,11 +94,13 @@ class SerializationSpec extends FlatSpec with Matchers {
 
   it should "serialize and deserialize a PullMultiply" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PullMultiply(Array(0.2f, 0.1f, 0.3f, 0.0f)))
+    val bytes = requestSerializer.toBinary(PullMultiply(Array(0.2f, 0.1f, 0.3f, 0.0f), 0, 100))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PullMultiply])
     val pullMultiply = reconstruction.asInstanceOf[PullMultiply]
     pullMultiply.vector should equal(Array(0.2f, 0.1f, 0.3f, 0.0f))
+    pullMultiply.startRow shouldBe 0
+    pullMultiply.endRow shouldBe 100
   }
 
   it should "serialize and deserialize a PullNormDots" in {

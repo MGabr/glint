@@ -43,6 +43,8 @@ class RequestSerializer extends GlintSerializer {
         buf.put(SerializationConstants.pullMultiply)
         buf.putInt(x.vector.length)
         buf.putFloatArray(x.vector)
+        buf.putLong(x.startRow)
+        buf.putLong(x.endRow)
 
       case x: PullNormDots =>
         buf.put(SerializationConstants.pullNormDots)
@@ -155,7 +157,9 @@ class RequestSerializer extends GlintSerializer {
 
       case SerializationConstants.pullMultiply =>
         val vector = buf.getFloatArray(objectSize)
-        PullMultiply(vector)
+        val startRow = buf.getLong()
+        val endRow = buf.getLong()
+        PullMultiply(vector, startRow, endRow)
 
       case SerializationConstants.pullNormDots =>
         val startRow = buf.getLong()

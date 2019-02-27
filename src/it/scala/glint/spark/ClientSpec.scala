@@ -4,6 +4,9 @@ import glint.Client
 import glint.exceptions.ServerCreationException
 import org.scalatest.{Matchers, fixture}
 
+/**
+  * Client integration test specification
+  */
 class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with SparkTest with Matchers {
 
   "A client" should "run on Spark" in withContext { sc =>
