@@ -8,6 +8,7 @@ import akka.serialization.JavaSerializer
 import breeze.linalg.DenseVector
 import breeze.math.Semiring
 import com.typesafe.config.Config
+import glint.StartedActorSystems
 import glint.messages.server.request.PullVector
 import glint.models.client.BigVector
 import glint.partitioning.{Partition, Partitioner}
@@ -170,7 +171,7 @@ abstract class AsyncBigVector[@specialized V: Semiring : ClassTag, R: ClassTag, 
   @throws(classOf[IOException])
   private def readObject(in: ObjectInputStream): Unit = {
     val config = in.readObject().asInstanceOf[Config]
-    val as = DeserializationHelper.getActorSystem(config.getConfig("glint.client"))
+    val as = StartedActorSystems.getActorSystem(config.getConfig("glint.client"))
     JavaSerializer.currentSystem.withValue(as.asInstanceOf[ExtendedActorSystem]) {
       in.defaultReadObject()
     }

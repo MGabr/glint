@@ -39,8 +39,8 @@ import scala.reflect.runtime.universe.TypeTag
   * @param master An actor reference to the master
   */
 class Client(val config: Config,
-                       private[glint] val system: ActorSystem,
-                       private[glint] val master: ActorRef) {
+             private[glint] val system: ActorSystem,
+             private[glint] val master: ActorRef) {
 
   private implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
   private implicit val ec = ExecutionContext.Implicits.global

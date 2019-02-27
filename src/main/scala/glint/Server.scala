@@ -32,7 +32,6 @@ private[glint] class Server extends Actor with ActorLogging {
 private[glint] object Server extends StrictLogging {
 
   private val lock = new Semaphore(1)
-  private var started = false
 
   /**
     * Starts a parameter server ready to receive commands
@@ -95,13 +94,12 @@ private[glint] object Server extends StrictLogging {
     lock.acquire()
     implicit val ec = ExecutionContext.Implicits.global
     implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
-    val future = if (!started) {
-      started = true
+    val future = if (!StartedActorSystems.hasStartedServer) {
       val system = startActorSystem(config)
-      StartedActorSystems.add(system)
+      StartedActorSystems.add(system, isServer = true)
 
       val partitionMaster = getPartitionMaster(config, system)
-      (partitionMaster ? AcquirePartition()).flatMap {
+      val partitionFuture = (partitionMaster ? AcquirePartition()).flatMap {
         case Some(partition: Partition) =>
           // we acquired a partition, so we can start a parameter server actor on this JVM
           val future = run(config, system)
@@ -112,10 +110,11 @@ private[glint] object Server extends StrictLogging {
           system.terminate()
           Future.successful(None)
       }
+      partitionFuture.onFailure { case _ => StartedActorSystems.remove(system, isServer = true) }
+      partitionFuture
     } else {
       Future.successful(None)
     }
-    future.onFailure { case _ => started = false }
     lock.release()
     future
   }
