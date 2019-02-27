@@ -3,14 +3,13 @@ package glint.spark
 import glint.Client
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalactic.{Equality, TolerantNumerics}
-import org.scalatest.{Inspectors, Matchers, fixture}
+import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 /**
   * BigWord2VecMatrix integration test specification
   * Similar to BigWord2VecMatrix system test specification
   */
-class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixture with SparkTest
-  with Matchers with Inspectors {
+class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with Inspectors {
 
   implicit val tolerantFloatEq: Equality[Float] = TolerantNumerics.tolerantFloatEquality(0.0000001f)
 
@@ -23,6 +22,7 @@ class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixtur
     }
   }
 
+
   val init = Array.ofDim[Float](1000, 0)
   init(0) = Array(0.0023096777f, 0.0033144099f, -0.002594636f)
   init(709) = Array(0.0010975379f, 0.004738921f, -0.0046323584f)
@@ -30,7 +30,7 @@ class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixtur
   init(999) = Array(0.003140425f, -0.003970925f, -0.0024834543f)
 
 
-  "A BigWord2VecMatrix" should "initialize values randomly" in withContext { sc =>
+  "A BigWord2VecMatrix" should "initialize values randomly" in {
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 10, 1000000)
@@ -48,7 +48,7 @@ class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixtur
     }
   }
 
-  it should "adjust input weights" in withContext { sc =>
+  it should "adjust input weights" in {
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 2, 1000000)
@@ -96,7 +96,7 @@ class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixtur
     }
   }
 
-  it should "compute dot products" in withContext { sc =>
+  it should "compute dot products" in {
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 2, 1000000)
@@ -134,7 +134,7 @@ class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixtur
     }
   }
 
-  it should "save data to file" in withContext { sc =>
+  it should "save data to file" in {
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 2, 1000000)
@@ -166,7 +166,7 @@ class BigWord2VecMatrixSpec extends fixture.FlatSpec with fixture.TestDataFixtur
     }
   }
 
-  it should "load data from file" in withContext { sc =>
+  it should "load data from file" in {
     if (!FileSystem.get(sc.hadoopConfiguration).exists(new Path("testdata"))) {
       pending
     }

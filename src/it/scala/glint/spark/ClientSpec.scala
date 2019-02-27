@@ -2,19 +2,19 @@ package glint.spark
 
 import glint.Client
 import glint.exceptions.ServerCreationException
-import org.scalatest.{Matchers, fixture}
+import org.scalatest.{FlatSpec, Matchers}
 
 /**
   * Client integration test specification
   */
-class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with SparkTest with Matchers {
+class ClientSpec extends FlatSpec with SparkTest with Matchers {
 
-  "A client" should "run on Spark" in withContext { sc =>
+  "A client" should "run on Spark" in {
     val client = Client.runOnSpark(sc)()
     client.terminateOnSpark(sc)
   }
 
-  it should "run on Spark with a parameter server per executor as default" in withContext { sc =>
+  it should "run on Spark with a parameter server per executor as default" in {
     val client = Client.runOnSpark(sc)()
     try {
       val servers = whenReady(client.serverList())(identity)
@@ -24,7 +24,7 @@ class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with Spar
     }
   }
 
-  it should "run on Spark with a set number of parameter servers" in withContext { sc =>
+  it should "run on Spark with a set number of parameter servers" in {
     val client = Client.runOnSpark(sc)(numParameterServers = 1)
     try {
       val servers = whenReady(client.serverList())(identity)
@@ -34,12 +34,12 @@ class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with Spar
     }
   }
 
-  it should "not run on Spark with more parameter servers than executors" in withContext { sc =>
+  it should "not run on Spark with more parameter servers than executors" in {
     an[ServerCreationException] should be thrownBy Client.runOnSpark(sc)(numParameterServers = 3)
   }
 
 
-  it should "run with a Word2Vec matrix on Spark" in withContext { sc =>
+  it should "run with a Word2Vec matrix on Spark" in {
     val vocabCns = (1 to 100).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 300, 10)
@@ -48,7 +48,7 @@ class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with Spar
     client.terminateOnSpark(sc)
   }
 
-  it should "run with a Word2Vec matrix on Spark with a parameter server per executor as default" in withContext { sc =>
+  it should "run with a Word2Vec matrix on Spark with a parameter server per executor as default" in {
     val vocabCns = Array(10, 11, 12, 13, 14, 15)
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 10, 10, 1000)
@@ -62,7 +62,7 @@ class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with Spar
     }
   }
 
-  it should "run with a Word2Vec matrix on Spark with a set number of parameter servers" in withContext { sc =>
+  it should "run with a Word2Vec matrix on Spark with a set number of parameter servers" in {
     val vocabCns = Array(10, 11, 12, 13, 14, 15)
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 10, 10, 1000, numParameterServers = 1)
@@ -76,7 +76,7 @@ class ClientSpec extends fixture.FlatSpec with fixture.TestDataFixture with Spar
     }
   }
 
-  it should "not run with a Word2Vec matrix on Spark with more parameter servers than executors" in withContext { sc =>
+  it should "not run with a Word2Vec matrix on Spark with more parameter servers than executors" in {
     val vocabCns = Array(10, 11, 12, 13, 14, 15)
     val bcVocabCns = sc.broadcast(vocabCns)
     an [ServerCreationException] should be thrownBy
