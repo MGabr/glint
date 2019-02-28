@@ -32,6 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param rows The number of rows
   * @param cols The number of columns
   * @param n The number of random negative words for Word2Vec
+  * @param trainable Whether the matrix is trainable
   */
 class AsyncBigWord2VecMatrix(partitioner: Partitioner,
                              matrices: Array[ActorRef],
@@ -39,7 +40,8 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
                              aggregate: Aggregate,
                              rows: Long,
                              cols: Long,
-                             val n: Int)
+                             val n: Int,
+                             val trainable: Boolean)
   extends AsyncBigMatrixFloat(partitioner, matrices, config, aggregate, rows, cols) with BigWord2VecMatrix {
 
   @transient
@@ -47,14 +49,27 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   private[glint] val numPartitions: Int = partitioner.all().length
 
-  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+
+  override def save(hdfsPath: String, hadoopConfig: Configuration)
+                   (implicit ec: ExecutionContext): Future[Boolean] = {
+
+    save(hdfsPath, hadoopConfig, true)
+  }
+
+  override def save(hdfsPath: String, hadoopConfig: Configuration, trainable: Boolean)
+                   (implicit ec: ExecutionContext): Future[Boolean] = {
+
+    if (trainable) {
+      require(this.trainable, "The matrix has to be trainable to be saved as trainable")
+    }
 
     // we don't have the metadata here
     // so the partial matrix which holds the first partition saves it
     val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
     val pushes = partitioner.all().map {
       case partition =>
-        val fsm = PushFSM[PushSave](id => PushSave(id, hdfsPath, serHadoopConfig), matrices(partition.index))
+        val fsm = PushFSM[PushSaveTrainable](id =>
+          PushSaveTrainable(id, hdfsPath, serHadoopConfig, trainable), matrices(partition.index))
         fsm.run()
     }.toIterator
     Future.sequence(pushes).transform(results => true, err => err)
@@ -62,6 +77,8 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   override def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long)
                       (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float])] = {
+
+    require(trainable, "The matrix has to be trainable to support dotprod")
 
     // Send dotprod pull requests to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
@@ -98,6 +115,8 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
                       gPlus: Array[Float],
                       gMinus: Array[Float],
                       seed: Long)(implicit ec: ExecutionContext): Future[Boolean] = {
+
+    require(trainable, "The matrix has to be trainable to support adjust")
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>

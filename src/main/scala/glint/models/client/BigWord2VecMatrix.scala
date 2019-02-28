@@ -1,6 +1,7 @@
 package glint.models.client
 
 import breeze.linalg.Vector
+import org.apache.hadoop.conf.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,6 +27,18 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
     * The number of partitions
     */
   private[glint] val numPartitions: Int
+
+  /**
+    * Saves the matrix to HDFS
+    *
+    * @param hdfsPath The HDFS base path where the matrix should be saved
+    * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+    * @param trainable Whether the saved matrix should be retrainable, requiring more data being saved
+    * @param ec The implicit execution context in which to execute the request
+    * @return A future whether the matrix was successfully saved
+    */
+  def save(hdfsPath: String, hadoopConfig: Configuration, trainable: Boolean)
+          (implicit ec: ExecutionContext): Future[Boolean]
 
   /**
     * Computes the dot products to be used as gradient updates

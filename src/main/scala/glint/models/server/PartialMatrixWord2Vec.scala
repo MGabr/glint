@@ -24,6 +24,7 @@ import scala.util.Random
   * @param n The number of negative examples to create per output word
   * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
   *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+  * @param trainable Whether the matrix is trainable, requiring more data (output weights, unigram table)
   */
 private[glint] class PartialMatrixWord2Vec(partition: Partition,
                                            aggregate: Aggregate,
@@ -32,7 +33,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
                                            val vectorSize: Int,
                                            val vocabCns: Array[Int],
                                            val n: Int,
-                                           val unigramTableSize: Int = 100000000)
+                                           val unigramTableSize: Int = 100000000,
+                                           val trainable: Boolean = true)
   extends PartialMatrixFloat(partition, vocabCns.length, partition.size, aggregate, hdfsPath, hadoopConfig) {
 
   @transient
@@ -62,10 +64,12 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     u = loadOrInitialize(
       () => Array.fill(rows * cols)((random.nextFloat() - 0.5f) / vectorSize),
       pathPostfix = "/glint/data/u/")
-    v = loadOrInitialize(() => new Array(rows * cols), pathPostfix = "/glint/data/v/")
     data = u
 
-    table = unigramTable()
+    if (trainable) {
+      v = loadOrInitialize(() => new Array(rows * cols), pathPostfix = "/glint/data/v/")
+      table = unigramTable()
+    }
   }
 
 
@@ -75,8 +79,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     case push: PushMatrixFloat =>
       update(push.rows, push.cols, push.values)
       updateFinished(push.id)
-    case push: PushSave =>
-      save(push.path, push.hadoopConfig)
+    case push: PushSaveTrainable =>
+      save(push.path, push.hadoopConfig, push.trainable)
       updateFinished(push.id)
     case pull: PullDotProd =>
       val (fPlus, fMinus) = dotprod(pull.wInput, pull.wOutput, pull.seed)
@@ -90,16 +94,18 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     case x => handleLogic(x, sender)
   }
 
-  override def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration): Unit = {
+  def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration, saveTrainable: Boolean): Unit = {
 
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
-      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, n, unigramTableSize)
+      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, n, unigramTableSize, trainable && saveTrainable)
       hdfs.saveWord2VecMatrixMetadata(hdfsPath, hadoopConfig.conf, meta)
     }
 
     hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, u, pathPostfix = "/glint/data/u/")
-    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, v, pathPostfix = "/glint/data/v/")
+    if (trainable && saveTrainable) {
+      hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, v, pathPostfix = "/glint/data/v/")
+    }
   }
 
   /**

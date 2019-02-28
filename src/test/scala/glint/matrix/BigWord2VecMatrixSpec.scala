@@ -83,7 +83,6 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
           identity
         }
         assert(result)
-
         val values = whenReady(model.pull(
           Array(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3),
           Array(0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2))) {
@@ -104,26 +103,14 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         // random negative words will be 2, 3, 3
 
-        var result = whenReady(model.adjust(
-          Array(1),
-          Array(Array(1)),
-          Array(0.11f),
-          Array(0.21f, 0.22f),
-          seed)) {
+        var result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(0.21f, 0.22f), seed)) {
           identity
         }
         assert(result)
-
-        result = whenReady(model.adjust(
-          Array(1),
-          Array(Array(1)),
-          Array(0.111f),
-          Array(0.211f, 0.221f),
-          seed)) {
+        result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.111f), Array(0.211f, 0.221f), seed)) {
           identity
         }
         assert(result)
-
         val values = whenReady(model.pull(
           Array(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3),
           Array(0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2))) {
@@ -154,22 +141,11 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(vocabCns, 3, 0)
         val seed = 1
 
-        var result = whenReady(model.adjust(
-          Array(1, 0),
-          Array(Array(0), Array(1)),
-          Array(0.11f, 0.12f),
-          Array(),
-          seed)) {
+        var result = whenReady(model.adjust(Array(1, 0), Array(Array(0), Array(1)), Array(0.11f, 0.12f), Array(), seed)) {
           identity
         }
         assert(result)
-
-        result = whenReady(model.adjust(
-          Array(1, 0),
-          Array(Array(0), Array(1)),
-          Array(0.111f, 0.121f),
-          Array(),
-          seed)) {
+        result = whenReady(model.adjust(Array(1, 0), Array(Array(0), Array(1)), Array(0.111f, 0.121f), Array(), seed)) {
           identity
         }
         assert(result)
@@ -206,26 +182,14 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         // random negative words will be 2, 3, 3
 
-        var result = whenReady(model.adjust(
-          Array(1),
-          Array(Array(0)),
-          Array(0.11f),
-          Array(0.21f, 0.22f),
-          seed)) {
+        var result = whenReady(model.adjust(Array(1), Array(Array(0)), Array(0.11f), Array(0.21f, 0.22f), seed)) {
           identity
         }
         assert(result)
-
-        result = whenReady(model.adjust(
-          Array(1),
-          Array(Array(0)),
-          Array(0.111f),
-          Array(0.211f, 0.221f),
-          seed)) {
+        result = whenReady(model.adjust(Array(1), Array(Array(0)), Array(0.111f), Array(0.211f, 0.221f), seed)) {
           identity
         }
         assert(result)
-
         val values = whenReady(model.pull(
           Array(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3),
           Array(0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2))) {
@@ -256,10 +220,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(vocabCns, 3, 0)
         val seed = 1
 
-        val value = whenReady(model.dotprod(
-          Array(0),
-          Array(Array(1, 0)),
-          seed)) {
+        val value = whenReady(model.dotprod(Array(0), Array(Array(1, 0)), seed)) {
           identity
         }
 
@@ -276,20 +237,11 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(vocabCns, 3, 0)
         val seed = 1
 
-        val result = whenReady(model.adjust(
-          Array(1),
-          Array(Array(1)),
-          Array(0.11f),
-          Array(),
-          seed)) {
+        val result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), seed)) {
           identity
         }
         assert(result)
-
-        val value = whenReady(model.dotprod(
-          Array(1),
-          Array(Array(1, 0)),
-          seed)) {
+        val value = whenReady(model.dotprod(Array(1), Array(Array(1, 0)), seed)) {
           identity
         }
 
@@ -309,22 +261,13 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(vocabCns, 3, 2)
         val seed = 1
 
-        val result = whenReady(model.adjust(
-          Array(1),
-          Array(Array(1)),
-          Array(0.11f),
-          Array(0.21f, 0.22f),
-          seed)) {
+        // random negative words will be 2, 3, 3, 2
+
+        val result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(0.21f, 0.22f), seed)) {
           identity
         }
         assert(result)
-
-        // random negative words will be 2, 3, 3, 2
-
-        val value = whenReady(model.dotprod(
-          Array(1),
-          Array(Array(1, 0)),
-          seed)) {
+        val value = whenReady(model.dotprod(Array(1), Array(Array(1, 0)), seed)) {
           identity
         }
 
@@ -410,8 +353,13 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val seed = 1
 
         var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
+          identity
+        }
+        assert(result)
+        result = whenReady(model.adjust(Array(2), Array(Array(2)), Array(0.22f), Array(), seed)) {
           identity
         }
         assert(result)
@@ -451,6 +399,103 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         }
 
         values should equal(Array(init(0)(0) + 0.1f, init(0)(1) + 0.3f, init(0)(2) + 0.5f, init(3)(0), init(3)(1)))
+      }
+    }
+  }
+
+  it should "retrain data loaded from file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata"))) {
+          pending
+        }
+
+        val loadedModel = client.loadWord2vecMatrix("testdata", hadoopConfig, trainable = true)
+        val seed = 1
+
+        val result = whenReady(loadedModel.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), seed)) {
+          identity
+        }
+        assert(result)
+        val value = whenReady(loadedModel.dotprod(Array(1), Array(Array(1, 2)), seed)) {
+          identity
+        }
+
+        value._1 should equal(Array(
+          init(1)(0) * (0.11f * init(1)(0)) + init(1)(1) * (0.11f * init(1)(1)) + init(1)(2) * (0.11f * init(1)(2)),
+          init(1)(0) * (0.22f * init(2)(0)) + init(1)(1) * (0.22f * init(2)(1)) + init(1)(2) * (0.22f * init(2)(2))
+        ))
+        value._2 should equal(Array())
+      }
+    }
+  }
+
+  it should "save untrainable data to file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        val vocabCns = Array(3, 1, 4, 2)
+        val model = client.word2vecMatrix(vocabCns, 3, 0)
+
+        var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
+          identity
+        }
+        assert(result)
+        result = whenReady(model.save("testdata-untrainable", hadoopConfig, trainable = false)) {
+          identity
+        }
+        assert(result)
+
+        val fs = FileSystem.get(hadoopConfig)
+        val paths = Seq(
+          "testdata-untrainable",
+          "testdata-untrainable/glint",
+          "testdata-untrainable/glint/metadata",
+          "testdata-untrainable/glint/data/u/0",
+          "testdata-untrainable/glint/data/u/1",
+          "testdata-untrainable/glint/data/u/2"
+        )
+        val pathsNot = Seq(
+          "testdata-untrainable/glint/data/v/0",
+          "testdata-untrainable/glint/data/v/1",
+          "testdata-untrainable/glint/data/v/2"
+        )
+        forAll (paths) {path => fs.exists(new Path(path)) shouldBe true }
+        forAll (pathsNot) {path => fs.exists(new Path(path)) shouldBe false }
+      }
+    }
+  }
+
+  it should "load untrainable data from file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata-untrainable"))) {
+          pending
+        }
+
+        val loadedModel = client.loadWord2vecMatrix("testdata-untrainable", hadoopConfig)
+
+        val values = whenReady(loadedModel.pull(Array(0, 0, 0, 3, 3), Array(0, 1, 2, 0, 1))) {
+          identity
+        }
+
+        values should equal(Array(init(0)(0) + 0.1f, init(0)(1) + 0.3f, init(0)(2) + 0.5f, init(3)(0), init(3)(1)))
+      }
+    }
+  }
+
+  it should "fail when attempting to retrain untrainable data" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata-untrainable"))) {
+          pending
+        }
+
+        val loadedModel = client.loadWord2vecMatrix("testdata-untrainable", hadoopConfig)
+
+        an[IllegalArgumentException] shouldBe thrownBy(
+          loadedModel.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), 1))
+        an[IllegalArgumentException] shouldBe thrownBy(
+          loadedModel.dotprod(Array(1), Array(Array(1, 0)), 1))
       }
     }
   }

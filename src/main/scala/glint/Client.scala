@@ -181,7 +181,8 @@ class Client(val config: Config,
                                      aggregate: Aggregate = AggregateAdd(),
                                      partitionBy: PartitionBy = PartitionBy.ROW): BigMatrix[V] = {
 
-    matrix[V](rows, cols, modelsPerServer, aggregate, partitionBy, (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, partitionBy))
+    matrix[V](rows, cols, modelsPerServer, aggregate, partitionBy,
+      (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, partitionBy))
   }
 
   /**
@@ -227,17 +228,27 @@ class Client(val config: Config,
                              n: Int,
                              unigramTableSize: Int,
                              hdfsPath: Option[String],
-                             hadoopConfig: Option[Configuration]): BigWord2VecMatrix = {
+                             hadoopConfig: Option[Configuration],
+                             trainable: Boolean): BigWord2VecMatrix = {
 
     val serHadoopConfig = hadoopConfig.map(new SerializableHadoopConfiguration(_))
 
     val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
 
-    val propFunction = (partition: Partition) =>
-      Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), hdfsPath, serHadoopConfig, vectorSize, vocabCns, n, unigramTableSize)
+    val propFunction = (partition: Partition) => Props(
+      classOf[PartialMatrixWord2Vec],
+      partition,
+      AggregateAdd(),
+      hdfsPath,
+      serHadoopConfig,
+      vectorSize,
+      vocabCns,
+      n,
+      unigramTableSize,
+      trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabCns.length, vectorSize, n)
+      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabCns.length, vectorSize, n, trainable)
 
     create[BigWord2VecMatrix](vectorSize, 1, createPartitioner, propFunction, objFunction)
   }
@@ -260,7 +271,7 @@ class Client(val config: Config,
                      n: Int,
                      unigramTableSize: Int = 100000000): BigWord2VecMatrix = {
 
-    word2vecMatrix(vocabCns, vectorSize, n, unigramTableSize, None, None)
+    word2vecMatrix(vocabCns, vectorSize, n, unigramTableSize, None, None, true)
   }
 
   /**
@@ -272,11 +283,17 @@ class Client(val config: Config,
     *
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
+    * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def loadWord2vecMatrix(hdfsPath: String, hadoopConfig: Configuration): BigWord2VecMatrix = {
+  def loadWord2vecMatrix(hdfsPath: String,
+                         hadoopConfig: Configuration,
+                         trainable: Boolean = false): BigWord2VecMatrix = {
     val m = hdfs.loadWord2VecMatrixMetadata(hdfsPath, hadoopConfig)
-    word2vecMatrix(m.vocabCns, m.vectorSize, m.n, m.unigramTableSize, Some(hdfsPath), Some(hadoopConfig))
+    if (trainable && !m.trainable) {
+      throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
+    }
+    word2vecMatrix(m.vocabCns, m.vectorSize, m.n, m.unigramTableSize, Some(hdfsPath), Some(hadoopConfig), trainable)
   }
 
   /**
@@ -500,7 +517,8 @@ object Client {
                                            n: Int,
                                            unigramTableSize: Int,
                                            numParameterServers: Int,
-                                           hdfsPath: Option[String]): (Client, BigWord2VecMatrix) = {
+                                           hdfsPath: Option[String],
+                                           trainable: Boolean): (Client, BigWord2VecMatrix) = {
     @transient
     implicit val ec = ExecutionContext.Implicits.global
 
@@ -529,10 +547,12 @@ object Client {
       partitionMasterSystem = Some(ps)
 
       // Start parameter servers with partial models
-      val models = word2vecMatrixServersOnSpark(sc, config, client.get, numParameterServers, bcVocabCns, vectorSize, n, unigramTableSize, hdfsPath)
+      val models = word2vecMatrixServersOnSpark(
+        sc, config, client.get, numParameterServers, bcVocabCns, vectorSize, n, unigramTableSize, hdfsPath, trainable)
 
       // Construct a big model client object
-      val bigModel = new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), bcVocabCns.value.length, vectorSize, n)
+      val bigModel = new AsyncBigWord2VecMatrix(
+        partitioner, models, config, AggregateAdd(), bcVocabCns.value.length, vectorSize, n, trainable)
 
       StartedActorSystems.add(masterSystem.get)
       StartedActorSystems.add(client.get.system)
@@ -557,7 +577,8 @@ object Client {
                                            vectorSize: Int,
                                            n: Int,
                                            unigramTableSize: Int,
-                                           hdfsPath: Option[String]): Array[ActorRef] = {
+                                           hdfsPath: Option[String],
+                                           trainable: Boolean): Array[ActorRef] = {
 
     val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
 
@@ -580,7 +601,8 @@ object Client {
             vectorSize,
             bcVocabCns.value,
             n,
-            unigramTableSize)
+            unigramTableSize,
+            trainable)
           val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
           Some((Serialization.serializedActorPath(actorRef), partition.index))
         case None => None
@@ -681,7 +703,7 @@ object Client {
                                    n: Int,
                                    unigramTableSize: Int,
                                    numParameterServers: Int): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers, None)
+    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers, None, true)
   }
 
   /**
@@ -693,10 +715,13 @@ object Client {
     *
     * @param sc The spark context
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
+    * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext, hdfsPath: String): (Client, BigWord2VecMatrix) = {
-    runWithLoadedWord2VecMatrixOnSpark(sc, "", hdfsPath)
+  def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
+                                         hdfsPath: String,
+                                         trainable: Boolean = false): (Client, BigWord2VecMatrix) = {
+    runWithLoadedWord2VecMatrixOnSpark(sc, "", hdfsPath, trainable)
   }
 
   /**
@@ -709,13 +734,15 @@ object Client {
     * @param sc The spark context
     * @param host The master host name
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
+    * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
                                          host: String,
-                                         hdfsPath: String): (Client, BigWord2VecMatrix) = {
+                                         hdfsPath: String,
+                                         trainable: Boolean): (Client, BigWord2VecMatrix) = {
     val config = getConfig(host)
-    runWithLoadedWord2VecMatrixOnSpark(sc, config, hdfsPath)
+    runWithLoadedWord2VecMatrixOnSpark(sc, config, hdfsPath, trainable)
   }
 
   /**
@@ -732,11 +759,15 @@ object Client {
     */
   def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
                                          config: Config,
-                                         hdfsPath: String): (Client, BigWord2VecMatrix) = {
+                                         hdfsPath: String,
+                                         trainable: Boolean): (Client, BigWord2VecMatrix) = {
     val m = hdfs.loadWord2VecMatrixMetadata(hdfsPath, sc.hadoopConfiguration)
+    if (trainable && !m.trainable) {
+      throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
+    }
     val bcVocabCns = sc.broadcast(m.vocabCns)
     val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")
-    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, m.vectorSize, m.n, m.unigramTableSize, numParameterServers, Some(hdfsPath))
+    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, m.vectorSize, m.n, m.unigramTableSize, numParameterServers, Some(hdfsPath), trainable)
   }
 
   /**

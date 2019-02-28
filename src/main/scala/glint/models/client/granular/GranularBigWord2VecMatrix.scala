@@ -2,6 +2,7 @@ package glint.models.client.granular
 
 import breeze.linalg.Vector
 import glint.models.client.BigWord2VecMatrix
+import org.apache.hadoop.conf.Configuration
 import spire.implicits.cforRange
 
 import scala.collection.mutable.ArrayBuffer
@@ -25,6 +26,20 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     * The number of partitions
     */
   private[glint] val numPartitions: Int = underlying.numPartitions
+
+  /**
+    * Saves the matrix to HDFS
+    *
+    * @param hdfsPath The HDFS base path where the matrix should be saved
+    * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+    * @param trainable Whether the saved matrix should be retrainable, requiring more data being saved
+    * @param ec The implicit execution context in which to execute the request
+    * @return A future whether the matrix was successfully saved
+    */
+  override def save(hdfsPath: String, hadoopConfig: Configuration, trainable: Boolean)
+                   (implicit ec: ExecutionContext): Future[Boolean] = {
+    underlying.save(hdfsPath, hadoopConfig, trainable)
+  }
 
   /**
     * Computes the dot products to be used as gradient updates
