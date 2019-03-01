@@ -23,6 +23,7 @@ import scala.reflect.ClassTag
   * @param initialTimeout The initial timeout for the request
   * @param maximumTimeout The maximum timeout for the request
   * @param backoffMultiplier The backoff multiplier
+  * @param parallelActor Whether the actor handles requests in parallel and sends the acknowledge as response
   * @param ec The execution context
   * @tparam T The type of message to send
   */
@@ -32,7 +33,8 @@ class PushFSM[T](message: Int => T,
                  maximumLogicAttempts: Int,
                  initialTimeout: FiniteDuration,
                  maximumTimeout: FiniteDuration,
-                 backoffMultiplier: Double)(implicit ec: ExecutionContext) {
+                 backoffMultiplier: Double,
+                 parallelActor: Boolean)(implicit ec: ExecutionContext) {
 
   private implicit var timeout: Timeout = new Timeout(initialTimeout)
 
@@ -90,8 +92,12 @@ class PushFSM[T](message: Int => T,
       promise.failure(new PushFailedException(s"Failed $attempts out of $maximumAttempts attempts to push data"))
     } else {
       attempts += 1
-      actorRef ! message(id)
-      acknowledge()
+      if (parallelActor) {
+        acknowledge(actorRef ? message(id))
+      } else {
+        actorRef ! message(id)
+        acknowledge()
+      }
     }
   }
 
@@ -100,7 +106,16 @@ class PushFSM[T](message: Int => T,
     * We keep sending acknowledge messages until we either receive a not acknowledge or acknowledge reply
     */
   private def acknowledge(): Unit = {
-    val acknowledgeFuture = actorRef ? AcknowledgeReceipt(id)
+    acknowledge(actorRef ? AcknowledgeReceipt(id))
+  }
+
+  /**
+    * Acknowledge state
+    * We keep sending acknowledge messages until we either receive a not acknowledge or acknowledge reply
+    *
+    * @param acknowledgeFuture A future which should contain a not acknowledge or acknowledge reply
+    */
+  private def acknowledge(acknowledgeFuture: Future[Any]): Unit = {
     acknowledgeFuture.onSuccess {
       case NotAcknowledgeReceipt(identifier) if identifier == id =>
         execute()
@@ -197,13 +212,15 @@ object PushFSM {
     *
     * @param message A function that takes an identifier and generates a message of type T
     * @param actorRef The actor to send to
+    * @param parallelActor Whether the actor handles requests in parallel and sends the acknowledge as response
     * @param ec The execution context
     * @tparam T The type of message to send
     * @return An new and initialized PushFSM
     */
-  def apply[T](message: Int => T, actorRef: ActorRef)(implicit ec: ExecutionContext): PushFSM[T] = {
+  def apply[T](message: Int => T, actorRef: ActorRef, parallelActor: Boolean = false)
+              (implicit ec: ExecutionContext): PushFSM[T] = {
     new PushFSM[T](message, actorRef, maximumAttempts, maximumLogicAttempts, initialTimeout, maximumTimeout,
-      backoffMultiplier)
+      backoffMultiplier, parallelActor)
   }
 
 }

@@ -120,7 +120,8 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
-      val fsm = PushFSM[PushAdjust](id => PushAdjust(id, wInput, wOutput, gPlus, gMinus, seed), matrices(partition.index))
+      val fsm = PushFSM[PushAdjust](id =>
+        PushAdjust(id, wInput, wOutput, gPlus, gMinus, seed), matrices(partition.index), parallelActor = true)
       fsm.run()
     }
 

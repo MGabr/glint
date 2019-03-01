@@ -1,6 +1,8 @@
 package glint.models.server
 
+import akka.pattern.pipe
 import com.github.fommil.netlib.F2jBLAS
+import glint.messages.server.logic.AcknowledgeReceipt
 import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat, ResponseRowsFloat}
 import glint.models.server.aggregate.Aggregate
@@ -10,6 +12,8 @@ import glint.util.hdfs
 import glint.util.hdfs.Word2VecMatrixMetadata
 import spire.implicits.cforRange
 
+import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 /**
@@ -72,7 +76,19 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     }
   }
 
+  implicit val ec: ExecutionContext = context.dispatcher
 
+  /**
+    * Receives and handles incoming messages
+    *
+    * The specific messages for efficient distributed Word2Vec training (dotprod and adjust) are executed
+    * asynchronously and then send their result back to the sender. This means that we lose the Akka concurrency
+    * guarantees and the dotprod and adjust methods access the actors state as shared mutable state
+    * without any synchronization and locking. These methods can therefore overwrite each others gradient updates.
+    *
+    * This is, however, required to achieve good performance. As explained in papers like HOGWILD! this still achieves
+    * a nearly optimal rate of convergence when the optimization problem is sparse.
+    */
   override def receive: Receive = {
     case pull: PullMatrix => sender ! ResponseFloat(get(pull.rows, pull.cols))
     case pull: PullMatrixRows => sender ! ResponseRowsFloat(getRows(pull.rows), cols)
@@ -83,16 +99,28 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
       save(push.path, push.hadoopConfig, push.trainable)
       updateFinished(push.id)
     case pull: PullDotProd =>
-      val (fPlus, fMinus) = dotprod(pull.wInput, pull.wOutput, pull.seed)
-      sender ! ResponseDotProd(fPlus, fMinus)
+      Future {
+        val (fPlus, fMinus) = dotprod(pull.wInput, pull.wOutput, pull.seed)
+        ResponseDotProd(fPlus, fMinus)
+      } pipeTo sender()
     case push: PushAdjust =>
-      adjust(push.wInput, push.wOutput, push.gPlus, push.gMinus, push.seed)
-      updateFinished(push.id)
+      Future {
+        adjust(push.wInput, push.wOutput, push.gPlus, push.gMinus, push.seed)
+        updateFinished(push.id)
+        AcknowledgeReceipt(push.id)
+      } pipeTo sender()
     case pull: PullNormDots => sender ! ResponseFloat(normDots(pull.startRow, pull.endRow))
     case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector, pull.startRow, pull.endRow))
     case pull: PullAverageRows => sender ! ResponseFloat(pullAverage(pull.rows))
     case x => handleLogic(x, sender)
   }
+
+  /**
+    * A synchronized set of received message ids.
+    * Required since pushAdjust messages are handled asynchronously without synchronization
+    */
+  override val receipt: mutable.HashSet[Int] = new mutable.HashSet[Int] with mutable.SynchronizedSet[Int]
+
 
   def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration, saveTrainable: Boolean): Unit = {
 
