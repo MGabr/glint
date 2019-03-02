@@ -2,7 +2,7 @@ package glint.matrix
 
 import breeze.linalg.Vector
 import com.github.fommil.netlib.F2jBLAS
-import glint.{HdfsTest, SystemTest}
+import glint.{HdfsTest, SystemTest, Word2VecArguments}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
@@ -51,8 +51,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   "A BigWord2VecMatrix" should "initialize values randomly" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
 
         val values = whenReady(model.pull(
           Array(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3),
@@ -68,8 +69,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "not adjust input weights on first gradient update" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 2, 3)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 3)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         // random negative words will be 2, 3, 3
@@ -97,8 +99,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "adjust input weights on following gradient updates for same input and output" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 2)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 2)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         // random negative words will be 2, 3, 3
@@ -137,8 +140,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "adjust input weights on following gradient updates for different input and output" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 2, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         var result = whenReady(model.adjust(Array(1, 0), Array(Array(0), Array(1)), Array(0.11f, 0.12f), Array(), seed)) {
@@ -176,8 +180,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "adjust input weights on following gradient updates with negative examples" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 2)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 2)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         // random negative words will be 2, 3, 3
@@ -216,8 +221,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "compute dot products as zero if no adjust has been made" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 2, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         val value = whenReady(model.dotprod(Array(0), Array(Array(1, 0)), seed)) {
@@ -233,8 +239,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "compute dot products of input and output weights" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 2, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         val result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), seed)) {
@@ -257,8 +264,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "compute dot products of input and output weights with negative examples" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 2, 2)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 2)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         // random negative words will be 2, 3, 3, 2
@@ -288,8 +296,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "compute euclidean norms" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
 
         val values = whenReady(model.norms()) {
           identity
@@ -307,8 +316,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "compute multiplication of matrix with vector" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val vector = Array(0.1f, 0.2f, 0.3f)
 
         val values = whenReady(model.multiply(vector)) {
@@ -331,8 +341,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "pull average of rows" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
 
         val values = whenReady(model.pullAverage(Array(Array(0L, 2L, 3L), Array(), Array(0L, 2L), Array(0L)))) {
           identity
@@ -351,8 +362,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "save data to file" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
         val seed = 1
 
         var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
@@ -433,8 +445,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
   it should "save untrainable data to file" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
+        val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(vocabCns, 3, 0)
+        val model = client.word2vecMatrix(args, vocabCns, 1)
 
         var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
           identity

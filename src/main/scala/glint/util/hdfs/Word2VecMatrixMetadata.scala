@@ -6,6 +6,8 @@ package glint.util.hdfs
   */
 case class Word2VecMatrixMetadata(vocabCns: Array[Int],
                                   vectorSize: Int,
+                                  window: Int,
+                                  batchSize: Int,
                                   n: Int,
                                   unigramTableSize: Int,
                                   trainable: Boolean)

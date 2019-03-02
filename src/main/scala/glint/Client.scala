@@ -223,10 +223,9 @@ class Client(val config: Config,
     matrix(m.rows, m.cols, 1, m.aggregate, m.partitionBy, m.createPartitioner, Some(hdfsPath), Some(hadoopConfig))
   }
 
-  private def word2vecMatrix(vocabCns: Array[Int],
-                             vectorSize: Int,
-                             n: Int,
-                             unigramTableSize: Int,
+  private def word2vecMatrix(args: Word2VecArguments,
+                             vocabCns: Array[Int],
+                             parameterServerCores: Int,
                              hdfsPath: Option[String],
                              hadoopConfig: Option[Configuration],
                              trainable: Boolean): BigWord2VecMatrix = {
@@ -241,16 +240,20 @@ class Client(val config: Config,
       AggregateAdd(),
       hdfsPath,
       serHadoopConfig,
-      vectorSize,
+      args.vectorSize,
       vocabCns,
-      n,
-      unigramTableSize,
+      args.window,
+      args.batchSize,
+      args.n,
+      parameterServerCores,
+      args.unigramTableSize,
       trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabCns.length, vectorSize, n, trainable)
+      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabCns.length, args.vectorSize, args.n,
+        trainable)
 
-    create[BigWord2VecMatrix](vectorSize, 1, createPartitioner, propFunction, objFunction)
+    create[BigWord2VecMatrix](args.vectorSize, 1, createPartitioner, propFunction, objFunction)
   }
 
   /**
@@ -260,18 +263,13 @@ class Client(val config: Config,
     * actors and is mainly intended for testing outside of spark. To efficiently construct a Word2Vec matrix use
     * [[glint.Client.runWithWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext)* runWithWord2VecMatrixOnSpark]]
     *
-    * @param vectorSize The (full) vector size
-    * @param n The number of negative examples to create per output word
-    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
-    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @param args The [[glint.Word2VecArguments Word2VecArguments]]
+    * @param vocabCns The array of all word counts
+    * @param parameterServerCores The number of cores per parameter server
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def word2vecMatrix(vocabCns: Array[Int],
-                     vectorSize: Int,
-                     n: Int,
-                     unigramTableSize: Int = 100000000): BigWord2VecMatrix = {
-
-    word2vecMatrix(vocabCns, vectorSize, n, unigramTableSize, None, None, true)
+  def word2vecMatrix(args: Word2VecArguments, vocabCns: Array[Int], parameterServerCores: Int): BigWord2VecMatrix = {
+    word2vecMatrix(args, vocabCns, parameterServerCores, None, None, true)
   }
 
   /**
@@ -284,16 +282,19 @@ class Client(val config: Config,
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
     * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
+    * @param parameterServerCores The number of cores per parameter server
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def loadWord2vecMatrix(hdfsPath: String,
                          hadoopConfig: Configuration,
-                         trainable: Boolean = false): BigWord2VecMatrix = {
+                         trainable: Boolean = false,
+                         parameterServerCores: Int = 1): BigWord2VecMatrix = {
     val m = hdfs.loadWord2VecMatrixMetadata(hdfsPath, hadoopConfig)
     if (trainable && !m.trainable) {
       throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
     }
-    word2vecMatrix(m.vocabCns, m.vectorSize, m.n, m.unigramTableSize, Some(hdfsPath), Some(hadoopConfig), trainable)
+    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
+    word2vecMatrix(args, m.vocabCns, parameterServerCores, Some(hdfsPath), Some(hadoopConfig), trainable)
   }
 
   /**
@@ -512,10 +513,9 @@ object Client {
 
   private def runWithWord2VecMatrixOnSpark(sc: SparkContext,
                                            config: Config,
+                                           args: Word2VecArguments,
                                            bcVocabCns: Broadcast[Array[Int]],
-                                           vectorSize: Int,
-                                           n: Int,
-                                           unigramTableSize: Int,
+                                           parameterServerCores: Int,
                                            numParameterServers: Int,
                                            hdfsPath: Option[String],
                                            trainable: Boolean): (Client, BigWord2VecMatrix) = {
@@ -542,17 +542,17 @@ object Client {
       client = Some(Client(config))
 
       // Start partition master
-      val partitioner = RangePartitioner(numParameterServers, vectorSize, PartitionBy.COL)
+      val partitioner = RangePartitioner(numParameterServers, args.vectorSize, PartitionBy.COL)
       val (ps, _) = Await.result(PartitionMaster.run(config, partitioner.all()), clientTimeout)
       partitionMasterSystem = Some(ps)
 
       // Start parameter servers with partial models
-      val models = word2vecMatrixServersOnSpark(
-        sc, config, client.get, numParameterServers, bcVocabCns, vectorSize, n, unigramTableSize, hdfsPath, trainable)
+      val models = word2vecMatrixServersOnSpark(sc, config, client.get, args, bcVocabCns, parameterServerCores,
+        numParameterServers, hdfsPath, trainable)
 
       // Construct a big model client object
       val bigModel = new AsyncBigWord2VecMatrix(
-        partitioner, models, config, AggregateAdd(), bcVocabCns.value.length, vectorSize, n, trainable)
+        partitioner, models, config, AggregateAdd(), bcVocabCns.value.length, args.vectorSize, args.n, trainable)
 
       StartedActorSystems.add(masterSystem.get)
       StartedActorSystems.add(client.get.system)
@@ -572,11 +572,10 @@ object Client {
   private def word2vecMatrixServersOnSpark(sc: SparkContext,
                                            config: Config,
                                            client: Client,
-                                           numParameterServers: Int,
+                                           args: Word2VecArguments,
                                            bcVocabCns: Broadcast[Array[Int]],
-                                           vectorSize: Int,
-                                           n: Int,
-                                           unigramTableSize: Int,
+                                           parameterServerCores: Int,
+                                           numParameterServers: Int,
                                            hdfsPath: Option[String],
                                            trainable: Boolean): Array[ActorRef] = {
 
@@ -592,17 +591,9 @@ object Client {
 
       val partialModelFuture = Server.runOnce(config).map {
         case Some((serverSystem, serverRef, partition)) =>
-          val props = Props(
-            classOf[PartialMatrixWord2Vec],
-            partition,
-            AggregateAdd(),
-            hdfsPath,
-            Some(serHadoopConfig),
-            vectorSize,
-            bcVocabCns.value,
-            n,
-            unigramTableSize,
-            trainable)
+          val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), hdfsPath, Some(serHadoopConfig),
+            args.vectorSize, bcVocabCns.value, args.window, args.batchSize, args.n, parameterServerCores,
+            args.unigramTableSize, trainable)
           val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
           Some((Serialization.serializedActorPath(actorRef), partition.index))
         case None => None
@@ -631,22 +622,19 @@ object Client {
     * and avoids having to send them as serialized Akka props to remote actors.
     *
     * @param sc The spark context
+    * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
-    * @param vectorSize The (full) vector size
-    * @param n The number of negative examples to create per output word
-    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
-    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @param parameterServerCores The number of cores per parameter server
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext)
-                                  (bcVocabCns: Broadcast[Array[Int]],
-                                   vectorSize: Int,
-                                   n: Int,
-                                   unigramTableSize: Int = 100000000,
+                                  (args: Word2VecArguments,
+                                   bcVocabCns: Broadcast[Array[Int]],
+                                   parameterServerCores: Int = getNumExecutors(sc),
                                    numParameterServers: Int = getNumExecutors(sc)): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, "", bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
+    runWithWord2VecMatrixOnSpark(sc, "", args, bcVocabCns, parameterServerCores, numParameterServers)
   }
 
   /**
@@ -658,24 +646,21 @@ object Client {
     *
     * @param sc The spark context
     * @param host The master host name
+    * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
-    * @param vectorSize The (full) vector size
-    * @param n The number of negative examples to create per output word
-    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
-    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @param parameterServerCores The number of cores per parameter server
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext,
                                    host: String,
+                                   args: Word2VecArguments,
                                    bcVocabCns: Broadcast[Array[Int]],
-                                   vectorSize: Int,
-                                   n: Int,
-                                   unigramTableSize: Int,
+                                   parameterServerCores: Int,
                                    numParameterServers: Int): (Client, BigWord2VecMatrix) = {
     val config = getConfig(host)
-    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers)
+    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers)
   }
 
   /**
@@ -687,23 +672,20 @@ object Client {
     *
     * @param sc The spark context
     * @param config The configuration
+    * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
-    * @param vectorSize The (full) vector size
-    * @param n The number of negative examples to create per output word
-    * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
-    *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+    * @param parameterServerCores The number of cores per parameter server
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext,
                                    config: Config,
+                                   args: Word2VecArguments,
                                    bcVocabCns: Broadcast[Array[Int]],
-                                   vectorSize: Int,
-                                   n: Int,
-                                   unigramTableSize: Int,
+                                   parameterServerCores: Int,
                                    numParameterServers: Int): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, vectorSize, n, unigramTableSize, numParameterServers, None, true)
+    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers, None, true)
   }
 
   /**
@@ -716,12 +698,15 @@ object Client {
     * @param sc The spark context
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
-                                         hdfsPath: String,
-                                         trainable: Boolean = false): (Client, BigWord2VecMatrix) = {
-    runWithLoadedWord2VecMatrixOnSpark(sc, "", hdfsPath, trainable)
+  def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext)
+                                        (hdfsPath: String,
+                                         trainable: Boolean = false,
+                                         parameterServerCores: Int = getExecutorCores(sc)
+                                        ): (Client, BigWord2VecMatrix) = {
+    runWithLoadedWord2VecMatrixOnSpark(sc, "", hdfsPath, trainable, parameterServerCores)
   }
 
   /**
@@ -735,14 +720,16 @@ object Client {
     * @param host The master host name
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
                                          host: String,
                                          hdfsPath: String,
-                                         trainable: Boolean): (Client, BigWord2VecMatrix) = {
+                                         trainable: Boolean,
+                                         parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
     val config = getConfig(host)
-    runWithLoadedWord2VecMatrixOnSpark(sc, config, hdfsPath, trainable)
+    runWithLoadedWord2VecMatrixOnSpark(sc, config, hdfsPath, trainable, parameterServerCores)
   }
 
   /**
@@ -755,19 +742,23 @@ object Client {
     * @param sc The spark context
     * @param config The configuration
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
                                          config: Config,
                                          hdfsPath: String,
-                                         trainable: Boolean): (Client, BigWord2VecMatrix) = {
+                                         trainable: Boolean,
+                                         parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
     val m = hdfs.loadWord2VecMatrixMetadata(hdfsPath, sc.hadoopConfiguration)
     if (trainable && !m.trainable) {
       throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
     }
+    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
     val bcVocabCns = sc.broadcast(m.vocabCns)
-    val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")
-    runWithWord2VecMatrixOnSpark(sc, config, bcVocabCns, m.vectorSize, m.n, m.unigramTableSize, numParameterServers, Some(hdfsPath), trainable)
+    val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")  // TODO: replace with partitions
+    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers,
+      Some(hdfsPath), trainable)
   }
 
   /**
@@ -852,6 +843,22 @@ object Client {
     }
   }
 }
+
+/**
+  * Word2Vec arguments
+  *
+  * @param vectorSize The (full) vector size
+  * @param window The window size
+  * @param batchSize The minibatch size
+  * @param n The number of negative examples to create per output word
+  * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
+  *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
+  */
+case class Word2VecArguments(vectorSize: Int,
+                             window: Int,
+                             batchSize: Int,
+                             n: Int,
+                             unigramTableSize: Int = 100000000)
 
 /**
   * The client actor class. The master keeps a death watch on this actor and knows when it is terminated.

@@ -1,6 +1,6 @@
 package glint.spark
 
-import glint.Client
+import glint.{Client, Word2VecArguments}
 import glint.models.client.granular.GranularBigWord2VecMatrix
 import org.scalatest._
 
@@ -12,9 +12,10 @@ import scala.util.Random
 class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers {
 
   "A GranularBigWord2VecMatrix" should "handle large norms responses" in {
+    val args = Word2VecArguments(100, 5, 50, 10, 1000000)
     val vocabCns = (0 to 1000000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
-    val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 5, 1000000)
+    val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
     try {
       val granularModel = new GranularBigWord2VecMatrix(model, 10000)
@@ -30,9 +31,10 @@ class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matcher
   }
 
   it should "handle large pullAverage requests" in {
+    val args = Word2VecArguments(100, 5, 50, 10, 1000000)
     val vocabCns = (0 to 50000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
-    val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 5, 1000000)
+    val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
     try {
       val granularModel = new GranularBigWord2VecMatrix(model, 10000)
@@ -50,9 +52,10 @@ class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matcher
   }
 
   it should "handle large multiply responses" in {
+    val args = Word2VecArguments(100, 5, 50, 10, 1000000)
     val vocabCns = (0 to 1000000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
-    val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 5, 1000000)
+    val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
     try {
       val granularModel = new GranularBigWord2VecMatrix(model, 10000)

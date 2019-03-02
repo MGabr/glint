@@ -1,6 +1,6 @@
 package glint.spark
 
-import glint.Client
+import glint.{Client, Word2VecArguments}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
@@ -31,9 +31,10 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
 
 
   "A BigWord2VecMatrix" should "initialize values randomly" in {
+    val args = Word2VecArguments(100, 5, 50, 10, 1000000)
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
-    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 10, 1000000)
+    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
     try {
       val values = whenReady(matrix.pull(
@@ -49,9 +50,10 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
   }
 
   it should "adjust input weights" in {
+    val args = Word2VecArguments(100, 5, 50, 2, 1000000)
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
-    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 2, 1000000)
+    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
     try {
       val seed = 1
@@ -97,9 +99,10 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
   }
 
   it should "compute dot products" in {
+    val args = Word2VecArguments(100, 5, 50, 2, 1000000)
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
-    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 2, 1000000)
+    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
     try {
       val initValues = whenReady(matrix.pull(Array.fill(100)(0), (0L until 100L).toArray)) {
@@ -135,9 +138,10 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
   }
 
   it should "save data to file" in {
+    val args = Word2VecArguments(100, 5, 50, 2, 1000000)
     val vocabCns = (1 to 1000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
-    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(bcVocabCns, 100, 2, 1000000)
+    val (client, matrix) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
     try {
 
@@ -171,7 +175,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
       pending
     }
 
-    val (client, loadedMatrix) = Client.runWithLoadedWord2VecMatrixOnSpark(sc, "testdata")
+    val (client, loadedMatrix) = Client.runWithLoadedWord2VecMatrixOnSpark(sc)("testdata")
 
     try {
       val values = whenReady(loadedMatrix.pull(Array(0, 0, 0, 999, 999), Array(0, 1, 2, 0, 1))) {
