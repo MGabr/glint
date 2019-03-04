@@ -244,8 +244,9 @@ class Client(val config: Config,
       args.window,
       args.batchSize,
       args.n,
-      parameterServerCores,
+      args.subsampleRatio,
       args.unigramTableSize,
+      parameterServerCores,
       trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
@@ -596,8 +597,8 @@ object Client {
       val partialModelFuture = Server.runOnce(config).map {
         case Some((serverSystem, serverRef, partition)) =>
           val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), hdfsPath, Some(serHadoopConfig),
-            args.vectorSize, bcVocabCns.value, args.window, args.batchSize, args.n, parameterServerCores,
-            args.unigramTableSize, trainable)
+            args.vectorSize, bcVocabCns.value, args.window, args.batchSize, args.n, args.subsampleRatio,
+            args.unigramTableSize, parameterServerCores, trainable)
           val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
           Some((Serialization.serializedActorPath(actorRef), partition.index))
         case None => None
@@ -855,6 +856,8 @@ object Client {
   * @param window The window size
   * @param batchSize The minibatch size
   * @param n The number of negative examples to create per output word
+  * @param subsampleRatio The ratio controlling how much subsampling occurs,
+  *                       smaller values mean frequent words are less likely to be kept
   * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
   *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
   */
@@ -862,6 +865,7 @@ case class Word2VecArguments(vectorSize: Int,
                              window: Int,
                              batchSize: Int,
                              n: Int,
+                             subsampleRatio: Double = 1e-6,
                              unigramTableSize: Int = 100000000)
 
 /**
