@@ -46,6 +46,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
       values should equal(init(0) ++ init(709) ++ init(857) ++ init(999))
     } finally {
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 
@@ -95,6 +96,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
         init(999)(2)))
     } finally {
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 
@@ -134,6 +136,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
       value._2 should equal(Array(initValues.map(v => v * (0.21f * v)).sum, initValues.map(v => v * (0.22f * v)).sum))
     } finally {
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 

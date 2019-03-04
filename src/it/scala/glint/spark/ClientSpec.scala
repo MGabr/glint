@@ -47,6 +47,7 @@ class ClientSpec extends FlatSpec with SparkTest with Matchers {
 
     whenReady(matrix.destroy())(identity)
     client.terminateOnSpark(sc)
+    bcVocabCns.destroy()
   }
 
   it should "run with a Word2Vec matrix on Spark with a parameter server per executor as default" in {
@@ -58,9 +59,9 @@ class ClientSpec extends FlatSpec with SparkTest with Matchers {
       val servers = whenReady(client.serverList())(identity)
       servers.length should equal(2)
     } finally {
-
       whenReady(matrix.destroy())(identity)
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 
@@ -73,9 +74,9 @@ class ClientSpec extends FlatSpec with SparkTest with Matchers {
       val servers = whenReady(client.serverList())(identity)
       servers.length should equal(1)
     } finally {
-
       whenReady(matrix.destroy())(identity)
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 
@@ -83,7 +84,11 @@ class ClientSpec extends FlatSpec with SparkTest with Matchers {
     val args = Word2VecArguments(10, 5, 50, 10, 1000)
     val vocabCns = Array(10, 11, 12, 13, 14, 15)
     val bcVocabCns = sc.broadcast(vocabCns)
-    an [ServerCreationException] should be thrownBy
-      Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns, numParameterServers = 3)
+    try {
+      an [ServerCreationException] should be thrownBy
+        Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns, numParameterServers = 3)
+    } finally {
+      bcVocabCns.destroy()
+    }
   }
 }

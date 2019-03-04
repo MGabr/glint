@@ -13,7 +13,7 @@ class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matcher
 
   "A GranularBigWord2VecMatrix" should "handle large norms responses" in {
     val args = Word2VecArguments(100, 5, 50, 10, 1000000)
-    val vocabCns = (0 to 1000000).toArray
+    val vocabCns = (0 to 500000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
@@ -27,6 +27,7 @@ class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matcher
       result should have length vocabCns.length
     } finally {
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 
@@ -48,12 +49,13 @@ class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matcher
       result should have length 10000
     } finally {
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 
   it should "handle large multiply responses" in {
     val args = Word2VecArguments(100, 5, 50, 10, 1000000)
-    val vocabCns = (0 to 1000000).toArray
+    val vocabCns = (0 to 500000).toArray
     val bcVocabCns = sc.broadcast(vocabCns)
     val (client, model) = Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns)
 
@@ -68,6 +70,7 @@ class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matcher
       result should have length vocabCns.length
     } finally {
       client.terminateOnSpark(sc)
+      bcVocabCns.destroy()
     }
   }
 }

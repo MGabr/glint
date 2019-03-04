@@ -89,8 +89,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     data = u
 
     if (trainable) {
+      table = unigramTable()  // initialized before v since it temporarily allocates a second vocabCns array
       v = loadOrInitialize(() => new Array(rows * cols), pathPostfix = "/glint/data/v/")
-      table = unigramTable()
     }
   }
 
