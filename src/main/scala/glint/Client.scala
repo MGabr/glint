@@ -226,13 +226,12 @@ class Client(val config: Config,
   private def word2vecMatrix(args: Word2VecArguments,
                              vocabCns: Array[Int],
                              parameterServerCores: Int,
+                             createPartitioner: (Int, Long) => Partitioner,
                              hdfsPath: Option[String],
                              hadoopConfig: Option[Configuration],
                              trainable: Boolean): BigWord2VecMatrix = {
 
     val serHadoopConfig = hadoopConfig.map(new SerializableHadoopConfiguration(_))
-
-    val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
 
     val propFunction = (partition: Partition) => Props(
       classOf[PartialMatrixWord2Vec],
@@ -269,7 +268,8 @@ class Client(val config: Config,
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def word2vecMatrix(args: Word2VecArguments, vocabCns: Array[Int], parameterServerCores: Int): BigWord2VecMatrix = {
-    word2vecMatrix(args, vocabCns, parameterServerCores, None, None, true)
+    val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
+    word2vecMatrix(args, vocabCns, parameterServerCores, createPartitioner, None, None, true)
   }
 
   /**
@@ -294,7 +294,11 @@ class Client(val config: Config,
       throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
     }
     val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
-    word2vecMatrix(args, m.vocabCns, parameterServerCores, Some(hdfsPath), Some(hadoopConfig), trainable)
+    val numParameterServers = hdfs.countPartitionData(hdfsPath, hadoopConfig, pathPostfix = "/glint/data/u/")
+    val createPartitioner =
+      (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
+    word2vecMatrix(args, m.vocabCns, parameterServerCores, createPartitioner, Some(hdfsPath), Some(hadoopConfig),
+      trainable)
   }
 
   /**
@@ -756,7 +760,7 @@ object Client {
     }
     val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
     val bcVocabCns = sc.broadcast(m.vocabCns)
-    val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")  // TODO: replace with partitions
+    val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")
     runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers,
       Some(hdfsPath), trainable)
   }
