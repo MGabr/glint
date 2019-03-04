@@ -277,7 +277,7 @@ class Client(val config: Config,
     *
     * This method for loading the matrix has to send the vocabulary counts as serialized Akka props to remote
     * actors and is mainly intended for testing outside of spark. To efficiently construct a Word2Vec matrix use
-    * [[glint.Client.runWithLoadedWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext,hdfsPath* runWithLoadedWord2VecMatrixOnSpark]]
+    * [[glint.Client.runWithLoadedWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext)(hdfsPath* runWithLoadedWord2VecMatrixOnSpark]]
     *
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
