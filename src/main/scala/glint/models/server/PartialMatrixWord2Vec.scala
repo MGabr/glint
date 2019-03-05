@@ -207,7 +207,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
     cforRange(0 until vocabCns.length)(i => {
       val percentageCn = vocabCns(i) / trainWordsCount
-      val ran = (Math.sqrt(percentageCn / subsampleRatio) + 1) * (subsampleRatio / percentageCn)
+      val ran = Math.min((Math.sqrt(percentageCn / subsampleRatio) + 1) * (subsampleRatio / percentageCn), 1.0)
       subsampleCns(i) = (ran * vocabCns(i)).toInt
     })
 
