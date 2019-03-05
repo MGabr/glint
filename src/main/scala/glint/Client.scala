@@ -520,8 +520,8 @@ object Client {
                                            config: Config,
                                            args: Word2VecArguments,
                                            bcVocabCns: Broadcast[Array[Int]],
-                                           parameterServerCores: Int,
                                            numParameterServers: Int,
+                                           parameterServerCores: Int,
                                            hdfsPath: Option[String],
                                            trainable: Boolean): (Client, BigWord2VecMatrix) = {
     @transient
@@ -552,8 +552,8 @@ object Client {
       partitionMasterSystem = Some(ps)
 
       // Start parameter servers with partial models
-      val models = word2vecMatrixServersOnSpark(sc, config, client.get, args, bcVocabCns, parameterServerCores,
-        numParameterServers, hdfsPath, trainable)
+      val models = word2vecMatrixServersOnSpark(sc, config, client.get, args, bcVocabCns, numParameterServers,
+        parameterServerCores, hdfsPath, trainable)
 
       // Construct a big model client object
       val bigModel = new AsyncBigWord2VecMatrix(
@@ -579,8 +579,8 @@ object Client {
                                            client: Client,
                                            args: Word2VecArguments,
                                            bcVocabCns: Broadcast[Array[Int]],
-                                           parameterServerCores: Int,
                                            numParameterServers: Int,
+                                           parameterServerCores: Int,
                                            hdfsPath: Option[String],
                                            trainable: Boolean): Array[ActorRef] = {
 
@@ -629,17 +629,17 @@ object Client {
     * @param sc The spark context
     * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
-    * @param parameterServerCores The number of cores per parameter server
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext)
                                   (args: Word2VecArguments,
                                    bcVocabCns: Broadcast[Array[Int]],
-                                   parameterServerCores: Int = getNumExecutors(sc),
-                                   numParameterServers: Int = getNumExecutors(sc)): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, "", args, bcVocabCns, parameterServerCores, numParameterServers)
+                                   numParameterServers: Int = getNumExecutors(sc),
+                                   parameterServerCores: Int = getNumExecutors(sc)): (Client, BigWord2VecMatrix) = {
+    runWithWord2VecMatrixOnSpark(sc, "", args, bcVocabCns, numParameterServers, parameterServerCores)
   }
 
   /**
@@ -653,19 +653,19 @@ object Client {
     * @param host The master host name
     * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
-    * @param parameterServerCores The number of cores per parameter server
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext,
                                    host: String,
                                    args: Word2VecArguments,
                                    bcVocabCns: Broadcast[Array[Int]],
-                                   parameterServerCores: Int,
-                                   numParameterServers: Int): (Client, BigWord2VecMatrix) = {
+                                   numParameterServers: Int,
+                                   parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
     val config = getConfig(host)
-    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers)
+    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, numParameterServers, parameterServerCores)
   }
 
   /**
@@ -679,18 +679,18 @@ object Client {
     * @param config The configuration
     * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param bcVocabCns The array of all word counts, broadcasted by Spark beforehand
-    * @param parameterServerCores The number of cores per parameter server
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def runWithWord2VecMatrixOnSpark(sc: SparkContext,
                                    config: Config,
                                    args: Word2VecArguments,
                                    bcVocabCns: Broadcast[Array[Int]],
-                                   parameterServerCores: Int,
-                                   numParameterServers: Int): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers, None, true)
+                                   numParameterServers: Int,
+                                   parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
+    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, numParameterServers, parameterServerCores, None, true)
   }
 
   /**
