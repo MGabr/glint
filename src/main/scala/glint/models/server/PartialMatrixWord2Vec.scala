@@ -146,7 +146,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
-      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, window, batchSize, n, unigramTableSize,
+      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, window, batchSize, n, subsampleRatio, unigramTableSize,
         trainable && saveTrainable)
       hdfs.saveWord2VecMatrixMetadata(hdfsPath, hadoopConfig.conf, meta)
     }

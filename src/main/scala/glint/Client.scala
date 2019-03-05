@@ -294,7 +294,7 @@ class Client(val config: Config,
     if (trainable && !m.trainable) {
       throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
     }
-    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
+    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.subsampleRatio, m.unigramTableSize)
     val numParameterServers = hdfs.countPartitionData(hdfsPath, hadoopConfig, pathPostfix = "/glint/data/u/")
     val createPartitioner =
       (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
@@ -759,7 +759,7 @@ object Client {
     if (trainable && !m.trainable) {
       throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
     }
-    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
+    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.subsampleRatio, m.unigramTableSize)
     val bcVocabCns = sc.broadcast(m.vocabCns)
     val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")
     runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers,
