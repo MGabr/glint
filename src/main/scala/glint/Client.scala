@@ -762,7 +762,7 @@ object Client {
     val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.subsampleRatio, m.unigramTableSize)
     val bcVocabCns = sc.broadcast(m.vocabCns)
     val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")
-    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, parameterServerCores, numParameterServers,
+    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, numParameterServers, parameterServerCores,
       Some(hdfsPath), trainable)
   }
 
