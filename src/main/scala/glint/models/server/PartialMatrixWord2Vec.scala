@@ -30,8 +30,6 @@ import scala.util.Random
   * @param vectorSize The (full) vector size
   * @param vocabCns The array of all word counts
   * @param n The number of negative examples to create per output word
-  * @param subsampleRatio The ratio controlling how much subsampling occurs,
-  *                       smaller values mean frequent words are less likely to be kept
   * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
   *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
   * @param cores The number of cores for asynchronously handled message
@@ -46,7 +44,6 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
                                            val window: Int,
                                            val batchSize: Int,
                                            val n: Int,
-                                           val subsampleRatio: Double,
                                            val unigramTableSize: Int,
                                            val cores: Int,
                                            val trainable: Boolean)
@@ -146,7 +143,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
-      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, window, batchSize, n, subsampleRatio, unigramTableSize,
+      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, window, batchSize, n, unigramTableSize,
         trainable && saveTrainable)
       hdfs.saveWord2VecMatrixMetadata(hdfsPath, hadoopConfig.conf, meta)
     }
@@ -171,18 +168,16 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
     val table = new Array[Int](unigramTableSize)
 
-    val subVocabCns = subsampleCns()
-
     cforRange(0 until vocabCns.length)(i => {
-      trainWordsPow += Math.pow(subVocabCns(i), power)
+      trainWordsPow += Math.pow(vocabCns(i), power)
     })
     var i = 0
-    var d1 = Math.pow(subVocabCns(i), power) / trainWordsPow
+    var d1 = Math.pow(vocabCns(i), power) / trainWordsPow
     cforRange(0 until unigramTableSize)(a => {
       table(a) = i
       if (a / unigramTableSize.toDouble > d1) {
         i += 1
-        d1 += Math.pow(subVocabCns(i), power) / trainWordsPow
+        d1 += Math.pow(vocabCns(i), power) / trainWordsPow
       }
       if (i >= vocabCns.length) {
         i = vocabCns.length - 1
@@ -190,28 +185,6 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     })
 
     table
-  }
-
-  /**
-    * Creates a corrected array of word counts taking into account the subsampling which was applied.
-    *
-    * @return An array of word counts
-    */
-  private def subsampleCns(): Array[Int] = {
-    val subsampleCns = new Array[Int](vocabCns.length)
-
-    var trainWordsCount = 0
-    cforRange(0 until vocabCns.length)(i => {
-      trainWordsCount += vocabCns(i)
-    })
-
-    cforRange(0 until vocabCns.length)(i => {
-      val percentageCn = vocabCns(i) / trainWordsCount
-      val ran = Math.min((Math.sqrt(percentageCn / subsampleRatio) + 1) * (subsampleRatio / percentageCn), 1.0)
-      subsampleCns(i) = (ran * vocabCns(i)).toInt
-    })
-
-    subsampleCns
   }
 
   /**

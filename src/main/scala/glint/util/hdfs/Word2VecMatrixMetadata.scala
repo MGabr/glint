@@ -9,6 +9,5 @@ case class Word2VecMatrixMetadata(vocabCns: Array[Int],
                                   window: Int,
                                   batchSize: Int,
                                   n: Int,
-                                  subsampleRatio: Double,
                                   unigramTableSize: Int,
                                   trainable: Boolean)
