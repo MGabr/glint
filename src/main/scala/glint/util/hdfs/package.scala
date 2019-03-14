@@ -1,6 +1,7 @@
 package glint.util
 
 import java.io.{ObjectInputStream, ObjectOutputStream}
+import java.util.UUID
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -49,6 +50,16 @@ package object hdfs {
                                  config: Configuration,
                                  pathPostfix: String = "/glint/metadata"): Word2VecMatrixMetadata = {
     load(path + pathPostfix, config).asInstanceOf[Word2VecMatrixMetadata]
+  }
+
+  def saveTmpWord2VecMatrixMetadata(config: Configuration, metadata: Word2VecMatrixMetadata): String = {
+    val tmpDir = config.get("hadoop.tmp.dir", "/tmp")
+    val randomUUID = UUID.randomUUID().toString
+    val path = s"${tmpDir}/glint/${randomUUID}"
+    hdfs.saveWord2VecMatrixMetadata(path, config, metadata)
+    FileSystem.get(config).deleteOnExit(new Path(path))
+
+    path
   }
 
   def savePartitionData[V](path: String,

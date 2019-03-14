@@ -4,6 +4,7 @@ import java.util.concurrent.Executors
 
 import akka.pattern.pipe
 import com.github.fommil.netlib.F2jBLAS
+import glint.Word2VecArguments
 import glint.messages.server.logic.AcknowledgeReceipt
 import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat, ResponseRowsFloat}
@@ -25,29 +26,24 @@ import scala.util.Random
   * @param aggregate The type of aggregation to apply
   * @param hdfsPath The HDFS base path from which the partial matrix' initial data should be loaded from
   * @param hadoopConfig The serializable Hadoop configuration to use for loading the initial data from HDFS
-  * @param window The window size
-  * @param batchSize The minibatch size
-  * @param vectorSize The (full) vector size
-  * @param vocabCns The array of all word counts
-  * @param n The number of negative examples to create per output word
-  * @param unigramTableSize The size of the unigram table for efficient generation of random negative words.
-  *                         Smaller sizes can prevent OutOfMemoryError but might lead to worse results
-  * @param cores The number of cores for asynchronously handled message
+  * @param args The [[glint.Word2VecArguments Word2VecArguments]]
+  * @param vocabSize The vocabulary size
+  * @param vocabCnsOpt The array of all word counts, if not specified it is loaded from HDFS
+  * @param loadVocabCnOnly If only vocabCns should be loaded from HDFS (and not all initial data)
   * @param trainable Whether the matrix is trainable, requiring more data (output weights, unigram table)
+  * @param cores The number of cores for asynchronously handled message
   */
 private[glint] class PartialMatrixWord2Vec(partition: Partition,
                                            aggregate: Aggregate,
                                            hdfsPath: Option[String],
                                            hadoopConfig: Option[SerializableHadoopConfiguration],
-                                           val vectorSize: Int,
-                                           val vocabCns: Array[Int],
-                                           val window: Int,
-                                           val batchSize: Int,
-                                           val n: Int,
-                                           val unigramTableSize: Int,
-                                           val cores: Int,
-                                           val trainable: Boolean)
-  extends PartialMatrixFloat(partition, vocabCns.length, partition.size, aggregate, hdfsPath, hadoopConfig) {
+                                           val args: Word2VecArguments,
+                                           val vocabSize: Int,
+                                           val vocabCnsOpt: Option[Array[Int]],
+                                           val loadVocabCnOnly: Boolean,
+                                           val trainable: Boolean,
+                                           val cores: Int)
+  extends PartialMatrixFloat(partition, vocabSize, partition.size, aggregate, hdfsPath, hadoopConfig) {
 
   @transient
   private lazy val blas = new F2jBLAS
@@ -68,6 +64,11 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   var v: Array[Float] = _
 
   /**
+    * The array of all word counts
+    */
+  var vocabCns: Array[Int] = _
+
+  /**
     * The unigram table for efficient generation of random negative words
     */
   var table: Array[Int] = _
@@ -79,15 +80,20 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(cores))
 
 
+  override def loadOrInitialize(initialize: => Array[Float], pathPostfix: String): Array[Float] = {
+    if (loadVocabCnOnly) initialize else super.loadOrInitialize(initialize, pathPostfix)
+  }
+
   override def preStart(): Unit = {
-    u = loadOrInitialize(
-      () => Array.fill(rows * cols)((random.nextFloat() - 0.5f) / vectorSize),
+    u = loadOrInitialize(Array.fill(rows * cols)((random.nextFloat() - 0.5f) / args.vectorSize),
       pathPostfix = "/glint/data/u/")
     data = u
 
     if (trainable) {
-      table = unigramTable()  // initialized before v since it temporarily allocates a second vocabCns array
-      v = loadOrInitialize(() => new Array(rows * cols), pathPostfix = "/glint/data/v/")
+      vocabCns = vocabCnsOpt.getOrElse(hdfs.loadWord2VecMatrixMetadata(hdfsPath.get, hadoopConfig.get.get()).vocabCns)
+      table = unigramTable()
+
+      v = loadOrInitialize(new Array(rows * cols), pathPostfix = "/glint/data/v/")
     }
   }
 
@@ -143,8 +149,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
-      val meta = Word2VecMatrixMetadata(vocabCns, vectorSize, window, batchSize, n, unigramTableSize,
-        trainable && saveTrainable)
+      val meta = Word2VecMatrixMetadata(vocabCns, args, trainable && saveTrainable)
       hdfs.saveWord2VecMatrixMetadata(hdfsPath, hadoopConfig.conf, meta)
     }
 
@@ -166,20 +171,20 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     var trainWordsPow = 0.0
     val power = 0.75
 
-    val table = new Array[Int](unigramTableSize)
+    val table = new Array[Int](args.unigramTableSize)
 
-    cforRange(0 until vocabCns.length)(i => {
+    cforRange(0 until vocabSize)(i => {
       trainWordsPow += Math.pow(vocabCns(i), power)
     })
     var i = 0
     var d1 = Math.pow(vocabCns(i), power) / trainWordsPow
-    cforRange(0 until unigramTableSize)(a => {
+    cforRange(0 until args.unigramTableSize)(a => {
       table(a) = i
-      if (a / unigramTableSize.toDouble > d1) {
+      if (a / args.unigramTableSize.toDouble > d1) {
         i += 1
         d1 += Math.pow(vocabCns(i), power) / trainWordsPow
       }
-      if (i >= vocabCns.length) {
+      if (i >= vocabSize) {
         i = vocabCns.length - 1
       }
     })
@@ -195,15 +200,15 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * @return The negative words
     */
   private def negativeExamples(random: Random, wOut: Int): Array[Int] = {
-    Array.fill[Int](n) {
-      var nextRandom = random.nextInt(unigramTableSize)
+    Array.fill[Int](args.n) {
+      var nextRandom = random.nextInt(args.unigramTableSize)
       var nOut = table(nextRandom)
       while (nOut == wOut) {
-        nextRandom = random.nextInt(unigramTableSize)
+        nextRandom = random.nextInt(args.unigramTableSize)
         nOut = table(nextRandom)
       }
       if (nOut == 0) {
-        nOut = nextRandom % (vocabCns.length - 1) + 1
+        nOut = nextRandom % (vocabSize - 1) + 1
       }
       nOut
     }
@@ -224,7 +229,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
     val length = wOutput.map(_.length).sum
     val fPlus = new Array[Float](length)
-    val fMinus = new Array[Float](length * n)
+    val fMinus = new Array[Float](length * args.n)
 
     var pos = 0
     var neg = 0
@@ -253,11 +258,11 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
 
   private val threadLocalUIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(batchSize)
+    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize)
   }
 
   private val threadLocalVIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(batchSize * window * (n + 1))
+    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * args.window * (args.n + 1))
   }
 
   private val threadLocalUpdatesArrayPool = new ThreadLocal[FloatArraysArrayPool] {

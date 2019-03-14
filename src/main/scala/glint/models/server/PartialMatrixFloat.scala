@@ -28,7 +28,7 @@ private[glint] class PartialMatrixFloat(partition: Partition,
   override var data: Array[Float] = _
 
   override def preStart(): Unit = {
-    data = loadOrInitialize(() => Array.fill[Float](rows * cols)(0.0f))
+    data = loadOrInitialize(Array.fill[Float](rows * cols)(0.0f))
   }
 
   override def receive: Receive = {

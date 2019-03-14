@@ -1,12 +1,16 @@
 package glint
 
 import java.io.File
+import java.net.InetAddress
 
 import glint.util.terminateAndWait
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
+import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 
 /**
   * This is the main class that runs when you start Glint. By manually specifying additional command-line options it is
@@ -24,6 +28,12 @@ import scala.concurrent.ExecutionContext
   *
   * Alternatively you can use the scripts provided in the ./sbin/ folder of the project to automatically construct a
   * master and servers over passwordless ssh.
+  *
+  * To start a master and parameter server nodes on Spark:
+  * {{{
+  *   spark-submit --num-executors num-servers --executor-cores server-cores /path/to/compiled/Glint.jar spark
+  * }}}
+  *
   */
 object Main extends StrictLogging {
 
@@ -35,7 +45,7 @@ object Main extends StrictLogging {
   def main(args: Array[String]): Unit = {
 
     val parser = new scopt.OptionParser[Options]("glint") {
-      head("glint", "0.1")
+      head("glint", "0.2")
       opt[File]('c', "config") valueName "<file>" action { (x, c) =>
         c.copy(config = x)
       } text "The .conf file for glint"
@@ -45,6 +55,9 @@ object Main extends StrictLogging {
       cmd("server") action { (_, c) =>
         c.copy(mode = "server")
       } text "Starts a server node."
+      cmd("spark") action { (_, c) =>
+        c.copy(mode = "spark")
+      } text "Starts master and server nodes on Spark."
     }
 
     parser.parse(args, Options()) match {
@@ -70,6 +83,7 @@ object Main extends StrictLogging {
               terminateAndWait(system, config)
             }
           }
+          case "spark" => runOnSpark()
           case _ =>
             parser.showUsageAsError
             System.exit(1)
@@ -91,4 +105,29 @@ object Main extends StrictLogging {
                              host: String = "localhost",
                              port: Int = 0)
 
+  /**
+    * Runs master and server nodes on Spark.
+    * This Spark application will run infinitely until it is killed or a client terminates it
+    */
+  private def runOnSpark(): Unit = {
+    val sc = new SparkContext(new SparkConf().setAppName("Glint parameter servers"))
+    val client = Client.runOnSpark(sc)()
+
+    val driverHost = InetAddress.getLocalHost.getHostAddress
+    logger.info(s"Started Glint parameter servers as Spark application ${sc.applicationId} with master on $driverHost")
+
+    // termination in case application is killed
+    sc.addSparkListener(new SparkListener {
+      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+        client.terminateOnSpark(sc)
+      }
+    })
+
+    // termination in case client system is terminated by other client
+    Await.ready(client.system.whenTerminated, Duration.Inf)
+    client.terminateOnSpark(sc)
+    if (!sc.isStopped) {
+      sc.stop()
+    }
+  }
 }

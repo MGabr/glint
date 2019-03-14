@@ -10,7 +10,7 @@ import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import glint.exceptions.{ModelCreationException, ServerCreationException}
-import glint.messages.master.{RegisterClient, ServerList}
+import glint.messages.master.{ClientList, RegisterClient, ServerList}
 import glint.models.client.async._
 import glint.models.client.{BigMatrix, BigVector, BigWord2VecMatrix}
 import glint.models.server._
@@ -21,6 +21,7 @@ import glint.partitioning.range.RangePartitioner
 import glint.partitioning.{Partition, Partitioner}
 import glint.serialization.SerializableHadoopConfiguration
 import glint.util._
+import glint.util.hdfs.Word2VecMatrixMetadata
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -224,32 +225,21 @@ class Client(val config: Config,
   }
 
   private def word2vecMatrix(args: Word2VecArguments,
-                             vocabCns: Array[Int],
+                             vocabSize: Int,
                              parameterServerCores: Int,
                              createPartitioner: (Int, Long) => Partitioner,
-                             hdfsPath: Option[String],
-                             hadoopConfig: Option[Configuration],
+                             hdfsPath: String,
+                             hadoopConfig: Configuration,
+                             loadVocabCnOnly: Boolean,
                              trainable: Boolean): BigWord2VecMatrix = {
 
-    val serHadoopConfig = hadoopConfig.map(new SerializableHadoopConfiguration(_))
+    val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
 
-    val propFunction = (partition: Partition) => Props(
-      classOf[PartialMatrixWord2Vec],
-      partition,
-      AggregateAdd(),
-      hdfsPath,
-      serHadoopConfig,
-      args.vectorSize,
-      vocabCns,
-      args.window,
-      args.batchSize,
-      args.n,
-      args.unigramTableSize,
-      parameterServerCores,
-      trainable)
+    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(),
+      Some(hdfsPath), Some(serHadoopConfig), args, vocabSize, None, loadVocabCnOnly, trainable, parameterServerCores)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabCns.length, args.vectorSize, args.n,
+      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabSize, args.vectorSize, args.n,
         trainable)
 
     create[BigWord2VecMatrix](args.vectorSize, 1, createPartitioner, propFunction, objFunction)
@@ -258,26 +248,28 @@ class Client(val config: Config,
   /**
     * Constructs a distributed Word2Vec matrix
     *
-    * This method for constructing the matrix has to send the vocabulary counts as serialized Akka props to remote
-    * actors and is mainly intended for testing outside of spark. To efficiently construct a Word2Vec matrix use
+    * This method for constructing the matrix has to save the vocabulary counts to a temporary HDFS file.
+    * To efficiently construct a Word2Vec matrix in a standalone glint cluster in the same Spark application use
     * [[glint.Client.runWithWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext)* runWithWord2VecMatrixOnSpark]]
     *
     * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param vocabCns The array of all word counts
+    * @param hadoopConfig The Hadoop configuration to use for saving vocabCns to HDFS
     * @param parameterServerCores The number of cores per parameter server
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def word2vecMatrix(args: Word2VecArguments, vocabCns: Array[Int], parameterServerCores: Int): BigWord2VecMatrix = {
+  def word2vecMatrix(args: Word2VecArguments,
+                     vocabCns: Array[Int],
+                     hadoopConfig: Configuration,
+                     parameterServerCores: Int): BigWord2VecMatrix = {
+
+    val tmpPath = hdfs.saveTmpWord2VecMatrixMetadata(hadoopConfig, Word2VecMatrixMetadata(vocabCns, args, true))
     val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
-    word2vecMatrix(args, vocabCns, parameterServerCores, createPartitioner, None, None, true)
+    word2vecMatrix(args, vocabCns.length, parameterServerCores, createPartitioner, tmpPath, hadoopConfig, true, true)
   }
 
   /**
     * Loads a distributed Word2Vec matrix
-    *
-    * This method for loading the matrix has to send the vocabulary counts as serialized Akka props to remote
-    * actors and is mainly intended for testing outside of spark. To efficiently construct a Word2Vec matrix use
-    * [[glint.Client.runWithLoadedWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext)(hdfsPath* runWithLoadedWord2VecMatrixOnSpark]]
     *
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
@@ -288,16 +280,16 @@ class Client(val config: Config,
   def loadWord2vecMatrix(hdfsPath: String,
                          hadoopConfig: Configuration,
                          trainable: Boolean = false,
-                         parameterServerCores: Int = 1): BigWord2VecMatrix = {
+                         parameterServerCores: Int = 1): BigWord2VecMatrix = {  // TODO: determine how many available
+
     val m = hdfs.loadWord2VecMatrixMetadata(hdfsPath, hadoopConfig)
     if (trainable && !m.trainable) {
       throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
     }
-    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
     val numParameterServers = hdfs.countPartitionData(hdfsPath, hadoopConfig, pathPostfix = "/glint/data/u/")
     val createPartitioner =
       (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
-    word2vecMatrix(args, m.vocabCns, parameterServerCores, createPartitioner, Some(hdfsPath), Some(hadoopConfig),
+    word2vecMatrix(m.args, m.vocabCns.length, parameterServerCores, createPartitioner, hdfsPath, hadoopConfig, false,
       trainable)
   }
 
@@ -359,6 +351,13 @@ class Client(val config: Config,
   }
 
   /**
+    * @return A future containing an array of connected clients
+    */
+  private def clientList(): Future[Array[ActorRef]] = {
+    (master ? new ClientList()).mapTo[Array[ActorRef]]
+  }
+
+  /**
     * Stops the glint client
     */
   def stop(): Unit = {
@@ -366,12 +365,20 @@ class Client(val config: Config,
   }
 
   /**
-    * Terminates a standalone glint cluster integrated in Spark
+    * Terminates a standalone glint cluster integrated in this or another Spark application.
     * Also stops the glint client itself
     *
     * @param sc The spark context
+    * @param terminateOtherClients If other clients should be terminated. This is the necessary if a glint cluster in
+    *                              another Spark application should be terminated.
     */
-  def terminateOnSpark(sc: SparkContext): Unit = {
+  def terminateOnSpark(sc: SparkContext, terminateOtherClients: Boolean = false): Unit = {
+    if (terminateOtherClients) {
+      Await.result(clientList(), timeout.duration).foreach { c =>
+        c ! PoisonPill
+      }
+    }
+
     val shutdownTimeout = config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS)
     Client.terminateOnSpark(sc, shutdownTimeout milliseconds)
     stop()
@@ -407,6 +414,16 @@ object Client {
     */
   def apply(): Client = {
     this(ConfigFactory.empty())
+  }
+
+  /**
+    * Constructs a client
+    *
+    * @param host The master host name
+    * @return A future Client
+    */
+  def apply(host: String): Client = {
+    apply(getConfig(host))
   }
 
   /**
@@ -596,8 +613,7 @@ object Client {
       val partialModelFuture = Server.runOnce(config).map {
         case Some((serverSystem, serverRef, partition)) =>
           val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), hdfsPath, Some(serHadoopConfig),
-            args.vectorSize, bcVocabCns.value, args.window, args.batchSize, args.n, args.unigramTableSize,
-            parameterServerCores, trainable)
+            args, bcVocabCns.value.length, Some(bcVocabCns.value), false, trainable, parameterServerCores)
           val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
           Some((Serialization.serializedActorPath(actorRef), partition.index))
         case None => None
@@ -623,7 +639,7 @@ object Client {
     *
     * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
     * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
-    * and avoids having to send them as serialized Akka props to remote actors.
+    * and avoids having to save them temporarily to HDFS.
     *
     * @param sc The spark context
     * @param args The [[glint.Word2VecArguments Word2VecArguments]]
@@ -646,7 +662,7 @@ object Client {
     *
     * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
     * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
-    * and avoids having to send them as serialized Akka props to remote actors.
+    * and avoids having to save them temporarily to HDFS.
     *
     * @param sc The spark context
     * @param host The master host name
@@ -672,7 +688,7 @@ object Client {
     *
     * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
     * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
-    * and avoids having to send them as serialized Akka props to remote actors.
+    * and avoids having to save them temporarily to HDFS.
     *
     * @param sc The spark context
     * @param config The configuration
@@ -690,79 +706,6 @@ object Client {
                                    numParameterServers: Int,
                                    parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
     runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, numParameterServers, parameterServerCores, None, true)
-  }
-
-  /**
-    * Starts a standalone glint cluster integrated in Spark and loads a saved Word2Vec matrix on it.
-    *
-    * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
-    * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
-    * and avoids having to send them as serialized Akka props to remote actors.
-    *
-    * @param sc The spark context
-    * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
-    * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
-    * @param parameterServerCores The number of cores per parameter server
-    * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
-    */
-  def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext)
-                                        (hdfsPath: String,
-                                         trainable: Boolean = false,
-                                         parameterServerCores: Int = getExecutorCores(sc)
-                                        ): (Client, BigWord2VecMatrix) = {
-    runWithLoadedWord2VecMatrixOnSpark(sc, "", hdfsPath, trainable, parameterServerCores)
-  }
-
-  /**
-    * Starts a standalone glint cluster integrated in Spark and loads a saved Word2Vec matrix on it.
-    *
-    * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
-    * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
-    * and avoids having to send them as serialized Akka props to remote actors.
-    *
-    * @param sc The spark context
-    * @param host The master host name
-    * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
-    * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
-    * @param parameterServerCores The number of cores per parameter server
-    * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
-    */
-  def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
-                                         host: String,
-                                         hdfsPath: String,
-                                         trainable: Boolean,
-                                         parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
-    val config = getConfig(host)
-    runWithLoadedWord2VecMatrixOnSpark(sc, config, hdfsPath, trainable, parameterServerCores)
-  }
-
-  /**
-    * Starts a standalone glint cluster integrated in Spark and loads a saved Word2Vec matrix on it.
-    *
-    * These two actions are performed together to efficiently initialize the partial Word2Vec matrices.
-    * This uses the vocabulary counts broadcasted by Spark as Akka props for each local actor
-    * and avoids having to send them as serialized Akka props to remote actors.
-    *
-    * @param sc The spark context
-    * @param config The configuration
-    * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
-    * @param parameterServerCores The number of cores per parameter server
-    * @return A future Glint client and and the constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
-    */
-  def runWithLoadedWord2VecMatrixOnSpark(sc: SparkContext,
-                                         config: Config,
-                                         hdfsPath: String,
-                                         trainable: Boolean,
-                                         parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
-    val m = hdfs.loadWord2VecMatrixMetadata(hdfsPath, sc.hadoopConfiguration)
-    if (trainable && !m.trainable) {
-      throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
-    }
-    val args = Word2VecArguments(m.vectorSize, m.window, m.batchSize, m.n, m.unigramTableSize)
-    val bcVocabCns = sc.broadcast(m.vocabCns)
-    val numParameterServers = hdfs.countPartitionData(hdfsPath, sc.hadoopConfiguration, pathPostfix = "/glint/data/u/")
-    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, numParameterServers, parameterServerCores,
-      Some(hdfsPath), trainable)
   }
 
   /**
@@ -796,13 +739,15 @@ object Client {
     * @param sc The spark context
     */
   def terminateOnSpark(sc: SparkContext, shutdownTimeout: Duration): Unit = {
-    val nrOfExecutors = getNumExecutors(sc)
-    val executorCores = getExecutorCores(sc)
-    val nrOfPartitions = nrOfExecutors * executorCores
-    sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition { case _ =>
-      @transient
-      implicit val ec = ExecutionContext.Implicits.global
-      StartedActorSystems.terminateAndWait(shutdownTimeout)
+    if (!sc.isStopped) {
+      val nrOfExecutors = getNumExecutors(sc)
+      val executorCores = getExecutorCores(sc)
+      val nrOfPartitions = nrOfExecutors * executorCores
+      sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition { case _ =>
+        @transient
+        implicit val ec = ExecutionContext.Implicits.global
+        StartedActorSystems.terminateAndWait(shutdownTimeout)
+      }
     }
 
     @transient
@@ -871,7 +816,13 @@ case class Word2VecArguments(vectorSize: Int,
   * crashes unexpectedly.
   */
 private class ClientActor extends Actor with ActorLogging {
+
   override def receive: Receive = {
     case x => log.info(s"Client actor received message ${x}")
+  }
+
+  override def postStop(): Unit = {
+    super.postStop()
+    context.system.terminate()
   }
 }

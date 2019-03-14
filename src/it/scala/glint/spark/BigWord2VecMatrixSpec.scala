@@ -178,7 +178,8 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
       pending
     }
 
-    val (client, loadedMatrix) = Client.runWithLoadedWord2VecMatrixOnSpark(sc)("testdata")
+    val client = Client.runOnSpark(sc)()
+    val loadedMatrix = client.loadWord2vecMatrix("testdata", sc.hadoopConfiguration)
 
     try {
       val values = whenReady(loadedMatrix.pull(Array(0, 0, 0, 999, 999), Array(0, 1, 2, 0, 1))) {

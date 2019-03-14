@@ -28,7 +28,7 @@ private[glint] class PartialMatrixLong(partition: Partition,
   override var data: Array[Long] = _
 
   override def preStart(): Unit = {
-    data = loadOrInitialize (() => Array.fill[Long](rows * cols)(0L))
+    data = loadOrInitialize (Array.fill[Long](rows * cols)(0L))
   }
 
   override def receive: Receive = {

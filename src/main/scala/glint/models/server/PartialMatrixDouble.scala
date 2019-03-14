@@ -28,7 +28,7 @@ private[glint] class PartialMatrixDouble(partition: Partition,
   override var data: Array[Double] = _
 
   override def preStart(): Unit = {
-    data = loadOrInitialize(() => Array.fill[Double](rows * cols)(0.0))
+    data = loadOrInitialize(Array.fill[Double](rows * cols)(0.0))
   }
 
   override def receive: Receive = {

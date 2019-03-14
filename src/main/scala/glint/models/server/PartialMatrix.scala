@@ -104,11 +104,11 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     * @param pathPostfix The path postfix added when loading the data matrix. Use the same postfix used for saving
     * @return The data matrix
     */
-  def loadOrInitialize(initialize: () => Array[V], pathPostfix: String = "/glint/data/"): Array[V] = {
+  def loadOrInitialize(initialize: => Array[V], pathPostfix: String = "/glint/data/"): Array[V] = {
     if (hdfsPath.isDefined && hadoopConfig.isDefined) {
       hdfs.loadPartitionData(hdfsPath.get, hadoopConfig.get.conf, partition.index, pathPostfix)
     } else {
-      initialize()
+      initialize
     }
   }
 
