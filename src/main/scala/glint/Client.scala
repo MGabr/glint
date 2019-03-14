@@ -476,162 +476,8 @@ object Client {
     * @return A future Glint client
     */
   def runOnSpark(sc: SparkContext, config: Config, numParameterServers: Int): Client = {
-    @transient
-    implicit val ec = ExecutionContext.Implicits.global
-
-    val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
-    val shutdownTimeout = config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS) milliseconds
-
-    // Defined upfront for easier error handling
-    var masterSystem: Option[ActorSystem] = None
-    var client: Option[Client] = None
-    var partitionMasterSystem: Option[ActorSystem] = None
-
-    try {
-      // Start master
-      val (s, _) = Await.result(Master.run(config), clientTimeout)
-      masterSystem = Some(s)
-      sys.addShutdownHook {
-        terminateAndWait(masterSystem.get, config)
-      }
-
-      // Construct client
-      client = Some(Client(config))
-
-      // Start partition master
-      val partitioner = RangePartitioner(numParameterServers, numParameterServers)
-      val (ps, _) = Await.result(PartitionMaster.run(config, partitioner.all()), clientTimeout)
-      partitionMasterSystem = Some(ps)
-
-      // Start parameter servers on workers
-      val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
-      sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition {
-        case _ => Await.result(Server.runOnce(config), clientTimeout)
-      }
-
-      // Check if the requested number of parameter servers were started
-      val numStartedParameterServers = Await.result(client.get.serverList().map(_.length), clientTimeout)
-      if (numStartedParameterServers != numParameterServers) {
-        throw new ServerCreationException(
-          s"Could not start the requested number of parameter servers. " +
-          s"Requested $numParameterServers, started $numStartedParameterServers")
-      }
-
-      StartedActorSystems.add(masterSystem.get)
-      StartedActorSystems.add(client.get.system)
-
-      client.get
-    } catch {
-      case ex: Throwable =>
-        masterSystem.foreach(_.terminate())
-        client.foreach(_.terminateOnSpark(sc))
-        throw ex
-    } finally {
-      // Shutdown partition master
-      partitionMasterSystem.foreach(terminateAndWait(_, config))
-    }
-  }
-
-  private def runWithWord2VecMatrixOnSpark(sc: SparkContext,
-                                           config: Config,
-                                           args: Word2VecArguments,
-                                           bcVocabCns: Broadcast[Array[Int]],
-                                           numParameterServers: Int,
-                                           parameterServerCores: Int,
-                                           hdfsPath: Option[String],
-                                           trainable: Boolean): (Client, BigWord2VecMatrix) = {
-    @transient
-    implicit val ec = ExecutionContext.Implicits.global
-
-    val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
-    val shutdownTimeout = config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS) milliseconds
-
-    // Defined upfront for easier error handling
-    var masterSystem: Option[ActorSystem] = None
-    var client: Option[Client] = None
-    var partitionMasterSystem: Option[ActorSystem] = None
-
-    try {
-      // Start master
-      val (s, _) = Await.result(Master.run(config), clientTimeout)
-      masterSystem = Some(s)
-      sys.addShutdownHook {
-        terminateAndWait(masterSystem.get, config)
-      }
-
-      // Construct client
-      client = Some(Client(config))
-
-      // Start partition master
-      val partitioner = RangePartitioner(numParameterServers, args.vectorSize, PartitionBy.COL)
-      val (ps, _) = Await.result(PartitionMaster.run(config, partitioner.all()), clientTimeout)
-      partitionMasterSystem = Some(ps)
-
-      // Start parameter servers with partial models
-      val models = word2vecMatrixServersOnSpark(sc, config, client.get, args, bcVocabCns, numParameterServers,
-        parameterServerCores, hdfsPath, trainable)
-
-      // Construct a big model client object
-      val bigModel = new AsyncBigWord2VecMatrix(
-        partitioner, models, config, AggregateAdd(), bcVocabCns.value.length, args.vectorSize, args.n, trainable)
-
-      StartedActorSystems.add(masterSystem.get)
-      StartedActorSystems.add(client.get.system)
-
-      (client.get, bigModel)
-    } catch {
-      case ex: Throwable =>
-        masterSystem.foreach(_.terminate())
-        client.foreach(_.terminateOnSpark(sc))
-        throw ex
-    } finally {
-      // Shutdown partition master
-      partitionMasterSystem.foreach(terminateAndWait(_, config))
-    }
-  }
-
-  private def word2vecMatrixServersOnSpark(sc: SparkContext,
-                                           config: Config,
-                                           client: Client,
-                                           args: Word2VecArguments,
-                                           bcVocabCns: Broadcast[Array[Int]],
-                                           numParameterServers: Int,
-                                           parameterServerCores: Int,
-                                           hdfsPath: Option[String],
-                                           trainable: Boolean): Array[ActorRef] = {
-
-    val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
-
-    // Start parameter servers and create 'numParameterServers' partial models on workers
-    // Return list of serialized partial model actor references
-    val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
-    val serHadoopConfig = new SerializableHadoopConfiguration(sc.hadoopConfiguration)
-    val models = sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).mapPartitions { _ =>
-      @transient
-      implicit val ec = ExecutionContext.Implicits.global
-
-      val partialModelFuture = Server.runOnce(config).map {
-        case Some((serverSystem, serverRef, partition)) =>
-          val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), hdfsPath, Some(serHadoopConfig),
-            args, bcVocabCns.value.length, Some(bcVocabCns.value), false, trainable, parameterServerCores)
-          val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
-          Some((Serialization.serializedActorPath(actorRef), partition.index))
-        case None => None
-      }
-      Await.result(partialModelFuture, clientTimeout).map(x => Iterator(x)).getOrElse(Iterator())
-    }.collect().sortBy(_._2).map(_._1)
-
-    // Check if the requested number of parameter servers were started
-    val numStartedParameterServers = models.length
-    if (numStartedParameterServers != numParameterServers) {
-      throw new ServerCreationException(
-        s"Could not start the requested number of parameter servers with partial models. " +
-          s"Requested $numParameterServers, started $numStartedParameterServers")
-    }
-
-    // deserialize partial model actor references
-    val extendedActorSystem = SerializationExtension(client.system).system
-    models.map(model => extendedActorSystem.provider.resolveActorRef(model))
+    val (client, _) = runOnSpark(sc, config, numParameterServers, None, None, None)
+    client
   }
 
   /**
@@ -705,7 +551,10 @@ object Client {
                                    bcVocabCns: Broadcast[Array[Int]],
                                    numParameterServers: Int,
                                    parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
-    runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, numParameterServers, parameterServerCores, None, true)
+
+    val (client, Some(model)) = runOnSpark(sc, config, numParameterServers,
+      Some(args), Some(bcVocabCns), Some(parameterServerCores))
+    (client, model)
   }
 
   /**
@@ -731,6 +580,117 @@ object Client {
         .withValue("glint.partition-master.host", hostConfigValue)
         .withValue("glint.partition-master.akka.remote.artery.canonical.hostname", hostConfigValue)
     }
+  }
+
+  private def runOnSpark(sc: SparkContext,
+                         config: Config,
+                         numParameterServers: Int,
+                         args: Option[Word2VecArguments],
+                         bcVocabCnsOpt: Option[Broadcast[Array[Int]]],
+                         parameterServerCores: Option[Int]): (Client, Option[BigWord2VecMatrix]) = {
+    @transient
+    implicit val ec = ExecutionContext.Implicits.global
+
+    val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+    val shutdownTimeout = config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS) milliseconds
+
+    // Defined upfront for easier error handling
+    var masterSystem: Option[ActorSystem] = None
+    var client: Option[Client] = None
+    var partitionMasterSystem: Option[ActorSystem] = None
+
+    try {
+      // Start master
+      val (s, _) = Await.result(Master.run(config), clientTimeout)
+      masterSystem = Some(s)
+      sys.addShutdownHook {
+        terminateAndWait(masterSystem.get, config)
+      }
+
+      // Construct client
+      client = Some(Client(config))
+
+      // Start partition master
+      val numKeys = args.map(_.vectorSize).getOrElse(numParameterServers)
+      val partitioner = RangePartitioner(numParameterServers, numKeys, PartitionBy.COL)
+      val (ps, _) = Await.result(PartitionMaster.run(config, partitioner.all()), clientTimeout)
+      partitionMasterSystem = Some(ps)
+
+      // Start parameter servers on workers
+      // If the vocabulary counts were broadcasted start them with partial models and construct a big model client
+      val bigModel = if (args.isDefined && bcVocabCnsOpt.isDefined && parameterServerCores.isDefined) {
+        Some(word2vecMatrixServersOnSpark(sc, config, clientTimeout, client.get, partitioner,
+          args.get, bcVocabCnsOpt.get, numParameterServers, parameterServerCores.get))
+      } else {
+        serversOnSpark(sc, config, clientTimeout)
+        None
+      }
+
+      // Check if the requested number of parameter servers were started
+      val numStarted = Await.result(client.get.serverList().map(_.length), clientTimeout)
+      if (numStarted != numParameterServers) {
+        throw new ServerCreationException(s"Could not start the requested number of parameter servers. " +
+          s"Requested $numParameterServers, started $numStarted")
+      }
+
+      StartedActorSystems.add(masterSystem.get)
+      StartedActorSystems.add(client.get.system)
+
+      (client.get, bigModel)
+    } catch {
+      case ex: Throwable =>
+        masterSystem.foreach(_.terminate())
+        client.foreach(_.terminateOnSpark(sc))
+        throw ex
+    } finally {
+      // Shutdown partition master
+      partitionMasterSystem.foreach(terminateAndWait(_, config))
+    }
+  }
+
+  private def serversOnSpark(sc: SparkContext, config: Config, clientTimeout: Duration): Unit = {
+    val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
+    sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition {
+      case _ => Await.result(Server.runOnce(config), clientTimeout)
+    }
+  }
+
+  private def word2vecMatrixServersOnSpark(sc: SparkContext,
+                                           config: Config,
+                                           clientTimeout: Duration,
+                                           client: Client,
+                                           partitioner: Partitioner,
+                                           args: Word2VecArguments,
+                                           bcVocabCns: Broadcast[Array[Int]],
+                                           numParameterServers: Int,
+                                           parameterServerCores: Int): BigWord2VecMatrix = {
+
+    // Start parameter servers and create 'numParameterServers' partial models on workers
+    // Return list of serialized partial model actor references
+    val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
+    val serHadoopConfig = new SerializableHadoopConfiguration(sc.hadoopConfiguration)
+    val models = sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).mapPartitions { _ =>
+      @transient
+      implicit val ec = ExecutionContext.Implicits.global
+
+      val partialModelFuture = Server.runOnce(config).map {
+        case Some((serverSystem, serverRef, partition)) =>
+          val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), None, Some(serHadoopConfig),
+            args, bcVocabCns.value.length, Some(bcVocabCns.value), false, true, parameterServerCores)
+          val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
+          Some((Serialization.serializedActorPath(actorRef), partition.index))
+        case None => None
+      }
+      Await.result(partialModelFuture, clientTimeout).map(x => Iterator(x)).getOrElse(Iterator())
+    }.collect().sortBy(_._2).map(_._1)
+
+    // deserialize partial model actor references
+    val extendedActorSystem = SerializationExtension(client.system).system
+    val modelActorRefs = models.map(model => extendedActorSystem.provider.resolveActorRef(model))
+
+    // Construct big model client object
+    new AsyncBigWord2VecMatrix(partitioner, modelActorRefs, config, AggregateAdd(),
+      bcVocabCns.value.length, args.vectorSize, args.n, true)
   }
 
   /**
