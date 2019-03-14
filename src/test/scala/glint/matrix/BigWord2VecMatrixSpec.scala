@@ -53,7 +53,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
         val values = whenReady(model.pull(
           Array(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3),
@@ -71,7 +71,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 2, 3)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         // random negative words will be 2, 3, 3
@@ -101,7 +101,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 2)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         // random negative words will be 2, 3, 3
@@ -142,7 +142,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 2, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         var result = whenReady(model.adjust(Array(1, 0), Array(Array(0), Array(1)), Array(0.11f, 0.12f), Array(), seed)) {
@@ -182,7 +182,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 2)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         // random negative words will be 2, 3, 3
@@ -223,7 +223,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 2, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         val value = whenReady(model.dotprod(Array(0), Array(Array(1, 0)), seed)) {
@@ -241,7 +241,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 2, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         val result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), seed)) {
@@ -266,7 +266,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 2, 2)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         // random negative words will be 2, 3, 3, 2
@@ -298,7 +298,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
         val values = whenReady(model.norms()) {
           identity
@@ -318,7 +318,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val vector = Array(0.1f, 0.2f, 0.3f)
 
         val values = whenReady(model.multiply(vector)) {
@@ -343,7 +343,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
         val values = whenReady(model.pullAverage(Array(Array(0L, 2L, 3L), Array(), Array(0L, 2L), Array(0L)))) {
           identity
@@ -364,7 +364,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
         var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
@@ -447,7 +447,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
       withClient { client =>
         val args = Word2VecArguments(3, 1, 1, 0)
         val vocabCns = Array(3, 1, 4, 2)
-        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig, 1)
+        val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
         var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
           identity

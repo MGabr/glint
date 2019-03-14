@@ -226,7 +226,6 @@ class Client(val config: Config,
 
   private def word2vecMatrix(args: Word2VecArguments,
                              vocabSize: Int,
-                             parameterServerCores: Int,
                              createPartitioner: (Int, Long) => Partitioner,
                              hdfsPath: String,
                              hadoopConfig: Configuration,
@@ -236,7 +235,7 @@ class Client(val config: Config,
     val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
 
     val propFunction = (partition: Partition) => Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(),
-      Some(hdfsPath), Some(serHadoopConfig), args, vocabSize, None, loadVocabCnOnly, trainable, parameterServerCores)
+      Some(hdfsPath), Some(serHadoopConfig), args, vocabSize, None, loadVocabCnOnly, trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
       new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabSize, args.vectorSize, args.n,
@@ -255,17 +254,13 @@ class Client(val config: Config,
     * @param args The [[glint.Word2VecArguments Word2VecArguments]]
     * @param vocabCns The array of all word counts
     * @param hadoopConfig The Hadoop configuration to use for saving vocabCns to HDFS
-    * @param parameterServerCores The number of cores per parameter server
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
-  def word2vecMatrix(args: Word2VecArguments,
-                     vocabCns: Array[Int],
-                     hadoopConfig: Configuration,
-                     parameterServerCores: Int): BigWord2VecMatrix = {
+  def word2vecMatrix(args: Word2VecArguments, vocabCns: Array[Int], hadoopConfig: Configuration): BigWord2VecMatrix = {
 
     val tmpPath = hdfs.saveTmpWord2VecMatrixMetadata(hadoopConfig, Word2VecMatrixMetadata(vocabCns, args, true))
     val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
-    word2vecMatrix(args, vocabCns.length, parameterServerCores, createPartitioner, tmpPath, hadoopConfig, true, true)
+    word2vecMatrix(args, vocabCns.length, createPartitioner, tmpPath, hadoopConfig, true, true)
   }
 
   /**
@@ -274,13 +269,11 @@ class Client(val config: Config,
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
     * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
-    * @param parameterServerCores The number of cores per parameter server
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
   def loadWord2vecMatrix(hdfsPath: String,
                          hadoopConfig: Configuration,
-                         trainable: Boolean = false,
-                         parameterServerCores: Int = 1): BigWord2VecMatrix = {  // TODO: determine how many available
+                         trainable: Boolean = false): BigWord2VecMatrix = {
 
     val m = hdfs.loadWord2VecMatrixMetadata(hdfsPath, hadoopConfig)
     if (trainable && !m.trainable) {
@@ -289,8 +282,7 @@ class Client(val config: Config,
     val numParameterServers = hdfs.countPartitionData(hdfsPath, hadoopConfig, pathPostfix = "/glint/data/u/")
     val createPartitioner =
       (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
-    word2vecMatrix(m.args, m.vocabCns.length, parameterServerCores, createPartitioner, hdfsPath, hadoopConfig, false,
-      trainable)
+    word2vecMatrix(m.args, m.vocabCns.length, createPartitioner, hdfsPath, hadoopConfig, false, trainable)
   }
 
   /**
@@ -445,11 +437,13 @@ object Client {
     * @param sc The spark context
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client
     */
   def runOnSpark(sc: SparkContext)
-                (numParameterServers: Int = getNumExecutors(sc)): Client = {
-    runOnSpark(sc, "", numParameterServers)
+                (numParameterServers: Int = getNumExecutors(sc),
+                 parameterServerCores: Int = getExecutorCores(sc)): Client = {
+    runOnSpark(sc, "", numParameterServers, parameterServerCores)
   }
 
   /**
@@ -459,11 +453,12 @@ object Client {
     * @param host The master host name
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client
     */
-  def runOnSpark(sc: SparkContext, host: String, numParameterServers: Int): Client = {
+  def runOnSpark(sc: SparkContext, host: String, numParameterServers: Int, parameterServerCores: Int): Client = {
     val config = getConfig(host)
-    runOnSpark(sc, config, numParameterServers)
+    runOnSpark(sc, config, numParameterServers, parameterServerCores)
   }
 
   /**
@@ -473,10 +468,11 @@ object Client {
     * @param config The configuration
     * @param numParameterServers The number of glint parameter servers to create on the cluster.
     *                            The maximum possible number is the number of executors.
+    * @param parameterServerCores The number of cores per parameter server
     * @return A future Glint client
     */
-  def runOnSpark(sc: SparkContext, config: Config, numParameterServers: Int): Client = {
-    val (client, _) = runOnSpark(sc, config, numParameterServers, None, None, None)
+  def runOnSpark(sc: SparkContext, config: Config, numParameterServers: Int, parameterServerCores: Int): Client = {
+    val (client, _) = runOnSpark(sc, config, numParameterServers, parameterServerCores, None, None)
     client
   }
 
@@ -499,7 +495,7 @@ object Client {
                                   (args: Word2VecArguments,
                                    bcVocabCns: Broadcast[Array[Int]],
                                    numParameterServers: Int = getNumExecutors(sc),
-                                   parameterServerCores: Int = getNumExecutors(sc)): (Client, BigWord2VecMatrix) = {
+                                   parameterServerCores: Int = getExecutorCores(sc)): (Client, BigWord2VecMatrix) = {
     runWithWord2VecMatrixOnSpark(sc, "", args, bcVocabCns, numParameterServers, parameterServerCores)
   }
 
@@ -552,8 +548,8 @@ object Client {
                                    numParameterServers: Int,
                                    parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
 
-    val (client, Some(model)) = runOnSpark(sc, config, numParameterServers,
-      Some(args), Some(bcVocabCns), Some(parameterServerCores))
+    val (client, Some(model)) = runOnSpark(
+      sc, config, numParameterServers, parameterServerCores, Some(args), Some(bcVocabCns))
     (client, model)
   }
 
@@ -585,9 +581,9 @@ object Client {
   private def runOnSpark(sc: SparkContext,
                          config: Config,
                          numParameterServers: Int,
+                         parameterServerCores: Int,
                          args: Option[Word2VecArguments],
-                         bcVocabCnsOpt: Option[Broadcast[Array[Int]]],
-                         parameterServerCores: Option[Int]): (Client, Option[BigWord2VecMatrix]) = {
+                         bcVocabCnsOpt: Option[Broadcast[Array[Int]]]): (Client, Option[BigWord2VecMatrix]) = {
     @transient
     implicit val ec = ExecutionContext.Implicits.global
 
@@ -618,11 +614,11 @@ object Client {
 
       // Start parameter servers on workers
       // If the vocabulary counts were broadcasted start them with partial models and construct a big model client
-      val bigModel = if (args.isDefined && bcVocabCnsOpt.isDefined && parameterServerCores.isDefined) {
-        Some(word2vecMatrixServersOnSpark(sc, config, clientTimeout, client.get, partitioner,
-          args.get, bcVocabCnsOpt.get, numParameterServers, parameterServerCores.get))
+      val bigModel = if (args.isDefined && bcVocabCnsOpt.isDefined) {
+        Some(word2vecMatrixServersOnSpark(
+          sc, config, clientTimeout, parameterServerCores, client.get, partitioner, args.get, bcVocabCnsOpt.get))
       } else {
-        serversOnSpark(sc, config, clientTimeout)
+        serversOnSpark(sc, config, clientTimeout, parameterServerCores)
         None
       }
 
@@ -648,24 +644,23 @@ object Client {
     }
   }
 
-  private def serversOnSpark(sc: SparkContext, config: Config, clientTimeout: Duration): Unit = {
+  private def serversOnSpark(sc: SparkContext, config: Config, clientTimeout: Duration, serverCores: Int): Unit = {
     val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
     sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition {
-      case _ => Await.result(Server.runOnce(config), clientTimeout)
+      case _ => Await.result(Server.runOnce(config, serverCores), clientTimeout)
     }
   }
 
   private def word2vecMatrixServersOnSpark(sc: SparkContext,
                                            config: Config,
                                            clientTimeout: Duration,
+                                           serverCores: Int,
                                            client: Client,
                                            partitioner: Partitioner,
                                            args: Word2VecArguments,
-                                           bcVocabCns: Broadcast[Array[Int]],
-                                           numParameterServers: Int,
-                                           parameterServerCores: Int): BigWord2VecMatrix = {
+                                           bcVocabCns: Broadcast[Array[Int]]): BigWord2VecMatrix = {
 
-    // Start parameter servers and create 'numParameterServers' partial models on workers
+    // Start parameter servers and create partial models on workers
     // Return list of serialized partial model actor references
     val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
     val serHadoopConfig = new SerializableHadoopConfiguration(sc.hadoopConfiguration)
@@ -673,10 +668,10 @@ object Client {
       @transient
       implicit val ec = ExecutionContext.Implicits.global
 
-      val partialModelFuture = Server.runOnce(config).map {
+      val partialModelFuture = Server.runOnce(config, serverCores).map {
         case Some((serverSystem, serverRef, partition)) =>
           val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), None, Some(serHadoopConfig),
-            args, bcVocabCns.value.length, Some(bcVocabCns.value), false, true, parameterServerCores)
+            args, bcVocabCns.value.length, Some(bcVocabCns.value), false, true)
           val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
           Some((Serialization.serializedActorPath(actorRef), partition.index))
         case None => None
@@ -684,7 +679,7 @@ object Client {
       Await.result(partialModelFuture, clientTimeout).map(x => Iterator(x)).getOrElse(Iterator())
     }.collect().sortBy(_._2).map(_._1)
 
-    // deserialize partial model actor references
+    // Deserialize partial model actor references
     val extendedActorSystem = SerializationExtension(client.system).system
     val modelActorRefs = models.map(model => extendedActorSystem.provider.resolveActorRef(model))
 

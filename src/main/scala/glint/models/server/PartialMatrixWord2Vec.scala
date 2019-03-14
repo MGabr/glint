@@ -1,7 +1,5 @@
 package glint.models.server
 
-import java.util.concurrent.Executors
-
 import akka.pattern.pipe
 import com.github.fommil.netlib.F2jBLAS
 import glint.Word2VecArguments
@@ -16,7 +14,7 @@ import glint.util.{FloatArraysArrayPool, IntArrayPool, hdfs}
 import spire.implicits.cforRange
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.util.Random
 
 /**
@@ -31,7 +29,6 @@ import scala.util.Random
   * @param vocabCnsOpt The array of all word counts, if not specified it is loaded from HDFS
   * @param loadVocabCnOnly If only vocabCns should be loaded from HDFS (and not all initial data)
   * @param trainable Whether the matrix is trainable, requiring more data (output weights, unigram table)
-  * @param cores The number of cores for asynchronously handled message
   */
 private[glint] class PartialMatrixWord2Vec(partition: Partition,
                                            aggregate: Aggregate,
@@ -41,8 +38,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
                                            val vocabSize: Int,
                                            val vocabCnsOpt: Option[Array[Int]],
                                            val loadVocabCnOnly: Boolean,
-                                           val trainable: Boolean,
-                                           val cores: Int)
+                                           val trainable: Boolean)
   extends PartialMatrixFloat(partition, vocabSize, partition.size, aggregate, hdfsPath, hadoopConfig) {
 
   @transient
@@ -74,12 +70,6 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   var table: Array[Int] = _
 
 
-  /**
-    * The execution context in which the asynchronously handled message are executed
-    */
-  implicit val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(cores))
-
-
   override def loadOrInitialize(initialize: => Array[Float], pathPostfix: String): Array[Float] = {
     if (loadVocabCnOnly) initialize else super.loadOrInitialize(initialize, pathPostfix)
   }
@@ -95,10 +85,6 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
       v = loadOrInitialize(new Array(rows * cols), pathPostfix = "/glint/data/v/")
     }
-  }
-
-  override def postStop(): Unit = {
-    ec.shutdown()
   }
 
   /**

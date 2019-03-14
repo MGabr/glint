@@ -16,7 +16,7 @@ package object util {
     *
     * @param system The actor system to terminate
     */
-  def terminateAndWait(system: ActorSystem, config: Config)(implicit ec: ExecutionContext): Unit = {
+  private[glint] def terminateAndWait(system: ActorSystem, config: Config)(implicit ec: ExecutionContext): Unit = {
     Await.result(system.terminate(), config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS) milliseconds)
   }
 

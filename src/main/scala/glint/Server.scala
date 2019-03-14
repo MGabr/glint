@@ -1,6 +1,6 @@
 package glint
 
-import java.util.concurrent.{Semaphore, TimeUnit}
+import java.util.concurrent.{Executors, Semaphore, TimeUnit}
 
 import akka.actor._
 import akka.pattern.ask
@@ -37,11 +37,12 @@ private[glint] object Server extends StrictLogging {
     * Starts a parameter server ready to receive commands
     *
     * @param config The configuration
+    * @param cores The number of cpu cores available for this parameter server
     * @return A future containing the started actor system and reference to the server actor
     */
-  def run(config: Config): Future[(ActorSystem, ActorRef)] = {
+  def run(config: Config, cores: Int = Runtime.getRuntime.availableProcessors()): Future[(ActorSystem, ActorRef)] = {
     implicit val ec = ExecutionContext.Implicits.global
-    val system = startActorSystem(config)
+    val system = startActorSystem(config, cores)
     try {
       run(config, system).map(server => (system, server))
     } catch {
@@ -51,9 +52,12 @@ private[glint] object Server extends StrictLogging {
     }
   }
 
-  private def startActorSystem(config: Config): ActorSystem = {
+  private def startActorSystem(config: Config, cores: Int): ActorSystem = {
     logger.debug(s"Starting actor system ${config.getString("glint.server.system")}")
-    ActorSystem(config.getString("glint.server.system"), config.getConfig("glint.server"))
+    val name = config.getString("glint.server.system")
+    val serverConfig = config.getConfig("glint.server")
+    val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(cores))
+    ActorSystem(name, config = Some(serverConfig), defaultExecutionContext = Some(ec))
   }
 
   private def run(config: Config, system: ActorSystem)(implicit ec: ExecutionContext): Future[ActorRef] = {
@@ -88,14 +92,15 @@ private[glint] object Server extends StrictLogging {
     * and only if there is still a partition available from the partition master
     *
     * @param config The configuration
+    * @param cores The number of cpu cores available for this parameter server
     * @return A future containing the started actor system, a reference to the server actor and the server partition
     */
-  def runOnce(config: Config): Future[Option[(ActorSystem, ActorRef, Partition)]] = {
+  def runOnce(config: Config, cores: Int): Future[Option[(ActorSystem, ActorRef, Partition)]] = {
     lock.acquire()
     implicit val ec = ExecutionContext.Implicits.global
     implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
     val future = if (!StartedActorSystems.hasStartedServer) {
-      val system = startActorSystem(config)
+      val system = startActorSystem(config, cores)
       StartedActorSystems.add(system, isServer = true)
 
       val partitionMaster = getPartitionMaster(config, system)

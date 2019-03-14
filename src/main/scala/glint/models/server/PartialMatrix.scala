@@ -34,6 +34,12 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
   var data: Array[V]
 
   /**
+    * The execution context in which asynchronously handled message can be executed.
+    * This leads to all partial matrices on a server sharing the thread pool in a fair way
+    */
+  implicit val ec = context.dispatcher
+
+  /**
     * Gets rows from the data matrix
     *
     * @param rows The row indices
