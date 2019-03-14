@@ -15,7 +15,7 @@ To use the current version you should compile the system manually, publish it to
 
 The `+` indicates that it should compile for all scala versions defined in the `build.sbt` file. The command will compile, assemble and publish the library jar file to the local ivy2 repository, which means you can then use it in your project's `build.sbt` (on the same machine) as follows:
 
-    libraryDependencies += "at.mgabr" %% "glint" % "0.2-SNAPSHOT"
+    libraryDependencies += "com.github.mgabr" %% "glint" % "0.2-SNAPSHOT"
 
 ## Documentation
 

@@ -18,7 +18,7 @@ Add a `build.sbt` file with the following contents:
     
     scalaVersion := "2.11.8"
     
-    libraryDependencies += "at.mgabr" %% "glint" % "0.2-SNAPSHOT"
+    libraryDependencies += "com.github.mgabr" %% "glint" % "0.2-SNAPSHOT"
 
 ## Adding Glint dependency
 
