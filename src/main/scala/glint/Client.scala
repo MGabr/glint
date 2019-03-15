@@ -245,7 +245,7 @@ class Client(val config: Config,
   }
 
   /**
-    * Constructs a distributed Word2Vec matrix
+    * Constructs a Word2Vec matrix distributed over all available parameter servers
     *
     * This method for constructing the matrix has to save the vocabulary counts to a temporary HDFS file.
     * To efficiently construct a Word2Vec matrix in a standalone glint cluster in the same Spark application use
@@ -260,6 +260,30 @@ class Client(val config: Config,
 
     val tmpPath = hdfs.saveTmpWord2VecMatrixMetadata(hadoopConfig, Word2VecMatrixMetadata(vocabCns, args, true))
     val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
+    word2vecMatrix(args, vocabCns.length, createPartitioner, tmpPath, hadoopConfig, true, true)
+  }
+
+  /**
+    * Constructs a distributed Word2Vec matrix
+    *
+    * This method for constructing the matrix has to save the vocabulary counts to a temporary HDFS file.
+    * To efficiently construct a Word2Vec matrix in a standalone glint cluster in the same Spark application use
+    * [[glint.Client.runWithWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext)* runWithWord2VecMatrixOnSpark]]
+    *
+    * @param args                The [[glint.Word2VecArguments Word2VecArguments]]
+    * @param vocabCns            The array of all word counts
+    * @param hadoopConfig        The Hadoop configuration to use for saving vocabCns to HDFS
+    * @param numParameterServers The number of parameter servers to which the matrix should be distributed
+    * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
+    */
+  def word2vecMatrix(args: Word2VecArguments,
+                     vocabCns: Array[Int],
+                     hadoopConfig: Configuration,
+                     numParameterServers: Int): BigWord2VecMatrix = {
+
+    val tmpPath = hdfs.saveTmpWord2VecMatrixMetadata(hadoopConfig, Word2VecMatrixMetadata(vocabCns, args, true))
+    val createPartitioner =
+      (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
     word2vecMatrix(args, vocabCns.length, createPartitioner, tmpPath, hadoopConfig, true, true)
   }
 
@@ -695,9 +719,7 @@ object Client {
     */
   def terminateOnSpark(sc: SparkContext, shutdownTimeout: Duration): Unit = {
     if (!sc.isStopped) {
-      val nrOfExecutors = getNumExecutors(sc)
-      val executorCores = getExecutorCores(sc)
-      val nrOfPartitions = nrOfExecutors * executorCores
+      val nrOfPartitions = getNumExecutors(sc) * getExecutorCores(sc)
       sc.range(0, nrOfPartitions, numSlices = nrOfPartitions).foreachPartition { case _ =>
         @transient
         implicit val ec = ExecutionContext.Implicits.global
