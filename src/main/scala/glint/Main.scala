@@ -3,8 +3,8 @@ package glint
 import java.io.File
 import java.net.InetAddress
 
-import glint.util.terminateAndWait
-import com.typesafe.config.ConfigFactory
+import glint.util._
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -31,7 +31,7 @@ import scala.concurrent.{Await, ExecutionContext}
   *
   * To start a master and parameter server nodes on Spark:
   * {{{
-  *   spark-submit --num-executors num-servers --executor-cores server-cores /path/to/compiled/Glint.jar spark
+  *   spark-submit --num-executors num-servers --executor-cores server-cores /path/to/compiled/Glint.jar spark -c /path/to/glint.conf
   * }}}
   *
   */
@@ -47,7 +47,7 @@ object Main extends StrictLogging {
     val parser = new scopt.OptionParser[Options]("glint") {
       head("glint", "0.2")
       opt[File]('c', "config") valueName "<file>" action { (x, c) =>
-        c.copy(config = x)
+        c.copy(config = Some(x))
       } text "The .conf file for glint"
       cmd("master") action { (_, c) =>
         c.copy(mode = "master")
@@ -64,9 +64,7 @@ object Main extends StrictLogging {
       case Some(options) =>
 
         // Read configuration
-        logger.debug("Parsing configuration file")
-        val default = ConfigFactory.parseResourcesAnySyntax("glint")
-        val config = ConfigFactory.parseFile(options.config).withFallback(default).resolve()
+        val config = options.config.map(c => ConfigFactory.parseFile(c)).getOrElse(ConfigFactory.empty())
 
         // Start specified mode of operation
         implicit val ec = ExecutionContext.Implicits.global
@@ -83,7 +81,7 @@ object Main extends StrictLogging {
               terminateAndWait(system, config)
             }
           }
-          case "spark" => runOnSpark()
+          case "spark" => runOnSpark(config)
           case _ =>
             parser.showUsageAsError
             System.exit(1)
@@ -96,22 +94,19 @@ object Main extends StrictLogging {
     * Command-line options
     *
     * @param mode The mode of operation (either "master" or "server")
-    * @param config The configuration file to load (defaults to the included glint.conf)
-    * @param host The host of the parameter server (only when mode of operation is "server")
-    * @param port The port of the parameter server (only when mode of operation is "server")
+    * @param config The configuration file to load
     */
-  private case class Options(mode: String = "",
-                             config: File = new File(getClass.getClassLoader.getResource("glint.conf").getFile),
-                             host: String = "localhost",
-                             port: Int = 0)
+  private case class Options(mode: String = "", config: Option[File] = None)
 
   /**
     * Runs master and server nodes on Spark.
     * This Spark application will run infinitely until it is killed or a client terminates it
+    *
+    * @param config The configuration to use
     */
-  private def runOnSpark(): Unit = {
+  private def runOnSpark(config: Config): Unit = {
     val sc = new SparkContext(new SparkConf().setAppName("Glint parameter servers"))
-    val client = Client.runOnSpark(sc)()
+    val client = Client.runOnSpark(sc, config, Client.getNumExecutors(sc), Client.getExecutorCores(sc))
 
     val driverHost = InetAddress.getLocalHost.getHostAddress
     logger.info(s"Started Glint parameter servers as Spark application ${sc.applicationId} with master on $driverHost")
@@ -126,8 +121,6 @@ object Main extends StrictLogging {
     // termination in case client system is terminated by other client
     Await.ready(client.system.whenTerminated, Duration.Inf)
     client.terminateOnSpark(sc)
-    if (!sc.isStopped) {
-      sc.stop()
-    }
+    sc.stop()
   }
 }

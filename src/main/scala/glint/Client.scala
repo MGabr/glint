@@ -391,7 +391,9 @@ class Client(val config: Config,
   def terminateOnSpark(sc: SparkContext, terminateOtherClients: Boolean = false): Unit = {
     if (terminateOtherClients) {
       Await.result(clientList(), timeout.duration).foreach { c =>
-        c ! PoisonPill
+        if (c.actorRef != actor) {
+          c ! PoisonPill
+        }
       }
     }
 
@@ -439,7 +441,7 @@ object Client {
     * @return A future Client
     */
   def apply(host: String): Client = {
-    apply(getConfig(host))
+    apply(getHostConfig(host))
   }
 
   /**
@@ -449,9 +451,45 @@ object Client {
     * @return A future Client
     */
   def apply(config: Config): Client = {
-    val default = ConfigFactory.parseResourcesAnySyntax("glint")
-    val conf = config.withFallback(default).resolve()
+    val conf = getConfigDefaultFallback(config)
     Await.result(start(conf), conf.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
+  }
+
+  /**
+    * Implementation to start a client by constructing an ActorSystem and establishing a connection to a master. It
+    * creates the Client object and checks if its registration actually succeeds
+    *
+    * @param config The configuration
+    * @return The future client
+    */
+  private def start(config: Config): Future[Client] = {
+
+    // Get information from config
+    val masterHost = config.getString("glint.master.host")
+    val masterPort = config.getInt("glint.master.port")
+    val masterName = config.getString("glint.master.name")
+    val masterSystem = config.getString("glint.master.system")
+
+    // Construct system and reference to master
+    val system = ActorSystem(config.getString("glint.client.system"), config.getConfig("glint.client"))
+    val master = system.actorSelection(s"akka://${masterSystem}@${masterHost}:${masterPort}/user/${masterName}")
+
+    // Set up implicit values for concurrency
+    implicit val ec = ExecutionContext.Implicits.global
+    implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
+
+    // Resolve master node asynchronously
+    val masterFuture = master.resolveOne()
+
+    // Construct client based on resolved master asynchronously
+    masterFuture.flatMap {
+      case m =>
+        val client = new Client(config, system, m)
+        client.registration.map {
+          case true => client
+          case _ => throw new RuntimeException("Invalid client registration response from master")
+        }
+    }
   }
 
 
@@ -481,7 +519,7 @@ object Client {
     * @return A future Glint client
     */
   def runOnSpark(sc: SparkContext, host: String, numParameterServers: Int, parameterServerCores: Int): Client = {
-    val config = getConfig(host)
+    val config = getHostConfig(host)
     runOnSpark(sc, config, numParameterServers, parameterServerCores)
   }
 
@@ -496,7 +534,8 @@ object Client {
     * @return A future Glint client
     */
   def runOnSpark(sc: SparkContext, config: Config, numParameterServers: Int, parameterServerCores: Int): Client = {
-    val (client, _) = runOnSpark(sc, config, numParameterServers, parameterServerCores, None, None)
+    val conf = getConfigDefaultFallback(config)
+    val (client, _) = runOnSpark(sc, conf, numParameterServers, parameterServerCores, None, None)
     client
   }
 
@@ -545,7 +584,7 @@ object Client {
                                    bcVocabCns: Broadcast[Array[Int]],
                                    numParameterServers: Int,
                                    parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
-    val config = getConfig(host)
+    val config = getHostConfig(host)
     runWithWord2VecMatrixOnSpark(sc, config, args, bcVocabCns, numParameterServers, parameterServerCores)
   }
 
@@ -572,34 +611,10 @@ object Client {
                                    numParameterServers: Int,
                                    parameterServerCores: Int): (Client, BigWord2VecMatrix) = {
 
+    val configDefaultFallback = getConfigDefaultFallback(config)
     val (client, Some(model)) = runOnSpark(
-      sc, config, numParameterServers, parameterServerCores, Some(args), Some(bcVocabCns))
+      sc, configDefaultFallback, numParameterServers, parameterServerCores, Some(args), Some(bcVocabCns))
     (client, model)
-  }
-
-  /**
-    * Gets the default configuration with the given host or the local host as master and partition master host
-    *
-    * @param host The host for the master and partition master or the empty string
-    * @return The  default configuration with the given host or the local host
-    */
-  private def getConfig(host: String): Config = {
-    val default = ConfigFactory.parseResourcesAnySyntax("glint").resolve()
-    if (host.isEmpty) {
-      val localhost = ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress)
-      default
-        .withValue("glint.master.host", localhost)
-        .withValue("glint.master.akka.remote.artery.canonical.hostname", localhost)
-        .withValue("glint.partition-master.host", localhost)
-        .withValue("glint.partition-master.akka.remote.artery.canonical.hostname", localhost)
-    } else {
-      val hostConfigValue = ConfigValueFactory.fromAnyRef(host)
-      default
-        .withValue("glint.master.host", hostConfigValue)
-        .withValue("glint.master.akka.remote.artery.canonical.hostname", hostConfigValue)
-        .withValue("glint.partition-master.host", hostConfigValue)
-        .withValue("glint.partition-master.akka.remote.artery.canonical.hostname", hostConfigValue)
-    }
   }
 
   private def runOnSpark(sc: SparkContext,
@@ -654,7 +669,6 @@ object Client {
       }
 
       StartedActorSystems.add(masterSystem.get)
-      StartedActorSystems.add(client.get.system)
 
       (client.get, bigModel)
     } catch {
@@ -733,40 +747,71 @@ object Client {
   }
 
   /**
-    * Implementation to start a client by constructing an ActorSystem and establishing a connection to a master. It
-    * creates the Client object and checks if its registration actually succeeds
+    * Gets the number of (worker) executors in a way which is portable across yarn, standalone and local mode
+    *
+    * @param sc The spark context
+    * @return The number of executors
+    */
+  def getNumExecutors(sc: SparkContext): Int = {
+    // if --num-executors is set for yarn
+    sc.getConf.getOption("spark.executor.instances").map(_.toInt)
+      // if --total-executor-cores is set for standalone
+      .orElse(sc.getConf.getOption("spark.cores.max").map(_.toInt / getExecutorCores(sc)))
+      // if no config is set
+      .getOrElse {
+
+      var nrOfExecutors = sc.getExecutorMemoryStatus.size
+      if (nrOfExecutors == 1) {
+        // For a short period at startup we get only 1 executor, so to be safe we wait a bit
+        // See https://stackoverflow.com/a/52516704
+        Thread.sleep(5000)
+        nrOfExecutors = sc.getExecutorMemoryStatus.size
+      }
+      // Subtract driver executor if not in local mode
+      Math.max(nrOfExecutors - 1, 1)
+    }
+  }
+
+  /**
+    * Gets the number of cores per executors
+    *
+    * @param sc The spark context
+    * @return The number of cores per executor
+    */
+  def getExecutorCores(sc: SparkContext): Int = {
+    sc.getConf.get("spark.executor.cores", "1").toInt
+  }
+
+  /**
+    * Gets a configuration with the given host or the local host as master and partition master host
+    *
+    * @param host The host for the master and partition master or the empty string
+    * @return The configuration with the given host or the local host
+    */
+  def getHostConfig(host: String = ""): Config = {
+    val hostConfigValue = if (host.isEmpty) {
+      ConfigValueFactory.fromAnyRef(InetAddress.getLocalHost.getHostAddress)
+    } else {
+      ConfigValueFactory.fromAnyRef(host)
+    }
+    ConfigFactory.empty()
+      .withValue("glint.master.host", hostConfigValue)
+      .withValue("glint.master.akka.remote.artery.canonical.hostname", hostConfigValue)
+      .withValue("glint.partition-master.host", hostConfigValue)
+      .withValue("glint.partition-master.akka.remote.artery.canonical.hostname", hostConfigValue)
+  }
+
+  /**
+    * Gets the given configuration with the local host and default configuration as fallback
     *
     * @param config The configuration
-    * @return The future client
+    * @return The configuration with fallback
     */
-  private def start(config: Config): Future[Client] = {
-
-    // Get information from config
-    val masterHost = config.getString("glint.master.host")
-    val masterPort = config.getInt("glint.master.port")
-    val masterName = config.getString("glint.master.name")
-    val masterSystem = config.getString("glint.master.system")
-
-    // Construct system and reference to master
-    val system = ActorSystem(config.getString("glint.client.system"), config.getConfig("glint.client"))
-    val master = system.actorSelection(s"akka://${masterSystem}@${masterHost}:${masterPort}/user/${masterName}")
-
-    // Set up implicit values for concurrency
-    implicit val ec = ExecutionContext.Implicits.global
-    implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
-
-    // Resolve master node asynchronously
-    val masterFuture = master.resolveOne()
-
-    // Construct client based on resolved master asynchronously
-    masterFuture.flatMap {
-      case m =>
-        val client = new Client(config, system, m)
-        client.registration.map {
-          case true => client
-          case _ => throw new RuntimeException("Invalid client registration response from master")
-        }
-    }
+  def getConfigDefaultFallback(config: Config): Config = {
+    config
+      .withFallback(getHostConfig())
+      .withFallback(ConfigFactory.parseResourcesAnySyntax("glint"))
+      .resolve()
   }
 }
 
@@ -799,7 +844,6 @@ private class ClientActor extends Actor with ActorLogging {
   }
 
   override def postStop(): Unit = {
-    super.postStop()
     context.system.terminate()
   }
 }

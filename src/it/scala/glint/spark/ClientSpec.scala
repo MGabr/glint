@@ -1,7 +1,8 @@
 package glint.spark
 
-import glint.{Client, Word2VecArguments}
+import com.typesafe.config.ConfigFactory
 import glint.exceptions.ServerCreationException
+import glint.{Client, Word2VecArguments}
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -89,6 +90,16 @@ class ClientSpec extends FlatSpec with SparkTest with Matchers {
         Client.runWithWord2VecMatrixOnSpark(sc)(args, bcVocabCns, numParameterServers = 3)
     } finally {
       bcVocabCns.destroy()
+    }
+  }
+
+  it should "run connected to a Glint cluster in a separate Spark application" in {
+    val client = Client(ConfigFactory.parseResourcesAnySyntax("separate-glint.conf"))
+    try {
+      val servers = whenReady(client.serverList())(identity)
+      servers.length should equal(2)
+    } finally {
+      client.terminateOnSpark(sc, terminateOtherClients = true)
     }
   }
 }
