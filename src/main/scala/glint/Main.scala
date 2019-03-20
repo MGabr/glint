@@ -105,7 +105,9 @@ object Main extends StrictLogging {
     * @param config The configuration to use
     */
   private def runOnSpark(config: Config): Unit = {
-    val sc = new SparkContext(new SparkConf().setAppName("Glint parameter servers"))
+    val sc = new SparkContext(new SparkConf()
+      .setAppName("Glint parameter servers")
+      .set("spark.dynamicAllocation.enabled", "false"))
     val client = Client.runOnSpark(sc, config, Client.getNumExecutors(sc), Client.getExecutorCores(sc))
 
     val driverHost = InetAddress.getLocalHost.getHostAddress
