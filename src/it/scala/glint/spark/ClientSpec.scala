@@ -10,6 +10,9 @@ import org.scalatest.{FlatSpec, Matchers}
   */
 class ClientSpec extends FlatSpec with SparkTest with Matchers {
 
+  val separateGlintConfig = ConfigFactory.parseResourcesAnySyntax("separate-glint.conf")
+  val aeronConfig = ConfigFactory.parseResourcesAnySyntax("aeron-glint.conf")
+
   "A client" should "run on Spark" in {
     val client = Client.runOnSpark(sc)()
     client.terminateOnSpark(sc)
@@ -94,12 +97,22 @@ class ClientSpec extends FlatSpec with SparkTest with Matchers {
   }
 
   it should "run connected to a Glint cluster in a separate Spark application" in {
-    val client = Client(ConfigFactory.parseResourcesAnySyntax("separate-glint.conf"))
+    val client = Client(separateGlintConfig)
     try {
       val servers = whenReady(client.serverList())(identity)
       servers.length should equal(2)
     } finally {
       client.terminateOnSpark(sc, terminateOtherClients = true)
+    }
+  }
+
+  it should "run on Spark using Aeron when specified" in {
+    val client = Client.runOnSpark(sc, aeronConfig, Client.getNumExecutors(sc), Client.getExecutorCores(sc))
+    try {
+      val servers = whenReady(client.serverList())(identity)
+      servers.length should equal(2)
+    } finally {
+      client.terminateOnSpark(sc)
     }
   }
 }
