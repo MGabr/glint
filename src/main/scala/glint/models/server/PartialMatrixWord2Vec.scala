@@ -10,7 +10,7 @@ import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs.Word2VecMatrixMetadata
-import glint.util.{FloatArraysArrayPool, IntArrayPool, hdfs}
+import glint.util.{FloatArrayPool, FloatArraysArrayPool, IntArrayPool, hdfs}
 import spire.implicits.cforRange
 
 import scala.collection.mutable
@@ -86,6 +86,27 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
       v = loadOrInitialize(new Array(rows * cols), pathPostfix = "/glint/data/v/")
     }
   }
+
+  /**
+    * Array pools used to prevent garbage collection.
+    * Thread local so that they can be used in asynchronously handled messages
+    */
+  private val threadLocalNegExamplesArrayPool = new ThreadLocal[IntArrayPool] {
+    override def initialValue(): IntArrayPool = new IntArrayPool(args.n)
+  }
+  private val threadLocalUIndicesArrayPool = new ThreadLocal[IntArrayPool] {
+    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize)
+  }
+  private val threadLocalVIndicesArrayPool = new ThreadLocal[IntArrayPool] {
+    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * args.window * (args.n + 1))
+  }
+  private val threadLocalUpdateArraysArrayPool = new ThreadLocal[FloatArraysArrayPool] {
+    override def initialValue(): FloatArraysArrayPool = new FloatArraysArrayPool(rows)
+  }
+  private val threadLocalUpdatesArrayPool = new ThreadLocal[FloatArrayPool] {
+    override def initialValue(): FloatArrayPool = new FloatArrayPool(cols)
+  }
+
 
   /**
     * Receives and handles incoming messages
@@ -183,10 +204,12 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     *
     * @param random The random number generator used for generating negative words
     * @param wOut The index of the output word which should not be among the random examples
+    * @param arrayPool The array pool to use for creating the negative examples array
     * @return The negative words
     */
-  private def negativeExamples(random: Random, wOut: Int): Array[Int] = {
-    Array.fill[Int](args.n) {
+  private def negativeExamples(random: Random, wOut: Int, arrayPool: IntArrayPool): Array[Int] = {
+    val examples = arrayPool.get()
+    cforRange(0 until examples.length)(i => {
       var nextRandom = random.nextInt(args.unigramTableSize)
       var nOut = table(nextRandom)
       while (nOut == wOut) {
@@ -196,8 +219,9 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
       if (nOut == 0) {
         nOut = nextRandom % (vocabSize - 1) + 1
       }
-      nOut
-    }
+      examples(i) = nOut
+    })
+    examples
   }
 
   /**
@@ -220,13 +244,16 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     var pos = 0
     var neg = 0
 
+    // used to prevent garbage collection
+    val negExamplesArrayPool = threadLocalNegExamplesArrayPool.get()
+
     cforRange(0 until wInput.length)(i => {
       val wIn = wInput(i)
       cforRange(0 until wOutput(i).length)(j => {
         val wOut = wOutput(i)(j)
 
         // generate n random negative examples for wOut
-        val nOutput = negativeExamples(random, wOut)
+        val nOutput = negativeExamples(random, wOut, negExamplesArrayPool)
 
         // compute partial dot products for positive and negative words
         fPlus(pos) = blas.sdot(cols, u, wIn * cols, 1, v, wOut * cols, 1)
@@ -236,23 +263,12 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
           fMinus(neg) = blas.sdot(cols, u, wIn * cols, 1, v, nOut * cols, 1)
           neg += 1
         })
+
+        negExamplesArrayPool.put(nOutput)
       })
     })
 
     (fPlus, fMinus)
-  }
-
-
-  private val threadLocalUIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize)
-  }
-
-  private val threadLocalVIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * args.window * (args.n + 1))
-  }
-
-  private val threadLocalUpdatesArrayPool = new ThreadLocal[FloatArraysArrayPool] {
-    override def initialValue(): FloatArraysArrayPool = new FloatArraysArrayPool(rows, cols)
   }
 
   /**
@@ -277,14 +293,16 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     var neg = 0
 
     // used to prevent garbage collection
+    val updateArraysArrayPool = threadLocalUpdateArraysArrayPool.get()
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
     val uIndicesArrayPool = threadLocalUIndicesArrayPool.get()
     val vIndicesArrayPool = threadLocalVIndicesArrayPool.get()
+    val negExamplesArrayPool = threadLocalNegExamplesArrayPool.get()
 
     // matrices holding partial gradient updates to be applied at the end
     // only create arrays on demand for rows which are updated
-    val uUpdates = updatesArrayPool.getArray()
-    val vUpdates = updatesArrayPool.getArray()
+    val uUpdates = updateArraysArrayPool.get()
+    val vUpdates = updateArraysArrayPool.get()
 
     // indices of partial gradient updates to be applied
     val uIndices = uIndicesArrayPool.get()
@@ -315,7 +333,7 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
         pos += 1
 
         // generate n random negative examples for wOut
-        val nOutput = negativeExamples(random, wOut)
+        val nOutput = negativeExamples(random, wOut, negExamplesArrayPool)
 
         cforRange(0 until nOutput.length)(k => {
           val nOut = nOutput(k)
@@ -330,6 +348,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
           blas.saxpy(cols, gMinus(neg), u, wIn * cols, 1, vUpdates(nOut), 0, 1)
           neg += 1
         })
+
+        negExamplesArrayPool.put(nOutput)
       })
     })
 
@@ -350,8 +370,8 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
         vUpdates(i) = null
       }
     })
-    updatesArrayPool.putArray(uUpdates)
-    updatesArrayPool.putArray(vUpdates)
+    updateArraysArrayPool.put(uUpdates)
+    updateArraysArrayPool.put(vUpdates)
     uIndicesArrayPool.putClearUntil(uIndices, uIndex)
     vIndicesArrayPool.putClearUntil(vIndices, vIndex)
   }

@@ -27,6 +27,17 @@ private[glint] class IntArrayPool(length: Int) {
   }
 
   /**
+    * Puts a new array to the pool and clears it to zero values.
+    * The array values have to be zero or it has to be accepted that arrays with non-zero
+    * values will be returned by [[get() get]].
+    *
+    * @param array An array of pool length
+    */
+  def put(array: Array[Int]): Unit = {
+    arrays.enqueue(array)
+  }
+
+  /**
     * Puts a new array to the pool and clears it to zero until the specified index.
     * The array values have to already be zero after the specified index
     *
