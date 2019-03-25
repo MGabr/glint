@@ -11,15 +11,20 @@ This fork adds support for column partitioning, running a Glint cluster on Spark
 ## Compile
 To use the current version you should compile the system manually, publish it to a local repository and include it in your project through sbt. Clone this repository and run:
 
-    sbt "+ compile" "+ assembly" "+ publishLocal"
+    sbt compile assembly publishLocal
 
-The `+` indicates that it should compile for all scala versions defined in the `build.sbt` file. The command will compile, assemble and publish the library jar file to the local ivy2 repository, which means you can then use it in your project's `build.sbt` (on the same machine) as follows:
+The command will compile, assemble and publish the library jar file to the local ivy2 repository, which means you can then use it in your project's `build.sbt` (on the same machine) as follows:
 
     libraryDependencies += "com.github.mgabr" %% "glint" % "0.2-SNAPSHOT"
 
+To also execute integration tests run:
+
+    sbt compile it:test publishLocal
+
 ## Documentation
 
-Refer to the [documentation](http://rjagerman.github.io/glint/) for instructions and examples on how to use the software.
+Refer to the original [documentation](http://rjagerma.github.io/glint/) and the [Scaladoc](https://mgabr.github.io/glint/latest/api/) 
+for instructions and examples on how to use the software.
 
 ## Citation
 
