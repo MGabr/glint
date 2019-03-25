@@ -1,0 +1,752 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>BigWord2VecMatrix - Glint - glint.models.client.BigWord2VecMatrix</title>
+          <meta name="description" content="BigWord2VecMatrix - Glint - glint.models.client.BigWord2VecMatrix" />
+          <meta name="keywords" content="BigWord2VecMatrix Glint glint.models.client.BigWord2VecMatrix" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../index.html';
+            var hash = 'glint.models.client.BigWord2VecMatrix';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img alt="Trait" src="../../../lib/trait_big.png" />
+        <p id="owner"><a href="../../package.html" class="extype" name="glint">glint</a>.<a href="../package.html" class="extype" name="glint.models">models</a>.<a href="package.html" class="extype" name="glint.models.client">client</a></p>
+        <h1>BigWord2VecMatrix</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="glint.models.client">package client</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <span class="name">BigWord2VecMatrix</span><span class="result"> extends <a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A big matrix of floats and supporting specific parameter server operations
+for efficient distributed Word2Vec computation</p><p>The pull and push operations can only access the input weights of the underlying weight matrix,
+the output weights stay hidden</p><pre><span class="kw">val</span> matrix: BigWord2VecMatrix = ...
+<span class="kw">val</span> wInput = <span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L) <span class="cmt">// input word indices</span>
+<span class="kw">val</span> wOutput = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L), <span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L)) <span class="cmt">// output word indices</span>
+<span class="kw">val</span> (fPlus, fMinus) = matrix.dotprod(wInput, wOutput, <span class="num">1</span>) <span class="cmt">// compute dot products for gradient updates</span>
+matrix.adjust(wInput, wOutput, fPlus, gMinus, <span class="num">1</span>) <span class="cmt">// adjust matrix by gradient updates</span>
+matrix.destroy() <span class="cmt">// Destroy matrix, freeing up memory on the parameter server</span></pre></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div><div class="toggleContainer block">
+            <span class="toggle">Known Subclasses</span>
+            <div class="subClasses hiddenContent"><a href="async/AsyncBigWord2VecMatrix.html" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a>, <a href="granular/GranularBigWord2VecMatrix.html" class="extype" name="glint.models.client.granular.GranularBigWord2VecMatrix">GranularBigWord2VecMatrix</a></div>
+          </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="glint.models.client.BigWord2VecMatrix"><span>BigWord2VecMatrix</span></li><li class="in" name="glint.models.client.BigMatrix"><span>BigMatrix</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Abstract Value Members</h3>
+              <ol><li name="glint.models.client.BigWord2VecMatrix#adjust" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="adjust(wInput:Array[Int],wOutput:Array[Array[Int]],gPlus:Array[Float],gMinus:Array[Float],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="adjust(Array[Int],Array[Array[Int]],Array[Float],Array[Float],Long)(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">adjust</span><span class="params">(<span name="wInput">wInput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="wOutput">wOutput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="gPlus">gPlus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="gMinus">gMinus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@adjust(wInput:Array[Int],wOutput:Array[Array[Int]],gPlus:Array[Float],gMinus:Array[Float],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Adjusts the weights according to the received gradient updates
+for the input and output word as well as the input and random negative words combinations
+</p><div class="fullcomment"><div class="comment cmt"><p>Adjusts the weights according to the received gradient updates
+for the input and output word as well as the input and random negative words combinations
+</p></div><dl class="paramcmts block"><dt class="param">wInput</dt><dd class="cmt"><p>The indices of the input words</p></dd><dt class="param">wOutput</dt><dd class="cmt"><p>The indices of the output words per input word</p></dd><dt class="param">gPlus</dt><dd class="cmt"><p>The gradient updates for the input and output word combinations</p></dd><dt class="param">gMinus</dt><dd class="cmt"><p>The gradient updates for the input and random neighbour word combinations</p></dd><dt class="param">seed</dt><dd class="cmt"><p>The same seed that was used for generating random negative words for the dot products</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl></div>
+    </li><li name="glint.models.client.BigMatrix#cols" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="cols:Long"></a>
+      <a id="cols:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cols</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@cols:Long" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">The number of columns
+</p><div class="fullcomment"><div class="comment cmt"><p>The number of columns
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.BigMatrix#destroy" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="destroy()(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="destroy()(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">destroy</span><span class="params">()</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@destroy()(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Destroys the big matrix and its resources on the parameter server
+</p><div class="fullcomment"><div class="comment cmt"><p>Destroys the big matrix and its resources on the parameter server
+</p></div><dl class="paramcmts block"><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully destroyed</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.BigWord2VecMatrix#dotprod" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float])]"></a>
+      <a id="dotprod(Array[Int],Array[Array[Int]],Long)(ExecutionContext):Future[(Array[Float],Array[Float])]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">dotprod</span><span class="params">(<span name="wInput">wInput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="wOutput">wOutput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>])]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float])]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Computes the dot products to be used as gradient updates
+for the input and output word as well as the input and random negative words combinations
+</p><div class="fullcomment"><div class="comment cmt"><p>Computes the dot products to be used as gradient updates
+for the input and output word as well as the input and random negative words combinations
+</p></div><dl class="paramcmts block"><dt class="param">wInput</dt><dd class="cmt"><p>The indices of the input words</p></dd><dt class="param">wOutput</dt><dd class="cmt"><p>The indices of the output words per input word</p></dd><dt class="param">seed</dt><dd class="cmt"><p>The seed for generating random negative words</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the gradient updates</p></dd></dl></div>
+    </li><li name="glint.models.client.BigWord2VecMatrix#multiply" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="multiply(vector:Array[Float],startRow:Long,endRow:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]"></a>
+      <a id="multiply(Array[Float],Long,Long)(ExecutionContext):Future[Array[Float]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">multiply</span><span class="params">(<span name="vector">vector: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="startRow">startRow: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="endRow">endRow: <span class="extype" name="scala.Long">Long</span> = <span class="symbol"><span class="name"><a href="BigMatrix.html#rows:Long">rows</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@multiply(vector:Array[Float],startRow:Long,endRow:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Pulls the result of the matrix multiplication of the input weight matrix with the received vector
+</p><div class="fullcomment"><div class="comment cmt"><p>Pulls the result of the matrix multiplication of the input weight matrix with the received vector
+</p></div><dl class="paramcmts block"><dt class="param">vector</dt><dd class="cmt"><p>The vector with which to multiply the matrix</p></dd><dt class="param">startRow</dt><dd class="cmt"><p>The start row index of the matrix, to support multiplication with only a part of the matrix</p></dd><dt class="param">endRow</dt><dd class="cmt"><p>The exclusive end row index of the matrix</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the matrix multiplication result</p></dd></dl></div>
+    </li><li name="glint.models.client.BigWord2VecMatrix#norms" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="norms(startRow:Long,endRow:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]"></a>
+      <a id="norms(Long,Long)(ExecutionContext):Future[Array[Float]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">norms</span><span class="params">(<span name="startRow">startRow: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="endRow">endRow: <span class="extype" name="scala.Long">Long</span> = <span class="symbol"><span class="name"><a href="BigMatrix.html#rows:Long">rows</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@norms(startRow:Long,endRow:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Pulls the euclidean norm of each input weight row
+</p><div class="fullcomment"><div class="comment cmt"><p>Pulls the euclidean norm of each input weight row
+</p></div><dl class="paramcmts block"><dt class="param">startRow</dt><dd class="cmt"><p>The start index of the range of rows whose euclidean norms to get</p></dd><dt class="param">endRow</dt><dd class="cmt"><p>The exclusive end index of the range of rows whose euclidean norms to get</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>The euclidean norms</p></dd></dl></div>
+    </li><li name="glint.models.client.BigMatrix#pull" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="pull(rows:Array[Long],cols:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[V]]"></a>
+      <a id="pull(Array[Long],Array[Long])(ExecutionContext):Future[Array[Float]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pull</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="cols">cols: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@pull(rows:Array[Long],cols:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[V]]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Pulls a set of elements
+</p><div class="fullcomment"><div class="comment cmt"><p>Pulls a set of elements
+</p></div><dl class="paramcmts block"><dt class="param">rows</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">cols</dt><dd class="cmt"><p>The corresponding indices of the columns</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the values of the elements at given rows, columns</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.BigMatrix#pull" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="pull(rows:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[V]]]"></a>
+      <a id="pull(Array[Long])(ExecutionContext):Future[Array[Vector[Float]]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pull</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="breeze.linalg.Vector">Vector</span>[<span class="extype" name="scala.Float">Float</span>]]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@pull(rows:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[V]]]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Pulls a set of rows
+</p><div class="fullcomment"><div class="comment cmt"><p>Pulls a set of rows
+</p></div><dl class="paramcmts block"><dt class="param">rows</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the vectors representing the rows</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.BigWord2VecMatrix#pullAverage" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="pullAverage(rows:Array[Array[Long]])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[Float]]]"></a>
+      <a id="pullAverage(Array[Array[Long]])(ExecutionContext):Future[Array[Vector[Float]]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pullAverage</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="breeze.linalg.Vector">Vector</span>[<span class="extype" name="scala.Float">Float</span>]]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@pullAverage(rows:Array[Array[Long]])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[Float]]]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Pulls the average of each set of rows
+</p><div class="fullcomment"><div class="comment cmt"><p>Pulls the average of each set of rows
+</p></div><dl class="paramcmts block"><dt class="param">rows</dt><dd class="cmt"><p>The array of row indices to average</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the average vectors</p></dd></dl></div>
+    </li><li name="glint.models.client.BigMatrix#push" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="push(rows:Array[Long],cols:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="push(Array[Long],Array[Long],Array[Float])(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">push</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="cols">cols: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@push(rows:Array[Long],cols:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Pushes a set of values
+</p><div class="fullcomment"><div class="comment cmt"><p>Pushes a set of values
+</p></div><dl class="paramcmts block"><dt class="param">rows</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">cols</dt><dd class="cmt"><p>The indices of the columns</p></dd><dt class="param">values</dt><dd class="cmt"><p>The values to update</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.BigMatrix#rows" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="rows:Long"></a>
+      <a id="rows:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">rows</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@rows:Long" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">The number of rows
+</p><div class="fullcomment"><div class="comment cmt"><p>The number of rows
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.BigWord2VecMatrix#save" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="save(String,Configuration,Boolean)(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">save</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Saves the matrix to HDFS
+</p><div class="fullcomment"><div class="comment cmt"><p>Saves the matrix to HDFS
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the matrix should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">trainable</dt><dd class="cmt"><p>Whether the saved matrix should be retrainable, requiring more data being saved</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully saved</p></dd></dl></div>
+    </li><li name="glint.models.client.BigMatrix#save" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="save(String,Configuration)(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">save</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Saves the matrix to HDFS
+</p><div class="fullcomment"><div class="comment cmt"><p>Saves the matrix to HDFS
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the matrix should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully saved</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li></ol>
+            </div>
+
+        <div id="values" class="values members">
+              <h3>Concrete Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@##():Int" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@clone():Object" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@toString():String" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="glint.models.client.BigMatrix">
+              <h3>Inherited from <a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="scala.Float">Float</span>]</h3>
+            </div><div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

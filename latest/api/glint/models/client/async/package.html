@@ -1,0 +1,231 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>async - Glint - glint.models.client.async</title>
+          <meta name="description" content="async - Glint - glint.models.client.async" />
+          <meta name="keywords" content="async Glint glint.models.client.async" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'glint.models.client.async.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="glint">glint</a>.<a href="../../package.html" class="extype" name="glint.models">models</a>.<a href="../package.html" class="extype" name="glint.models.client">client</a></p>
+        <h1>async</h1><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">async</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="glint.models.client.async.AsyncBigMatrix" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="AsyncBigMatrix[V,R,P]extendsBigMatrix[V]"></a>
+      <a id="AsyncBigMatrix[V,R,P]:AsyncBigMatrix[V,R,P]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AsyncBigMatrix.html"><span class="name">AsyncBigMatrix</span></a><span class="tparams">[<span name="V">V</span>, <span name="R">R</span>, <span name="P">P</span>]</span><span class="result"> extends <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="glint.models.client.async.AsyncBigMatrix.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package@AsyncBigMatrix[V,R,P]extendsBigMatrix[V]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">An asynchronous implementation of a <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>.</p><div class="fullcomment"><div class="comment cmt"><p>An asynchronous implementation of a <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>. You don't want to construct this
+object manually but instead use the methods provided in <a href="../../../Client.html" class="extype" name="glint.Client">Client</a>, as so</p><pre>client.matrix[<span class="std">Double</span>](rows, columns)</pre></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store</p></dd><dt class="tparam">R</dt><dd class="cmt"><p>The type of responses we expect to get from the parameter servers</p></dd><dt class="tparam">P</dt><dd class="cmt"><p>The type of push requests we should send to the parameter servers</p></dd></dl></div>
+    </li><li name="glint.models.client.async.AsyncBigVector" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="AsyncBigVector[V,R,P]extendsBigVector[V]"></a>
+      <a id="AsyncBigVector[V,R,P]:AsyncBigVector[V,R,P]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AsyncBigVector.html"><span class="name">AsyncBigVector</span></a><span class="tparams">[<span name="V">V</span>, <span name="R">R</span>, <span name="P">P</span>]</span><span class="result"> extends <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="glint.models.client.async.AsyncBigVector.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package@AsyncBigVector[V,R,P]extendsBigVector[V]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">An asynchronous implementation of the <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>.</p><div class="fullcomment"><div class="comment cmt"><p>An asynchronous implementation of the <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>. You don't want to construct this
+object manually but instead use the methods provided in <a href="../../../Client.html" class="extype" name="glint.Client">Client</a>, as so</p><pre>client.vector[<span class="std">Double</span>](keys)</pre></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store</p></dd><dt class="tparam">R</dt><dd class="cmt"><p>The type of responses we expect to get from the parameter servers</p></dd><dt class="tparam">P</dt><dd class="cmt"><p>The type of push requests we should send to the parameter servers</p></dd></dl></div>
+    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="AsyncBigWord2VecMatrixextendsAsyncBigMatrixFloatwithBigWord2VecMatrix"></a>
+      <a id="AsyncBigWord2VecMatrix:AsyncBigWord2VecMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AsyncBigWord2VecMatrix.html"><span class="name">AsyncBigWord2VecMatrix</span></a><span class="result"> extends <span class="extype" name="glint.models.client.async.AsyncBigMatrixFloat">AsyncBigMatrixFloat</span> with <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package@AsyncBigWord2VecMatrixextendsAsyncBigMatrixFloatwithBigWord2VecMatrix" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">An asynchronous implementation of a <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a>.</p><div class="fullcomment"><div class="comment cmt"><p>An asynchronous implementation of a <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a>.
+You don't want to construct this object manually but instead use the methods provided in <a href="../../../Client.html" class="extype" name="glint.Client">Client</a>
+to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVocabCns, vectorSize, n)</pre></div></div>
+    </li><li name="glint.models.client.async.PullFSM" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="PullFSM[T,R]extendsAnyRef"></a>
+      <a id="PullFSM[T,R]:PullFSM[T,R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PullFSM.html"><span class="name">PullFSM</span></a><span class="tparams">[<span name="T">T</span>, <span name="R">R</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package@PullFSM[T,R]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A pull-mechanism using a finite state machine to perform multiple retries with exponential timeout backoff
+</p><div class="fullcomment"><div class="comment cmt"><p>A pull-mechanism using a finite state machine to perform multiple retries with exponential timeout backoff
+</p></div><dl class="paramcmts block"><dt class="tparam">T</dt><dd class="cmt"><p>The type of message to send</p></dd></dl></div>
+    </li><li name="glint.models.client.async.PushFSM" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="PushFSM[T]extendsAnyRef"></a>
+      <a id="PushFSM[T]:PushFSM[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PushFSM.html"><span class="name">PushFSM</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package@PushFSM[T]extendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A push-mechanism using a finite state machine to guarantee exactly-once delivery with multiple attempts
+</p><div class="fullcomment"><div class="comment cmt"><p>A push-mechanism using a finite state machine to guarantee exactly-once delivery with multiple attempts
+</p></div><dl class="paramcmts block"><dt class="tparam">T</dt><dd class="cmt"><p>The type of message to send</p></dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="glint.models.client.async.PullFSM" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PullFSM"></a>
+      <a id="PullFSM:PullFSM"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PullFSM$.html"><span class="name">PullFSM</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package@PullFSM" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.models.client.async.PushFSM" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PushFSM"></a>
+      <a id="PushFSM:PushFSM"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PushFSM$.html"><span class="name">PushFSM</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.package@PushFSM" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

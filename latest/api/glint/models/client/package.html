@@ -1,0 +1,238 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>client - Glint - glint.models.client</title>
+          <meta name="description" content="client - Glint - glint.models.client" />
+          <meta name="keywords" content="client Glint glint.models.client" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../index.html';
+            var hash = 'glint.models.client.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../lib/package_big.png" />
+        <p id="owner"><a href="../../package.html" class="extype" name="glint">glint</a>.<a href="../package.html" class="extype" name="glint.models">models</a></p>
+        <h1>client</h1><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">client</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="glint.models.client.BigMatrix" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="BigMatrix[V]extendsSerializable"></a>
+      <a id="BigMatrix[V]:BigMatrix[V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="BigMatrix.html"><span class="name">BigMatrix</span></a><span class="tparams">[<span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@BigMatrix[V]extendsSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A big matrix supporting basic parameter server row-wise and element-wise operations</p><div class="fullcomment"><div class="comment cmt"><p>A big matrix supporting basic parameter server row-wise and element-wise operations</p><pre><span class="kw">val</span> matrix: BigMatrix[<span class="std">Double</span>] = ...
+matrix.pull(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L, <span class="num">2</span>L)) <span class="cmt">// get full rows</span>
+matrix.pull(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L, <span class="num">2</span>L), <span class="std">Array</span>(<span class="num">3</span>, <span class="num">100</span>, <span class="num">234</span>)) <span class="cmt">// get values corresponding to row column indices</span>
+matrix.push(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L, <span class="num">2</span>L), <span class="std">Array</span>(<span class="num">3</span>, <span class="num">100</span>, <span class="num">234</span>), <span class="std">Array</span>(<span class="num">0.5</span>, <span class="num">3.14</span>, <span class="num">9.9</span>)) <span class="cmt">// add values to matrix</span>
+matrix.destroy() <span class="cmt">// Destroy matrix, freeing up memory on the parameter server</span></pre></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store</p></dd></dl></div>
+    </li><li name="glint.models.client.BigVector" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="BigVector[V]extendsSerializable"></a>
+      <a id="BigVector[V]:BigVector[V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="BigVector.html"><span class="name">BigVector</span></a><span class="tparams">[<span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@BigVector[V]extendsSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A big vector supporting basic parameter server element-wise operations</p><div class="fullcomment"><div class="comment cmt"><p>A big vector supporting basic parameter server element-wise operations</p><pre><span class="kw">val</span> vector: BigVector[<span class="std">Double</span>] = ...
+vector.pull(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">100</span>L, <span class="num">30000</span>L)) <span class="cmt">// Pull values from the vector</span>
+vector.push(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">100</span>L, <span class="num">30000</span>L), <span class="std">Array</span>(<span class="num">0.5</span>, <span class="num">3.14</span>, <span class="num">9.9</span>)) <span class="cmt">// Add values to the vector</span>
+vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the parameter server</span></pre></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store</p></dd></dl></div>
+    </li><li name="glint.models.client.BigWord2VecMatrix" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="BigWord2VecMatrixextendsBigMatrix[Float]"></a>
+      <a id="BigWord2VecMatrix:BigWord2VecMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="BigWord2VecMatrix.html"><span class="name">BigWord2VecMatrix</span></a><span class="result"> extends <a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@BigWord2VecMatrixextendsBigMatrix[Float]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A big matrix of floats and supporting specific parameter server operations
+for efficient distributed Word2Vec computation</p><div class="fullcomment"><div class="comment cmt"><p>A big matrix of floats and supporting specific parameter server operations
+for efficient distributed Word2Vec computation</p><p>The pull and push operations can only access the input weights of the underlying weight matrix,
+the output weights stay hidden</p><pre><span class="kw">val</span> matrix: BigWord2VecMatrix = ...
+<span class="kw">val</span> wInput = <span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L) <span class="cmt">// input word indices</span>
+<span class="kw">val</span> wOutput = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L), <span class="std">Array</span>(<span class="num">0</span>L, <span class="num">1</span>L)) <span class="cmt">// output word indices</span>
+<span class="kw">val</span> (fPlus, fMinus) = matrix.dotprod(wInput, wOutput, <span class="num">1</span>) <span class="cmt">// compute dot products for gradient updates</span>
+matrix.adjust(wInput, wOutput, fPlus, gMinus, <span class="num">1</span>) <span class="cmt">// adjust matrix by gradient updates</span>
+matrix.destroy() <span class="cmt">// Destroy matrix, freeing up memory on the parameter server</span></pre></div></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="glint.models.client.async" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="async"></a>
+      <a id="async:async"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="async/package.html"><span class="name">async</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@async" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.models.client.buffered" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="buffered"></a>
+      <a id="buffered:buffered"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="buffered/package.html"><span class="name">buffered</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@buffered" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.models.client.granular" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="granular"></a>
+      <a id="granular:granular"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="granular/package.html"><span class="name">granular</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@granular" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.models.client.retry" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="retry"></a>
+      <a id="retry:retry"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="retry/package.html"><span class="name">retry</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@retry" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

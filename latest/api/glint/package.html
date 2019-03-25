@@ -1,0 +1,305 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>glint - Glint - glint</title>
+          <meta name="description" content="glint - Glint - glint" />
+          <meta name="keywords" content="glint Glint glint" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../lib/template.js"></script>
+      <script type="text/javascript" src="../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../index.html';
+            var hash = 'glint.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../lib/package_big.png" />
+        
+        <h1>glint</h1><span class="permalink">
+      <a href="../index.html#glint.package" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">glint</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="glint.Client" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ClientextendsAnyRef"></a>
+      <a id="Client:Client"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Client.html"><span class="name">Client</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@ClientextendsAnyRef" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">The client provides the functions needed to spawn large distributed matrices and vectors on the parameter servers.</p><div class="fullcomment"><div class="comment cmt"><p>The client provides the functions needed to spawn large distributed matrices and vectors on the parameter servers.
+Use the companion object to construct a Client object from a configuration file.
+</p></div></div>
+    </li><li name="glint.Word2VecArguments" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="Word2VecArgumentsextendsProductwithSerializable"></a>
+      <a id="Word2VecArguments:Word2VecArguments"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Word2VecArguments.html"><span class="name">Word2VecArguments</span></a><span class="params">(<span name="vectorSize">vectorSize: <span class="extype" name="scala.Int">Int</span></span>, <span name="window">window: <span class="extype" name="scala.Int">Int</span></span>, <span name="batchSize">batchSize: <span class="extype" name="scala.Int">Int</span></span>, <span name="n">n: <span class="extype" name="scala.Int">Int</span></span>, <span name="unigramTableSize">unigramTableSize: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">100000000</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@Word2VecArgumentsextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Word2Vec arguments
+</p><div class="fullcomment"><div class="comment cmt"><p>Word2Vec arguments
+</p></div><dl class="paramcmts block"><dt class="param">vectorSize</dt><dd class="cmt"><p>The (full) vector size</p></dd><dt class="param">window</dt><dd class="cmt"><p>The window size</p></dd><dt class="param">batchSize</dt><dd class="cmt"><p>The minibatch size</p></dd><dt class="param">n</dt><dd class="cmt"><p>The number of negative examples to create per output word</p></dd><dt class="param">unigramTableSize</dt><dd class="cmt"><p>The size of the unigram table for efficient generation of random negative words.
+                        Smaller sizes can prevent OutOfMemoryError but might lead to worse results</p></dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="glint.Client" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="Client"></a>
+      <a id="Client:Client"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Client$.html"><span class="name">Client</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@Client" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Contains functions to easily create a client object that is connected to the glint cluster.</p><div class="fullcomment"><div class="comment cmt"><p>Contains functions to easily create a client object that is connected to the glint cluster.</p><p>You can construct a client with a specific configuration:</p><pre><span class="kw">import</span> glint.Client
+
+<span class="kw">import</span> java.io.File
+<span class="kw">import</span> com.typesafe.config.ConfigFactory
+
+<span class="kw">val</span> config = ConfigFactory.parseFile(<span class="kw">new</span> File(<span class="lit">"/your/file.conf"</span>))
+<span class="kw">val</span> client = Client(config)</pre><p>The resulting client object can then be used to create distributed matrices or vectors on the available parameter
+servers:</p><pre><span class="kw">val</span> matrix = client.matrix[<span class="std">Double</span>](<span class="num">10000</span>, <span class="num">50</span>)</pre></div></div>
+    </li><li name="glint.Main" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="Main"></a>
+      <a id="Main:Main"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Main$.html"><span class="name">Main</span></a><span class="result"> extends <span class="extype" name="com.typesafe.scalalogging.StrictLogging">StrictLogging</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@Main" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">This is the main class that runs when you start Glint.</p><div class="fullcomment"><div class="comment cmt"><p>This is the main class that runs when you start Glint. By manually specifying additional command-line options it is
+possible to start a master node or a parameter server.</p><p>To start a master node:</p><pre>java -jar /path/to/compiled/Glint.jar master -c /path/to/glint.conf</pre><p>To start a parameter server node:</p><pre>java -jar /path/to/compiled/Glint.jar server -c /path/to/glint.conf</pre><p>Alternatively you can use the scripts provided in the ./sbin/ folder of the project to automatically construct a
+master and servers over passwordless ssh.</p><p>To start a master and parameter server nodes on Spark:</p><pre>spark-submit --num-executors num-servers --executor-cores server-cores /path/to/compiled/Glint.jar spark -c /path/to/glint.conf</pre></div></div>
+    </li><li name="glint.exceptions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="exceptions"></a>
+      <a id="exceptions:exceptions"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="exceptions/package.html"><span class="name">exceptions</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@exceptions" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.iterators" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="iterators"></a>
+      <a id="iterators:iterators"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="iterators/package.html"><span class="name">iterators</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@iterators" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.messages" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="messages"></a>
+      <a id="messages:messages"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="messages/package.html"><span class="name">messages</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@messages" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.models" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="models"></a>
+      <a id="models:models"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="models/package.html"><span class="name">models</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@models" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.partitioning" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="partitioning"></a>
+      <a id="partitioning:partitioning"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="partitioning/package.html"><span class="name">partitioning</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@partitioning" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.serialization" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="serialization"></a>
+      <a id="serialization:serialization"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="serialization/package.html"><span class="name">serialization</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@serialization" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="util"></a>
+      <a id="util:util"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="util/package.html"><span class="name">util</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@util" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

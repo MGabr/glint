@@ -1,0 +1,163 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>granular - Glint - glint.models.client.granular</title>
+          <meta name="description" content="granular - Glint - glint.models.client.granular" />
+          <meta name="keywords" content="granular Glint glint.models.client.granular" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'glint.models.client.granular.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="glint">glint</a>.<a href="../../package.html" class="extype" name="glint.models">models</a>.<a href="../package.html" class="extype" name="glint.models.client">client</a></p>
+        <h1>granular</h1><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.granular.package" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">granular</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="glint.models.client.granular.GranularBigMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="GranularBigMatrix[V]extendsBigMatrix[V]"></a>
+      <a id="GranularBigMatrix[V]:GranularBigMatrix[V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GranularBigMatrix.html"><span class="name">GranularBigMatrix</span></a><span class="tparams">[<span name="V">V</span>]</span><span class="result"> extends <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="glint.models.client.granular.GranularBigMatrix.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.granular.package@GranularBigMatrix[V]extendsBigMatrix[V]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a> whose messages are limited to a specific maximum message size.</p><div class="fullcomment"><div class="comment cmt"><p>A <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a> whose messages are limited to a specific maximum message size. This
+helps resolve timeout exceptions and heartbeat failures in akka at the cost of additional message overhead.</p><pre>matrix = client.matrix[<span class="std">Double</span>](<span class="num">1000000</span>, <span class="num">100</span>)
+granularMatrix = <span class="kw">new</span> GranularBigMatrix[<span class="std">Double</span>](matrix, <span class="num">1000</span>)
+granularMatrix.pull(veryLargeArrayOfRowIndices)</pre></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store</p></dd></dl></div>
+    </li><li name="glint.models.client.granular.GranularBigVector" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="GranularBigVector[V]extendsBigVector[V]"></a>
+      <a id="GranularBigVector[V]:GranularBigVector[V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GranularBigVector.html"><span class="name">GranularBigVector</span></a><span class="tparams">[<span name="V">V</span>]</span><span class="result"> extends <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="glint.models.client.granular.GranularBigVector.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.granular.package@GranularBigVector[V]extendsBigVector[V]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a> whose messages are limited to a specific maximum message size.</p><div class="fullcomment"><div class="comment cmt"><p>A <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a> whose messages are limited to a specific maximum message size. This
+helps resolve timeout exceptions and heartbeat failures in akka at the cost of additional message overhead.</p><pre>vector = client.vector[<span class="std">Double</span>](<span class="num">1000000</span>)
+granularVector = <span class="kw">new</span> GranularBigVector[<span class="std">Double</span>](vector, <span class="num">1000</span>)
+granularVector.pull(veryLargeArrayOfIndices)</pre></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store</p></dd></dl></div>
+    </li><li name="glint.models.client.granular.GranularBigWord2VecMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="GranularBigWord2VecMatrixextendsGranularBigMatrix[Float]withBigWord2VecMatrix"></a>
+      <a id="GranularBigWord2VecMatrix:GranularBigWord2VecMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GranularBigWord2VecMatrix.html"><span class="name">GranularBigWord2VecMatrix</span></a><span class="result"> extends <a href="GranularBigMatrix.html" class="extype" name="glint.models.client.granular.GranularBigMatrix">GranularBigMatrix</a>[<span class="extype" name="scala.Float">Float</span>] with <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.granular.package@GranularBigWord2VecMatrixextendsGranularBigMatrix[Float]withBigWord2VecMatrix" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a> whose messages are limited to a specific maximum
+message size.</p><div class="fullcomment"><div class="comment cmt"><p>A <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a> whose messages are limited to a specific maximum
+message size. This helps resolve timeout exceptions and heartbeat failures in akka at the cost of additional message
+overhead.</p><p>The specific parameter server operations for efficient distributed Word2Vec training are not limited to
+a specific maximum message size. The operations for Word2Vec prediction are however.
+</p></div></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

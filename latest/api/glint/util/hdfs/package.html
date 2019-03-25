@@ -1,0 +1,305 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>hdfs - Glint - glint.util.hdfs</title>
+          <meta name="description" content="hdfs - Glint - glint.util.hdfs" />
+          <meta name="keywords" content="hdfs Glint glint.util.hdfs" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../index.html';
+            var hash = 'glint.util.hdfs.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../lib/package_big.png" />
+        <p id="owner"><a href="../../package.html" class="extype" name="glint">glint</a>.<a href="../package.html" class="extype" name="glint.util">util</a></p>
+        <h1>hdfs</h1><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hdfs</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Central package for utils related to saving to and loading from HDFS
+</p></div><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="glint.util.hdfs"><span>hdfs</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="glint.util.hdfs.MatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MatrixMetadataextendsProductwithSerializable"></a>
+      <a id="MatrixMetadata:MatrixMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="MatrixMetadata.html"><span class="name">MatrixMetadata</span></a><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Long">Long</span></span>, <span name="cols">cols: <span class="extype" name="scala.Long">Long</span></span>, <span name="aggregate">aggregate: <a href="../../models/server/aggregate/Aggregate.html" class="extype" name="glint.models.server.aggregate.Aggregate">Aggregate</a></span>, <span name="partitionBy">partitionBy: <a href="../../partitioning/by/PartitionBy$.html#PartitionBy=glint.partitioning.by.PartitionBy.Value" class="extmbr" name="glint.partitioning.by.PartitionBy.PartitionBy">PartitionBy</a></span>, <span name="createPartitioner">createPartitioner: (<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Long">Long</span>) ⇒ <a href="../../partitioning/Partitioner.html" class="extype" name="glint.partitioning.Partitioner">Partitioner</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@MatrixMetadataextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Metadata of a matrix
+In combination with the matrix data it provides enough information to load it again
+</p>
+    </li><li name="glint.util.hdfs.Word2VecMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Word2VecMatrixMetadataextendsProductwithSerializable"></a>
+      <a id="Word2VecMatrixMetadata:Word2VecMatrixMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Word2VecMatrixMetadata.html"><span class="name">Word2VecMatrixMetadata</span></a><span class="params">(<span name="vocabCns">vocabCns: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="args">args: <a href="../../Word2VecArguments.html" class="extype" name="glint.Word2VecArguments">Word2VecArguments</a></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@Word2VecMatrixMetadataextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Metadata of a word2vec matrix
+In combination with the matrix data it provides enough information to load it again
+</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="glint.util.hdfs#countPartitionData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="countPartitionData(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):Int"></a>
+      <a id="countPartitionData(String,Configuration,String):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">countPartitionData</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/data/&quot;</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@countPartitionData(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):Int" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#loadMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="loadMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.MatrixMetadata"></a>
+      <a id="loadMatrixMetadata(String,Configuration,String):MatrixMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadMatrixMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <a href="MatrixMetadata.html" class="extype" name="glint.util.hdfs.MatrixMetadata">MatrixMetadata</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@loadMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.MatrixMetadata" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#loadPartitionData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="loadPartitionData[V](path:String,config:org.apache.hadoop.conf.Configuration,partitionIndex:Int,pathPostfix:String):Array[V]"></a>
+      <a id="loadPartitionData[V](String,Configuration,Int,String):Array[V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadPartitionData</span><span class="tparams">[<span name="V">V</span>]</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="partitionIndex">partitionIndex: <span class="extype" name="scala.Int">Int</span></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/data/&quot;</span></span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="glint.util.hdfs.loadPartitionData.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@loadPartitionData[V](path:String,config:org.apache.hadoop.conf.Configuration,partitionIndex:Int,pathPostfix:String):Array[V]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#loadWord2VecMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="loadWord2VecMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.Word2VecMatrixMetadata"></a>
+      <a id="loadWord2VecMatrixMetadata(String,Configuration,String):Word2VecMatrixMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadWord2VecMatrixMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <a href="Word2VecMatrixMetadata.html" class="extype" name="glint.util.hdfs.Word2VecMatrixMetadata">Word2VecMatrixMetadata</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@loadWord2VecMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.Word2VecMatrixMetadata" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#saveMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.MatrixMetadata,pathPostfix:String):Unit"></a>
+      <a id="saveMatrixMetadata(String,Configuration,MatrixMetadata,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveMatrixMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="metadata">metadata: <a href="MatrixMetadata.html" class="extype" name="glint.util.hdfs.MatrixMetadata">MatrixMetadata</a></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@saveMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.MatrixMetadata,pathPostfix:String):Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#savePartitionData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="savePartitionData[V](path:String,config:org.apache.hadoop.conf.Configuration,partitionIndex:Int,partitionData:Array[V],pathPostfix:String):Unit"></a>
+      <a id="savePartitionData[V](String,Configuration,Int,Array[V],String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">savePartitionData</span><span class="tparams">[<span name="V">V</span>]</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="partitionIndex">partitionIndex: <span class="extype" name="scala.Int">Int</span></span>, <span name="partitionData">partitionData: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="glint.util.hdfs.savePartitionData.V">V</span>]</span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/data/&quot;</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@savePartitionData[V](path:String,config:org.apache.hadoop.conf.Configuration,partitionIndex:Int,partitionData:Array[V],pathPostfix:String):Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#saveTmpWord2VecMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveTmpWord2VecMatrixMetadata(config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.Word2VecMatrixMetadata):String"></a>
+      <a id="saveTmpWord2VecMatrixMetadata(Configuration,Word2VecMatrixMetadata):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveTmpWord2VecMatrixMetadata</span><span class="params">(<span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="metadata">metadata: <a href="Word2VecMatrixMetadata.html" class="extype" name="glint.util.hdfs.Word2VecMatrixMetadata">Word2VecMatrixMetadata</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@saveTmpWord2VecMatrixMetadata(config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.Word2VecMatrixMetadata):String" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#saveWord2VecMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveWord2VecMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.Word2VecMatrixMetadata,pathPostfix:String):Unit"></a>
+      <a id="saveWord2VecMatrixMetadata(String,Configuration,Word2VecMatrixMetadata,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveWord2VecMatrixMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="metadata">metadata: <a href="Word2VecMatrixMetadata.html" class="extype" name="glint.util.hdfs.Word2VecMatrixMetadata">Word2VecMatrixMetadata</a></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@saveWord2VecMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.Word2VecMatrixMetadata,pathPostfix:String):Unit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
