@@ -31,4 +31,4 @@ deploy:
   script: sbt ghpagesPushSite
   skip_cleanup: true
   on:
-    condition: $TRAVIS_PULL_REQUEST = false && $SBT_CROSS_VERSION = 0.13*
+    condition: $TRAVIS_PULL_REQUEST = false
