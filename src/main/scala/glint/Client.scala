@@ -773,13 +773,16 @@ object Client {
   }
 
   /**
-    * Gets the number of cores per executors
+    * Gets the number of cores per executors.
+    * The number is divided by the number of cpus per task
     *
     * @param sc The spark context
-    * @return The number of cores per executor
+    * @return The number of cores per executor divided by the number of cpus per task
     */
   def getExecutorCores(sc: SparkContext): Int = {
-    sc.getConf.get("spark.executor.cores", "1").toInt
+    val cores = sc.getConf.get("spark.executor.cores", "1").toDouble
+    val taskCpus = sc.getConf.get("spark.task.cpus", "1").toDouble
+    (cores / taskCpus).toInt
   }
 
   /**
