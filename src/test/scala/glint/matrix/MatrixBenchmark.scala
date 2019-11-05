@@ -24,26 +24,17 @@ class MatrixBenchmark extends Bench.OfflineReport {
   // Construct necessary data
   implicit val system = ActorSystem("MatrixBenchmark")
   val random = new scala.util.Random(42)
-  val rangePartition = RangePartition(1, 10000, 20000, PartitionBy.ROW) // 10000 elements
-  val cyclicPartition = CyclicPartition(3, 10, 100000, PartitionBy.ROW) // 10000 elements
+  val rangePartition = RangePartition(0, 0, 10000, PartitionBy.ROW) // 10000 elements
 
   // Construct matrices for range and cyclic partitions
   val rangeMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(rangePartition, 10000, 300, AggregateAdd(), None, None))
   val rangeMatrixDouble = rangeMatrixDoubleRef.underlyingActor
-  val cyclicMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(cyclicPartition, 10000, 300, AggregateAdd(), None, None))
-  val cyclicMatrixDouble = cyclicMatrixDoubleRef.underlyingActor
 
   // Sizes and data
   val sizes = Gen.range("size")(4000, 10000, 2000)
   val rangeData = for (size <- sizes) yield {
-    val rows = (0L until size).map { case x => x + 10000 }.toArray
-    val cols = (0L until size).map { case x => x % 300 }.toArray
-    val values = (0 until size).map(_ => random.nextDouble()).toArray
-    (rows, cols, values)
-  }
-  val cyclicData = for (size <- sizes) yield {
-    val rows = (0L until size).map { case x => (x * 10) + 3 }.toArray
-    val cols = (0L until size).map { case x => x % 300 }.toArray
+    val rows = (0 until size).map { case x => x }.toArray
+    val cols = (0 until size).map { case x => x % 300 }.toArray
     val values = (0 until size).map(_ => random.nextDouble()).toArray
     (rows, cols, values)
   }
@@ -51,7 +42,7 @@ class MatrixBenchmark extends Bench.OfflineReport {
   // Number of benchmark runs
   val benchRuns = 60
 
-  performance of "RangePartialMatrixDouble" in {
+  performance of "PartialMatrixDouble" in {
     measure method "update" config (
       exec.benchRuns -> benchRuns
       ) in {
@@ -76,31 +67,4 @@ class MatrixBenchmark extends Bench.OfflineReport {
       }
     }
   }
-
-  performance of "CyclicPartialMatrixDouble" in {
-    measure method "update" config (
-      exec.benchRuns -> benchRuns
-      ) in {
-      using(cyclicData) in { case (rows, cols, values) =>
-        cyclicMatrixDouble.update(rows, cols, values)
-      }
-    }
-
-    measure method "get" config (
-      exec.benchRuns -> benchRuns
-      ) in {
-      using(cyclicData) in { case (rows, cols, values) =>
-        cyclicMatrixDouble.get(rows, cols)
-      }
-    }
-
-    measure method "getRows" config (
-      exec.benchRuns -> benchRuns
-      ) in {
-      using(cyclicData) in { case (rows, cols, values) =>
-        cyclicMatrixDouble.getRows(rows)
-      }
-    }
-  }
-
 }

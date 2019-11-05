@@ -345,7 +345,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
-        val values = whenReady(model.pullAverage(Array(Array(0L, 2L, 3L), Array(), Array(0L, 2L), Array(0L)))) {
+        val values = whenReady(model.pullAverage(Array(Array(0, 2, 3), Array(), Array(0, 2), Array(0)))) {
           identity
         }
 

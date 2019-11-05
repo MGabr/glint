@@ -79,7 +79,7 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
     * @param ec The implicit execution context in which to execute the request
     * @return The euclidean norms
     */
-  def norms(startRow: Long = 0, endRow: Long = rows)(implicit ec: ExecutionContext): Future[Array[Float]]
+  def norms(startRow: Int = 0, endRow: Int = rows.toInt)(implicit ec: ExecutionContext): Future[Array[Float]]
 
   /**
     * Pulls the result of the matrix multiplication of the input weight matrix with the received vector
@@ -90,7 +90,7 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the matrix multiplication result
     */
-  def multiply(vector: Array[Float], startRow: Long = 0, endRow: Long = rows)
+  def multiply(vector: Array[Float], startRow: Int = 0, endRow: Int = rows.toInt)
               (implicit ec: ExecutionContext): Future[Array[Float]]
 
   /**
@@ -100,5 +100,5 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the average vectors
     */
-  def pullAverage(rows: Array[Array[Long]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]]
+  def pullAverage(rows: Array[Array[Int]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]]
 }

@@ -24,8 +24,8 @@ object SerializationBenchmark extends Bench.OfflineReport with SystemTest {
 
   // Defines number of iterations to test (test size)
   val sizes = Gen.range("size")(1000, 9000, 2000)
-  val requestData = for (size <- sizes) yield PullMatrix((0L until size).toArray, (0L until size).toArray)
-  val requestDataRequestSerialized = for (size <- sizes) yield requestSerializer.toBinary(PullMatrix((0L until size).toArray, (0L until size).toArray))
+  val requestData = for (size <- sizes) yield PullMatrix((0 until size).toArray, (0 until size).toArray)
+  val requestDataRequestSerialized = for (size <- sizes) yield requestSerializer.toBinary(PullMatrix((0 until size).toArray, (0 until size).toArray))
 
   val responseData = for (size <- sizes) yield ResponseLong((0L until size).toArray)
   val responseDataResponseSerialized = for (size <- sizes) yield responseSerializer.toBinary(ResponseLong((0L until size).toArray))

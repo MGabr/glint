@@ -89,7 +89,8 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     * @param ec The implicit execution context in which to execute the request
     * @return The euclidean norms
     */
-  override def norms(startRow: Long = 0, endRow: Long = rows)(implicit ec: ExecutionContext): Future[Array[Float]] = {
+  override def norms(startRow: Int = 0, endRow: Int = rows.toInt)
+                    (implicit ec: ExecutionContext): Future[Array[Float]] = {
     pullStartToEndRow(underlying.norms, startRow, endRow)
   }
 
@@ -103,14 +104,14 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the matrix multiplication result
     */
-  override def multiply(vector: Array[Float], startRow: Long = 0, endRow: Long = rows)
+  override def multiply(vector: Array[Float], startRow: Int = 0, endRow: Int = rows.toInt)
                        (implicit ec: ExecutionContext): Future[Array[Float]] = {
     pullStartToEndRow((start, end) => underlying.multiply(vector, start, end), startRow, endRow)
   }
 
-  private def pullStartToEndRow(pull: (Long, Long) => Future[Array[Float]], startRow: Long, endRow: Long)
+  private def pullStartToEndRow(pull: (Int, Int) => Future[Array[Float]], startRow: Int, endRow: Int)
                                (implicit ec: ExecutionContext): Future[Array[Float]] = {
-    val rows = (endRow - startRow).toInt
+    val rows = endRow - startRow
     if (rows  <= maximumMessageSize) {
       pull(startRow, endRow)
     } else {
@@ -139,7 +140,7 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the average vectors
     */
-  override def pullAverage(rows: Array[Array[Long]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]] = {
+  override def pullAverage(rows: Array[Array[Int]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]] = {
 
     // message sizes are limited by either the number of rows to average or the columns of the average vector
     val partialCols = Math.ceil(underlying.cols.toDouble / underlying.numPartitions.toDouble).toInt

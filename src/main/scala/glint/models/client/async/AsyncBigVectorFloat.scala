@@ -24,7 +24,7 @@ private[glint] class AsyncBigVectorFloat(partitioner: Partitioner,
     * @return A PushVectorFloat message for type V
     */
   @inline
-  override protected def toPushMessage(id: Int, keys: Array[Long], values: Array[Float]): PushVectorFloat = {
+  override protected def toPushMessage(id: Int, keys: Array[Int], values: Array[Float]): PushVectorFloat = {
     PushVectorFloat(id, keys, values)
   }
 

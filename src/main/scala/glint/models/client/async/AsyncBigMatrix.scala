@@ -75,7 +75,8 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     // Send pull request of the list of keys
     val pulls = rows.groupBy(partitioner.partition).map {
       case (partition, partitionKeys) =>
-        val pullMessage = PullMatrixRows(partitionKeys)
+        val localPartitionKeys = partitionKeys.map(partition.globalRowToLocal)
+        val pullMessage = PullMatrixRows(localPartitionKeys)
         val fsm = PullFSM[PullMatrixRows, R](pullMessage, matrices(partition.index))
         fsm.run()
     }
@@ -109,7 +110,8 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
   private def pullColPartitioned(rows: Array[Long])(implicit ec: ExecutionContext): Future[Array[Vector[V]]] = {
     // Send pull request to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
-      val pullMessage = PullMatrixRows(rows)
+      val localRows = rows.map(partition.globalRowToLocal)
+      val pullMessage = PullMatrixRows(localRows)
       val fsm = PullFSM[PullMatrixRows, R](pullMessage, matrices(partition.index))
       fsm.run().map(response => (response, partition))
     }
@@ -147,7 +149,9 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     // Send pull request of the list of keys
     val pulls = mapPartitions(keys(rows, cols)) {
       case (partition, indices) =>
-        val pullMessage = PullMatrix(indices.map(rows).toArray, indices.map(cols).toArray)
+        val localRows = indices.map(rows).map(partition.globalRowToLocal).toArray
+        val localCols = indices.map(cols).map(partition.globalColToLocal).toArray
+        val pullMessage = PullMatrix(localRows, localCols)
         val fsm = PullFSM[PullMatrix, R](pullMessage, matrices(partition.index))
         fsm.run()
     }
@@ -192,10 +196,10 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     // Send push requests
     val pushes = mapPartitions(keys(rows, cols)) {
       case (partition, indices) =>
-        val rs = indices.map(rows).toArray
-        val cs = indices.map(cols).toArray
-        val vs = indices.map(values).toArray
-        val fsm = PushFSM[P](id => toPushMessage(id, rs, cs, vs), matrices(partition.index))
+        val localRows = indices.map(rows).map(partition.globalRowToLocal).toArray
+        val localCols = indices.map(cols).map(partition.globalColToLocal).toArray
+        val vals = indices.map(values).toArray
+        val fsm = PushFSM[P](id => toPushMessage(id, localRows, localCols, vals), matrices(partition.index))
         fsm.run()
     }
 
@@ -301,7 +305,7 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
     * @return A PushMatrix message for type V
     */
   @inline
-  protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Long], values: Array[V]): P
+  protected def toPushMessage(id: Int, rows: Array[Int], cols: Array[Int], values: Array[V]): P
 
   /**
     * Deserializes this instance. This starts an ActorSystem with appropriate configuration before attempting to

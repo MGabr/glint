@@ -40,7 +40,7 @@ class GranularBigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matcher
     try {
       val granularModel = new GranularBigWord2VecMatrix(model, 10000)
       val random = new Random(1)
-      val rows = Array.fill(10000)(Array.fill(random.nextInt(15))(random.nextInt(vocabCns.length).toLong))
+      val rows = Array.fill(10000)(Array.fill(random.nextInt(15))(random.nextInt(vocabCns.length)))
 
       val result = whenReady(granularModel.pullAverage(rows)) {
         identity

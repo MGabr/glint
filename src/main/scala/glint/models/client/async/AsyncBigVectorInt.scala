@@ -24,7 +24,7 @@ private[glint] class AsyncBigVectorInt(partitioner: Partitioner,
     * @return A PushVectorInt message for type V
     */
   @inline
-  override protected def toPushMessage(id: Int, keys: Array[Long], values: Array[Int]): PushVectorInt = {
+  override protected def toPushMessage(id: Int, keys: Array[Int], values: Array[Int]): PushVectorInt = {
     PushVectorInt(id, keys, values)
   }
 

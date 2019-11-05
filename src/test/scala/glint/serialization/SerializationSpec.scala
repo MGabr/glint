@@ -55,11 +55,11 @@ class SerializationSpec extends FlatSpec with Matchers {
 
   "A RequestSerializer" should "serialize and deserialize a PullAverageRows" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PullAverageRows(Array(Array(0L, 1L, 2L), Array(), Array(0L, 2L))))
+    val bytes = requestSerializer.toBinary(PullAverageRows(Array(Array(0, 1, 2), Array(), Array(0, 2))))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PullAverageRows])
     val pullAverageRow = reconstruction.asInstanceOf[PullAverageRows]
-    pullAverageRow.rows should equal(Array(Array(0L, 1L, 2L), Array(), Array(0L, 2L)))
+    pullAverageRow.rows should equal(Array(Array(0, 1, 2), Array(), Array(0, 2)))
   }
 
   it should "serialize and deserialize a PullDotProd" in {
@@ -75,21 +75,21 @@ class SerializationSpec extends FlatSpec with Matchers {
 
   it should "serialize and deserialize a PullMatrix" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PullMatrix(Array(0L, 1L, 2L), Array(3, 4, 5)))
+    val bytes = requestSerializer.toBinary(PullMatrix(Array(0, 1, 2), Array(3, 4, 5)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PullMatrix])
     val pullMatrix = reconstruction.asInstanceOf[PullMatrix]
-    pullMatrix.rows should equal(Array(0L, 1L, 2L))
+    pullMatrix.rows should equal(Array(0, 1, 2))
     pullMatrix.cols should equal(Array(3, 4, 5))
   }
 
   it should "serialize and deserialize a PullMatrixRows" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PullMatrixRows(Array(0L, 1L, 2L, 5L)))
+    val bytes = requestSerializer.toBinary(PullMatrixRows(Array(0, 1, 2, 5)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PullMatrixRows])
     val pullMatrixRows = reconstruction.asInstanceOf[PullMatrixRows]
-    pullMatrixRows.rows should equal(Array(0L, 1L, 2L, 5L))
+    pullMatrixRows.rows should equal(Array(0, 1, 2, 5))
   }
 
   it should "serialize and deserialize a PullMultiply" in {
@@ -115,11 +115,11 @@ class SerializationSpec extends FlatSpec with Matchers {
 
   it should "serialize and deserialize a PullVector" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PullVector(Array(0L, 16L, 2L, 5L)))
+    val bytes = requestSerializer.toBinary(PullVector(Array(0, 16, 2, 5)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PullVector])
     val pullVector = reconstruction.asInstanceOf[PullVector]
-    pullVector.keys should equal(Array(0L, 16L, 2L, 5L))
+    pullVector.keys should equal(Array(0, 16, 2, 5))
   }
 
   it should "serialize and deserialize a PushAdjust" in {
@@ -142,85 +142,85 @@ class SerializationSpec extends FlatSpec with Matchers {
 
   it should "serialize and deserialize a PushMatrixDouble" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushMatrixDouble(2, Array(0L, 5L, 9L), Array(2, 10, 3), Array(0.0, 0.5, 0.99)))
+    val bytes = requestSerializer.toBinary(PushMatrixDouble(2, Array(0, 5, 9), Array(2, 10, 3), Array(0.0, 0.5, 0.99)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushMatrixDouble])
     val pushMatrixDouble = reconstruction.asInstanceOf[PushMatrixDouble]
-    pushMatrixDouble.rows should equal(Array(0L, 5L, 9L))
+    pushMatrixDouble.rows should equal(Array(0, 5, 9))
     pushMatrixDouble.cols should equal(Array(2, 10, 3))
     pushMatrixDouble.values should equal(Array(0.0, 0.5, 0.99))
   }
 
   it should "serialize and deserialize a PushMatrixFloat" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushMatrixFloat(32, Array(0L, 5L, 9L), Array(2, 10, 3), Array(0.3f, 0.6f, 10.314f)))
+    val bytes = requestSerializer.toBinary(PushMatrixFloat(32, Array(0, 5, 9), Array(2, 10, 3), Array(0.3f, 0.6f, 10.314f)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushMatrixFloat])
     val pushMatrixFloat = reconstruction.asInstanceOf[PushMatrixFloat]
-    pushMatrixFloat.rows should equal(Array(0L, 5L, 9L))
+    pushMatrixFloat.rows should equal(Array(0, 5, 9))
     pushMatrixFloat.cols should equal(Array(2, 10, 3))
     pushMatrixFloat.values should equal(Array(0.3f, 0.6f, 10.314f))
   }
 
   it should "serialize and deserialize a PushMatrixInt" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushMatrixInt(16, Array(1L, 2L, 100000000000L), Array(10000, 10, 1), Array(99, -20, -3500)))
+    val bytes = requestSerializer.toBinary(PushMatrixInt(16, Array(1, 2, 1000000000), Array(10000, 10, 1), Array(99, -20, -3500)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushMatrixInt])
     val pushMatrixInt = reconstruction.asInstanceOf[PushMatrixInt]
-    pushMatrixInt.rows should equal(Array(1L, 2L, 100000000000L))
+    pushMatrixInt.rows should equal(Array(1, 2, 1000000000))
     pushMatrixInt.cols should equal(Array(10000, 10, 1))
     pushMatrixInt.values should equal(Array(99, -20, -3500))
   }
 
   it should "serialize and deserialize a PushMatrixLong" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushMatrixLong(0, Array(1L, 2L, 100000000000L), Array(10000, 10, 1), Array(5000300200100L, -9000100200300L, 0L)))
+    val bytes = requestSerializer.toBinary(PushMatrixLong(0, Array(1, 2, 1000000000), Array(10000, 10, 1), Array(5000300200100L, -9000100200300L, 0L)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushMatrixLong])
     val pushMatrixLong = reconstruction.asInstanceOf[PushMatrixLong]
-    pushMatrixLong.rows should equal(Array(1L, 2L, 100000000000L))
+    pushMatrixLong.rows should equal(Array(1, 2, 1000000000))
     pushMatrixLong.cols should equal(Array(10000, 10, 1))
     pushMatrixLong.values should equal(Array(5000300200100L, -9000100200300L, 0L))
   }
 
   it should "serialize and deserialize a PushVectorDouble" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushVectorDouble(123, Array(0L, 5L, 9L), Array(0.0, 0.5, 0.99)))
+    val bytes = requestSerializer.toBinary(PushVectorDouble(123, Array(0, 5, 9), Array(0.0, 0.5, 0.99)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushVectorDouble])
     val pushMatrixDouble = reconstruction.asInstanceOf[PushVectorDouble]
-    pushMatrixDouble.keys should equal(Array(0L, 5L, 9L))
+    pushMatrixDouble.keys should equal(Array(0, 5, 9))
     pushMatrixDouble.values should equal(Array(0.0, 0.5, 0.99))
   }
 
   it should "serialize and deserialize a PushVectorFloat" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushVectorFloat(9999, Array(0L, 5L, 9L), Array(0.3f, 0.6f, 10.314f)))
+    val bytes = requestSerializer.toBinary(PushVectorFloat(9999, Array(0, 5, 9), Array(0.3f, 0.6f, 10.314f)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushVectorFloat])
     val pushMatrixFloat = reconstruction.asInstanceOf[PushVectorFloat]
-    pushMatrixFloat.keys should equal(Array(0L, 5L, 9L))
+    pushMatrixFloat.keys should equal(Array(0, 5, 9))
     pushMatrixFloat.values should equal(Array(0.3f, 0.6f, 10.314f))
   }
 
   it should "serialize and deserialize a PushVectorInt" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushVectorInt(231, Array(1L, 2L, 100000000000L), Array(99, -20, -3500)))
+    val bytes = requestSerializer.toBinary(PushVectorInt(231, Array(1, 2, 1000000000), Array(99, -20, -3500)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushVectorInt])
     val pushMatrixInt = reconstruction.asInstanceOf[PushVectorInt]
-    pushMatrixInt.keys should equal(Array(1L, 2L, 100000000000L))
+    pushMatrixInt.keys should equal(Array(1, 2, 1000000000))
     pushMatrixInt.values should equal(Array(99, -20, -3500))
   }
 
   it should "serialize and deserialize a PushVectorLong" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushVectorLong(213, Array(1L, 2L, 100000000000L), Array(5000300200100L, -9000100200300L, 0L)))
+    val bytes = requestSerializer.toBinary(PushVectorLong(213, Array(1, 2, 1000000000), Array(5000300200100L, -9000100200300L, 0L)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushVectorLong])
     val pushMatrixLong = reconstruction.asInstanceOf[PushVectorLong]
-    pushMatrixLong.keys should equal(Array(1L, 2L, 100000000000L))
+    pushMatrixLong.keys should equal(Array(1, 2, 1000000000))
     pushMatrixLong.values should equal(Array(5000300200100L, -9000100200300L, 0L))
   }
 

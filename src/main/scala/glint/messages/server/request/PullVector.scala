@@ -5,4 +5,4 @@ package glint.messages.server.request
   *
   * @param keys The indices
   */
-private[glint] case class PullVector(keys: Array[Long]) extends Request
+private[glint] case class PullVector(keys: Array[Int]) extends Request

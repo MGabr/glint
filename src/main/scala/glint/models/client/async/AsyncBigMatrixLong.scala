@@ -47,7 +47,7 @@ private[glint] class AsyncBigMatrixLong(partitioner: Partitioner,
     * @return A PushMatrix message for type V
     */
   @inline
-  override protected def toPushMessage(id: Int, rows: Array[Long], cols: Array[Long], values: Array[Long]): PushMatrixLong = {
+  override protected def toPushMessage(id: Int, rows: Array[Int], cols: Array[Int], values: Array[Long]): PushMatrixLong = {
     PushMatrixLong(id, rows, cols, values)
   }
 

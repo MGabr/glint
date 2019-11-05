@@ -52,10 +52,10 @@ abstract class AsyncBigVector[@specialized V: Semiring : ClassTag, R: ClassTag, 
     // Send pull request of the list of keys
     val pulls = mapPartitions(keys) {
       case (partition, indices) =>
-        val pullMessage = PullVector(indices.map(keys).toArray)
+        val localKeys = indices.map(keys).map(partition.globalRowToLocal).toArray
+        val pullMessage = PullVector(localKeys)
         val fsm = PullFSM[PullVector, R](pullMessage, models(partition.index))
         fsm.run()
-        //(models(partition.index) ? pullMessage).mapTo[R]
     }
 
     // Obtain key indices after partitioning so we can place the results in a correctly ordered array
@@ -110,9 +110,9 @@ abstract class AsyncBigVector[@specialized V: Semiring : ClassTag, R: ClassTag, 
     // Send push requests
     val pushes = mapPartitions(keys) {
       case (partition, indices) =>
-        val ks = indices.map(keys).toArray
-        val vs = indices.map(values).toArray
-        val fsm = PushFSM[P]((id) => toPushMessage(id, ks, vs), models(partition.index))
+        val localKeys = indices.map(keys).map(partition.globalRowToLocal).toArray
+        val vals = indices.map(values).toArray
+        val fsm = PushFSM[P]((id) => toPushMessage(id, localKeys, vals), models(partition.index))
         fsm.run()
     }
 
@@ -159,7 +159,7 @@ abstract class AsyncBigVector[@specialized V: Semiring : ClassTag, R: ClassTag, 
     * @return A PushMatrix message for type V
     */
   @inline
-  protected def toPushMessage(id: Int, keys: Array[Long], values: Array[V]): P
+  protected def toPushMessage(id: Int, keys: Array[Int], values: Array[V]): P
 
   /**
     * Deserializes this instance. This starts an ActorSystem with appropriate configuration before attempting to

@@ -384,10 +384,10 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * @param endRow The exclusive end index of the range of rows whose partial dot products to get
     * @return The partial dot products
     */
-  def normDots(startRow: Long, endRow: Long): Array[Float] = {
-    val results = new Array[Float](endRow.toInt - startRow.toInt)
-    cforRange(startRow.toInt until endRow.toInt)(i => {
-      results(i - startRow.toInt) = blas.sdot(cols, u, i * cols, 1, u, i * cols, 1)
+  def normDots(startRow: Int, endRow: Int): Array[Float] = {
+    val results = new Array[Float](endRow - startRow)
+    cforRange(startRow until endRow)(i => {
+      results(i - startRow) = blas.sdot(cols, u, i * cols, 1, u, i * cols, 1)
     })
     results
   }
@@ -400,12 +400,12 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * @param endRow The exclusive end row index of the matrix
     * @return The matrix multiplication result
     */
-  def multiply(vector: Array[Float], startRow: Long, endRow: Long): Array[Float] = {
-    val rows = (endRow - startRow).toInt
+  def multiply(vector: Array[Float], startRow: Int, endRow: Int): Array[Float] = {
+    val rows = endRow - startRow
     val resultVector = new Array[Float](rows)
     val alpha: Float = 1
     val beta: Float = 0
-    blas.sgemv("T", cols, rows, alpha, u, startRow.toInt * cols, cols, vector, 0, 1, beta, resultVector, 0, 1)
+    blas.sgemv("T", cols, rows, alpha, u, startRow * cols, cols, vector, 0, 1, beta, resultVector, 0, 1)
     resultVector
   }
 
@@ -415,12 +415,12 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * @param rows The indices of the rows
     * @return The average rows
     */
-  def pullAverage(rows: Array[Array[Long]]): Array[Float] = {
+  def pullAverage(rows: Array[Array[Int]]): Array[Float] = {
     val result = new Array[Float](rows.length * cols)
     cforRange(0 until rows.length)(i => {
       val row = rows(i)
       cforRange(0 until row.length)(j => {
-        blas.saxpy(cols, 1.0f, u, row(j).toInt * cols, 1, result, i * cols, 1)
+        blas.saxpy(cols, 1.0f, u, row(j) * cols, 1, result, i * cols, 1)
       })
       if (row.length != 0) {
         blas.sscal(cols, 1.0f / row.length, result, i * cols, 1)

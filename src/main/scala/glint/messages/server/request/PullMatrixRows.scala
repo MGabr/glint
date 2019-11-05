@@ -5,4 +5,4 @@ package glint.messages.server.request
   *
   * @param rows The row indices
   */
-private[glint] case class PullMatrixRows(rows: Array[Long]) extends Request
+private[glint] case class PullMatrixRows(rows: Array[Int]) extends Request

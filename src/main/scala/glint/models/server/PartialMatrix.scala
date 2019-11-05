@@ -45,12 +45,11 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     * @param rows The row indices
     * @return A sequence of values
     */
-  def getRows(rows: Array[Long]): Array[Array[V]] = {
+  def getRows(rows: Array[Int]): Array[Array[V]] = {
     var i = 0
     val a = new Array[Array[V]](rows.length)
     while (i < rows.length) {
-      val row = partition.globalRowToLocal(rows(i))
-      a(i) = data.slice(row * cols, row * cols + cols)
+      a(i) = data.slice(rows(i) * cols, rows(i) * cols + cols)
       i += 1
     }
     a
@@ -63,13 +62,11 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     * @param cols The column indices
     * @return A sequence of values
     */
-  def get(rows: Array[Long], cols: Array[Long]): Array[V] = {
+  def get(rows: Array[Int], cols: Array[Int]): Array[V] = {
     var i = 0
     val a = new Array[V](rows.length)
     while (i < rows.length) {
-      val row = partition.globalRowToLocal(rows(i))
-      val col = partition.globalColToLocal(cols(i))
-      a(i) = data(row * this.cols + col)
+      a(i) = data(rows(i) * this.cols + cols(i))
       i += 1
     }
     a
@@ -82,12 +79,10 @@ private[glint] abstract class PartialMatrix[@specialized V: Semiring : Order : C
     * @param cols The cols
     * @param values The values
     */
-  def update(rows: Array[Long], cols: Array[Long], values: Array[V]): Unit = {
+  def update(rows: Array[Int], cols: Array[Int], values: Array[V]): Unit = {
     var i = 0
     while (i < rows.length) {
-      val row = partition.globalRowToLocal(rows(i))
-      val col = partition.globalColToLocal(cols(i))
-      data(row * this.cols + col) = aggregate.aggregate[V](data(row * this.cols + col), values(i))
+      data(rows(i) * this.cols + cols(i)) = aggregate.aggregate[V](data(rows(i) * this.cols + cols(i)), values(i))
       i += 1
     }
   }

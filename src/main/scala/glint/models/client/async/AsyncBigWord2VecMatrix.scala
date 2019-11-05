@@ -130,7 +130,8 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   }
 
-  override def norms(startRow: Long = 0, endRow: Long = rows)(implicit ec: ExecutionContext): Future[Array[Float]] = {
+  override def norms(startRow: Int = 0, endRow: Int = rows.toInt)
+                    (implicit ec: ExecutionContext): Future[Array[Float]] = {
 
     // Send norm dots pull requests to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
@@ -142,7 +143,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
     // Define aggregator for computing euclidean norms
     // by summing up partial dot products of successful responses and taking the square root
     def aggregateSuccess(responses: Iterable[ResponseFloat]): Array[Float] = {
-      val lengthNorms = (endRow - startRow).toInt
+      val lengthNorms = endRow - startRow
       val norms = new Array[Float](lengthNorms)
 
       val responsesArray = responses.toArray
@@ -158,7 +159,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   }
 
-  override def multiply(vector: Array[Float], startRow: Long = 0, endRow: Long = rows)
+  override def multiply(vector: Array[Float], startRow: Int = 0, endRow: Int = rows.toInt)
                        (implicit ec: ExecutionContext): Future[Array[Float]] = {
 
     val keys = 0L until cols.toInt
@@ -173,7 +174,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
     // Define aggregator for computing multiplication by summing up partial multiplication results
     def aggregateSuccess(responses: Iterable[ResponseFloat]): Array[Float] = {
-      val lengthResult = (endRow - startRow).toInt
+      val lengthResult = endRow - startRow
       val result = new Array[Float](lengthResult)
 
       val responsesArray = responses.toArray
@@ -188,7 +189,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
     Future.sequence(pulls).transform(aggregateSuccess, err => err)
   }
 
-  override def pullAverage(rows: Array[Array[Long]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]] = {
+  override def pullAverage(rows: Array[Array[Int]])(implicit ec: ExecutionContext): Future[Array[Vector[Float]]] = {
 
     // Send dotprod pull requests to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
