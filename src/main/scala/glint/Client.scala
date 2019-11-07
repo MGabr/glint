@@ -12,7 +12,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import glint.exceptions.{ModelCreationException, ServerCreationException}
 import glint.messages.master.{ClientList, RegisterClient, ServerList}
 import glint.models.client.async._
-import glint.models.client.{BigMatrix, BigVector, BigWord2VecMatrix}
+import glint.models.client.{BigFMPairMatrix, BigMatrix, BigVector, BigWord2VecMatrix}
 import glint.models.server._
 import glint.models.server.aggregate.{Aggregate, AggregateAdd}
 import glint.partitioning.by.PartitionBy
@@ -308,6 +308,26 @@ class Client(val config: Config,
       (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
     word2vecMatrix(m.args, m.vocabCns.length, createPartitioner, hdfsPath, hadoopConfig, false, trainable)
   }
+
+  private def fmpairMatrix(args: FMPairArguments,
+                           features: Int,
+                           createPartitioner: (Int, Long) => Partitioner,
+                           hdfsPath: String,
+                           hadoopConfig: Configuration,
+                           trainable: Boolean): BigFMPairMatrix = {
+
+    val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
+
+    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixFMPair], partition, features,
+      AggregateAdd(), Some(hdfsPath), Some(serHadoopConfig), args, trainable)
+
+    val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
+      new AsyncBigFMPairMatrix(partitioner, models, config, AggregateAdd(), features, args.k, trainable)
+
+    create[BigFMPairMatrix](args.k, 1, createPartitioner, propFunction, objFunction)
+  }
+
+
 
   /**
     * Constructs a distributed vector (indexed by key: Long) for specified type of values
@@ -833,6 +853,10 @@ case class Word2VecArguments(vectorSize: Int,
                              batchSize: Int,
                              n: Int,
                              unigramTableSize: Int = 100000000)
+
+
+case class FMPairArguments(k: Int, batchSize: Int, initLearningRate: Float, regRate: Float)
+
 
 /**
   * The client actor class. The master keeps a death watch on this actor and knows when it is terminated.

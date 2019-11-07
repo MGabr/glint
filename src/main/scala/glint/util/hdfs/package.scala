@@ -52,6 +52,19 @@ package object hdfs {
     load(path + pathPostfix, config).asInstanceOf[Word2VecMatrixMetadata]
   }
 
+  def saveFMPairMatrixMetadata(path: String,
+                               config: Configuration,
+                               metadata: FMPairMetadata,
+                               pathPostfix: String = "/glint/metadata"): Unit = {
+    save(path + pathPostfix, config, metadata)
+  }
+
+  def loadFMPairMatrixMetadata(path: String,
+                               config: Configuration,
+                               pathPostfix: String = "/glint/metadata"): FMPairMetadata = {
+    load(path + pathPostfix, config).asInstanceOf[FMPairMetadata]
+  }
+
   def saveTmpWord2VecMatrixMetadata(config: Configuration, metadata: Word2VecMatrixMetadata): String = {
     val randomUUID = UUID.randomUUID().toString
     val path = s"/tmp/glint/$randomUUID"
