@@ -14,7 +14,7 @@ trait TolerantFloat {
         a.length == br.length && a.zip(br).forall { case (ax, bx) => tolerantFloatEq.areEqual(ax, bx) }
       case brr: Array[_] => a.deep == brr.deep
       case _ => a == b
-    }F
+    }
   }
 
   implicit val tolerantFloatVectorEq: Equality[Vector[Float]] = new Equality[Vector[Float]] {
