@@ -8,5 +8,7 @@ package glint.messages.server.request
   * @param iItem The item feature indices
   * @param wItem The item feature weights
   */
-private[glint] case class PullDotProdFM(iUser: Array[Array[Int]], wUser: Array[Array[Float]],
-                                        iItem: Array[Array[Int]], wItem: Array[Array[Float]]) extends Request
+private[glint] case class PullDotProdFM(iUser: Array[Array[Int]],
+                                        wUser: Array[Array[Float]],
+                                        iItem: Array[Array[Int]],
+                                        wItem: Array[Array[Float]]) extends Request

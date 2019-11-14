@@ -27,12 +27,17 @@ private[glint] object SerializationConstants {
   val pullNormDots: Byte = 0x0E
   val pullAverageRows: Byte = 0x0F
 
-  val responseDoubleByte: Byte = 0x10
-  val responseFloatByte: Byte = 0x11
-  val responseIntByte: Byte = 0x12
-  val responseLongByte: Byte = 0x13
+  val pullDotProdFMByte: Byte = 0x10
+  val pushAdjustFMByte: Byte = 0x11
 
-  val responseDotProd: Byte = 0x14
+  val responseDoubleByte: Byte = 0x20
+  val responseFloatByte: Byte = 0x21
+  val responseIntByte: Byte = 0x22
+  val responseLongByte: Byte = 0x23
+
+  val responseDotProd: Byte = 0x24
+
+  val responseDotProdFM: Byte = 0x25
 
   // Byte identifiers for message types
   val masterClientList: Byte = 0x00

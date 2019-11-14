@@ -270,9 +270,9 @@ class Client(val config: Config,
     * To efficiently construct a Word2Vec matrix in a standalone glint cluster in the same Spark application use
     * [[glint.Client.runWithWord2VecMatrixOnSpark(sc:org\.apache\.spark\.SparkContext)* runWithWord2VecMatrixOnSpark]]
     *
-    * @param args                The [[glint.Word2VecArguments Word2VecArguments]]
-    * @param vocabCns            The array of all word counts
-    * @param hadoopConfig        The Hadoop configuration to use for saving vocabCns to HDFS
+    * @param args The [[glint.Word2VecArguments Word2VecArguments]]
+    * @param vocabCns The array of all word counts
+    * @param hadoopConfig The Hadoop configuration to use for saving vocabCns to HDFS
     * @param numParameterServers The number of parameter servers to which the matrix should be distributed
     * @return The constructed [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]]
     */
@@ -310,24 +310,78 @@ class Client(val config: Config,
   }
 
   private def fmpairMatrix(args: FMPairArguments,
-                           features: Int,
+                           numFeatures: Int,
+                           avgActiveFeatures: Int,
                            createPartitioner: (Int, Long) => Partitioner,
-                           hdfsPath: String,
-                           hadoopConfig: Configuration,
+                           hdfsPath: Option[String],
+                           hadoopConfig: Option[Configuration],
                            trainable: Boolean): BigFMPairMatrix = {
 
-    val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
+    val serHadoopConfig = hadoopConfig.map(c => new SerializableHadoopConfiguration(c))
 
-    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixFMPair], partition, features,
-      AggregateAdd(), Some(hdfsPath), Some(serHadoopConfig), args, trainable)
+    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixFMPair], partition, AggregateAdd(),
+      hdfsPath, serHadoopConfig, args, numFeatures, avgActiveFeatures, trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigFMPairMatrix(partitioner, models, config, AggregateAdd(), features, args.k, trainable)
+      new AsyncBigFMPairMatrix(partitioner, models, config, AggregateAdd(), numFeatures, args.k, trainable)
 
     create[BigFMPairMatrix](args.k, 1, createPartitioner, propFunction, objFunction)
   }
 
+  /**
+   * Construct a distributed FM-Pair matrix
+   *
+   * @param args The [[glint.FMPairArguments FMPairArguments]]
+   * @param numFeatures The number of features
+   * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
+   *                          determining good array pool sizes against garbage collection.
+   * @return The constructed [[glint.models.client.BigFMPairMatrix BigFMPairMatrix]]
+   */
+  def fmpairMatrix(args: FMPairArguments, numFeatures: Int, avgActiveFeatures: Int = 2): BigFMPairMatrix = {
+    val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
+    fmpairMatrix(args, numFeatures, avgActiveFeatures, createPartitioner, None, None, true)
+  }
 
+  /**
+    * Construct a distributed FM-Pair matrix
+    *
+    * @param args The [[glint.FMPairArguments FMPairArguments]]
+    * @param numFeatures The number of features
+    * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
+    *                          determining good array pool sizes against garbage collection.
+    * @param numParameterServers The number of parameter servers to which the matrix should be distributed
+    * @return The constructed [[glint.models.client.BigFMPairMatrix BigFMPairMatrix]]
+    */
+  def fmpairMatrix(args: FMPairArguments,
+                   numFeatures: Int,
+                   avgActiveFeatures: Int,
+                   numParameterServers: Int): BigFMPairMatrix = {
+
+    val createPartitioner =
+      (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
+    fmpairMatrix(args, numFeatures, avgActiveFeatures, createPartitioner, None, None, true)
+  }
+
+  /**
+    * Loads a distributed FM-Pair matrix
+    *
+    * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
+    * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
+    * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
+    * @return The constructed [[glint.models.client.BigFMPairMatrix BigFMPairMatrix]]
+    */
+  def loadFMPairMatrix(hdfsPath: String, hadoopConfig: Configuration, trainable: Boolean = false): BigFMPairMatrix = {
+
+    val m = hdfs.loadFMPairMatrixMetadata(hdfsPath, hadoopConfig)
+    if (trainable && !m.trainable) {
+      throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
+    }
+    val numParameterServers = hdfs.countPartitionData(hdfsPath, hadoopConfig, pathPostfix = "/glint/data/v/")
+    val createPartitioner =
+      (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
+    fmpairMatrix(m.args, m.numFeatures, m.avgActiveFeatures, createPartitioner, Some(hdfsPath), Some(hadoopConfig),
+      trainable)
+  }
 
   /**
     * Constructs a distributed vector (indexed by key: Long) for specified type of values
@@ -376,7 +430,6 @@ class Client(val config: Config,
     }
 
     create[BigVector[V]](keys, modelsPerServer, createPartitioner, propFunction, objFunction)
-
   }
 
   /**
@@ -838,6 +891,7 @@ object Client {
   }
 }
 
+
 /**
   * Word2Vec arguments
   *
@@ -855,7 +909,20 @@ case class Word2VecArguments(vectorSize: Int,
                              unigramTableSize: Int = 100000000)
 
 
-case class FMPairArguments(k: Int, batchSize: Int, initLearningRate: Float, regRate: Float)
+/**
+  * FM-Pair arguments
+  *
+  * @param k The number of dimensions / latent factors
+  * @param batchSize The minibatch size
+  * @param lr The Adagrad learning rate
+  * @param linearReg The regularization rate for the linear weights
+  * @param factorsReg The regularization rate for the latent factors
+  */
+case class FMPairArguments(k: Int = 50,
+                           batchSize: Int = 4096,
+                           lr: Float = 0.1f,
+                           linearReg: Float = 0.6f,
+                           factorsReg: Float = 0.006f)
 
 
 /**

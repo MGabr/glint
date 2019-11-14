@@ -17,9 +17,9 @@ import scala.concurrent.{ExecutionContext, Future}
   *   val iItem = Array(Array(10, 15, 20))
   *   val wItem = Array(Array(1.0, 0.25, 0.25))
   *
-  *   val (f, cacheKey) = matrix.dotprod(iUser, wUser, iItem, wItem) // compute dot products for gradient updates
+  *   val (f, cacheKeys) = matrix.dotprod(iUser, wUser, iItem, wItem) // compute dot products for gradient updates
   *   val g = ...(f) // compute whole BPR gradient
-  *   matrix.adjust(g, cacheKey) // adjust matrix by gradient updates
+  *   matrix.adjust(g, cacheKeys) // adjust matrix by gradient updates
   *
   *   matrix.destroy() // Destroy matrix, freeing up memory on the parameter server
   * }}}
@@ -53,20 +53,20 @@ trait BigFMPairMatrix extends BigMatrix[Float] {
     * @param wItem The item feature weights
     * @return The partial dot products
     * @param ec The implicit execution context in which to execute the request
-    * @return A future containing the dot products and a cache key for the adjust operation
+    * @return A future containing the dot products and the cache keys for the adjust operation
     */
   def dotprod(iUser: Array[Array[Int]],
               wUser: Array[Array[Float]],
               iItem: Array[Array[Int]],
-              wItem: Array[Array[Float]])(implicit ec: ExecutionContext): Future[(Array[Float], Int)]
+              wItem: Array[Array[Float]])(implicit ec: ExecutionContext): Future[(Array[Float], Array[Int])]
 
   /**
     * Adjusts the weights according to the received gradient updates
     *
-    * @param g        The general BPR gradient per training instance in the batch
-    * @param cacheKey The key to retrieve the cached indices and weights
-    * @param ec       The implicit execution context in which to execute the request
+    * @param g The general BPR gradient per training instance in the batch
+    * @param cacheKeys The keys to retrieve the cached indices and weights
+    * @param ec The implicit execution context in which to execute the request
     * @return A future containing either the success or failure of the operation
     */
-  def adjust(g: Array[Float], cacheKey: Long)(implicit ec: ExecutionContext): Future[Boolean]
+  def adjust(g: Array[Float], cacheKeys: Array[Int])(implicit ec: ExecutionContext): Future[Boolean]
 }

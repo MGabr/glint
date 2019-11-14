@@ -11,15 +11,6 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
     buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfLong)
   }
 
-  def putLongArrayArray(values: Array[Array[Long]]): Unit = {
-    val typedBuffer = buf.asLongBuffer()
-    cforRange(0 until values.length) { i =>
-      typedBuffer.put(values(i).length)
-      typedBuffer.put(values(i))
-    }
-    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfLong)
-  }
-
   def putIntArray(values: Array[Int]): Unit = {
     val typedBuffer = buf.asIntBuffer()
     typedBuffer.put(values)
@@ -45,6 +36,16 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
       typedBuffer.put(values(i))
     }
     buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfInt)
+  }
+
+  def putFloatArrayArray(values: Array[Array[Float]]): Unit = {
+    val typedBuffer = buf.asFloatBuffer()
+    typedBuffer.position(values.length * SerializationConstants.sizeOfInt)
+    cforRange(0 until values.length) { i =>
+      buf.putInt(values(i).length)
+      typedBuffer.put(values(i))
+    }
+    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfFloat)
   }
 
   def getLongArray(size: Int): Array[Long] = {
@@ -90,14 +91,15 @@ class ExtendedByteBuffer(val buf: ByteBuffer) {
     output
   }
 
-  def getLongArrayArray(sizeArray: Int): Array[Array[Long]] = {
-    val output = new Array[Array[Long]](sizeArray)
-    val typedBuffer = buf.asLongBuffer()
+  def getFloatArrayArray(sizeArray: Int): Array[Array[Float]] = {
+    val output = new Array[Array[Float]](sizeArray)
+    val typedBuffer = buf.asFloatBuffer()
+    typedBuffer.position(sizeArray * SerializationConstants.sizeOfInt)
     cforRange(0 until sizeArray) { i =>
-      output(i) = new Array[Long](typedBuffer.get().toInt)
+      output(i) = new Array[Float](buf.getInt())
       typedBuffer.get(output(i))
     }
-    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfLong)
+    buf.position(buf.position() + typedBuffer.position() * SerializationConstants.sizeOfFloat)
     output
   }
 }

@@ -2,26 +2,13 @@ package glint.spark
 
 import glint.{Client, Word2VecArguments}
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 /**
   * BigWord2VecMatrix integration test specification
   * Similar to BigWord2VecMatrix system test specification
   */
-class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with Inspectors {
-
-  implicit val tolerantFloatEq: Equality[Float] = TolerantNumerics.tolerantFloatEquality(0.0000001f)
-
-  implicit val tolerantFloatArrayEq: Equality[Array[Float]] = new Equality[Array[Float]] {
-    override def areEqual(a: Array[Float], b: Any): Boolean = b match {
-      case br: Array[Float] =>
-        a.length == br.length && a.zip(br).forall { case (ax, bx) => tolerantFloatEq.areEqual(ax, bx) }
-      case brr: Array[_] => a.deep == brr.deep
-      case _ => a == b
-    }
-  }
-
+class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with Inspectors with TolerantFloat {
 
   val init = Array.ofDim[Float](1000, 0)
   init(0) = Array(0.0023096777f, 0.0033144099f, -0.002594636f)

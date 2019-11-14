@@ -27,8 +27,24 @@ private[glint] class IntArrayPool(length: Int) {
   }
 
   /**
-    * Puts a new array to the pool and clears it to zero values.
-    * The array values have to be zero or it has to be accepted that arrays with non-zero
+   * Gets an array with a minimum length from the pool or creates a new one if there are no arrays left in the pool.
+   * If arrays of less than the minimum length are encountered they are removed from the pool.
+   * This allows the pool to adjust dynamically at the cost of some garbage collection
+   *
+   * @param minLength the minimum length of the array
+   * @return An array of zero values and at least minimum and pool length
+   */
+  def get(minLength: Int): Array[Int] = {
+    if (arrays.nonEmpty) {
+      val array = arrays.dequeue()
+      if (array.length < minLength) get(minLength) else array
+    } else {
+      new Array[Int](Math.max(minLength, length))
+    }
+  }
+
+  /**
+    * Puts a new array to the pool. The array values have to be zero or it has to be accepted that arrays with non-zero
     * values will be returned by [[get() get]].
     *
     * @param array An array of pool length

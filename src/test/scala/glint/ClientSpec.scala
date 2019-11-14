@@ -5,8 +5,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 import glint.exceptions.ModelCreationException
 import glint.messages.master.ClientList
-import glint.models.client.async.{AsyncBigMatrix, AsyncBigVector}
-import glint.models.client.{BigMatrix, BigVector}
+import glint.models.client.async.{AsyncBigMatrix, AsyncBigVector, AsyncBigFMPairMatrix}
+import glint.models.client.{BigMatrix, BigVector, BigFMPairMatrix}
 import org.scalatest.FlatSpec
 
 import scala.concurrent.duration._
@@ -95,6 +95,16 @@ class ClientSpec extends FlatSpec with SystemTest {
     }
   }
 
+  it should "be able to create a FMPairMatrix with one partial model per server" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        val model = client.fmpairMatrix(FMPairArguments(), 10000)
+        assert(model.isInstanceOf[BigFMPairMatrix])
+        assert(model.asInstanceOf[AsyncBigFMPairMatrix].nrOfPartitions == 3)
+      }
+    }
+  }
+
   it should "be able to create a BigMatrix[Int]" in withMaster { _ =>
     withServer { server =>
       withClient { client =>
@@ -167,4 +177,12 @@ class ClientSpec extends FlatSpec with SystemTest {
     }
   }
 
+  it should "be able to create a BigFMPairMatrix" in withMaster { _ =>
+    withServer { server =>
+      withClient { client =>
+        val model = client.fmpairMatrix(FMPairArguments(), 10000)
+        assert(model.isInstanceOf[BigFMPairMatrix])
+      }
+    }
+  }
 }

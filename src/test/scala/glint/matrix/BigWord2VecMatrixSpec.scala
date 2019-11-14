@@ -2,44 +2,17 @@ package glint.matrix
 
 import breeze.linalg.Vector
 import com.github.fommil.netlib.F2jBLAS
-import glint.{HdfsTest, SystemTest, Word2VecArguments}
+import glint.{HdfsTest, SystemTest, Word2VecArguments, TolerantFloat}
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 /**
   * BigWord2VecMatrix test specification
   */
-class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Matchers with Inspectors {
+class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Matchers with Inspectors with TolerantFloat {
 
   @transient
   private lazy val blas = new F2jBLAS
-
-  implicit val tolerantFloatEq: Equality[Float] = TolerantNumerics.tolerantFloatEquality(0.0000001f)
-
-  implicit val tolerantFloatArrayEq: Equality[Array[Float]] = new Equality[Array[Float]] {
-    override def areEqual(a: Array[Float], b: Any): Boolean = b match {
-      case br: Array[Float] =>
-        a.length == br.length && a.zip(br).forall { case (ax, bx) => tolerantFloatEq.areEqual(ax, bx) }
-      case brr: Array[_] => a.deep == brr.deep
-      case _ => a == b
-    }
-  }
-
-  implicit val tolerantFloatVectorEq: Equality[Vector[Float]] = new Equality[Vector[Float]] {
-    override def areEqual(a: Vector[Float], b: Any): Boolean = b match {
-      case br: Vector[Float] => tolerantFloatArrayEq.areEqual(a.toArray, br.toArray)
-      case _ => a == b
-    }
-  }
-
-  implicit val tolerantFloatVectorArrayEq: Equality[Array[Vector[Float]]] = new Equality[Array[Vector[Float]]]{
-    override def areEqual(a: Array[Vector[Float]], b: Any): Boolean = b match {
-      case br: Array[Vector[Float]] =>
-        a.length == br.length && a.zip(br).forall { case (ax, bx) => tolerantFloatVectorEq.areEqual(ax, bx) }
-      case _ => a == b
-    }
-  }
 
   val init = Array(
     Array(0.076989256f, 0.076959394f, 0.07704898f),

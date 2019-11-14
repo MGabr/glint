@@ -73,6 +73,23 @@ class SerializationSpec extends FlatSpec with Matchers {
     pullDotProd.seed should equal(1L)
   }
 
+  it should "serialize and deserialize a PullDotProdFM" in {
+    val requestSerializer = new RequestSerializer()
+    val bytes = requestSerializer.toBinary(PullDotProdFM(
+      Array(Array(0), Array(0), Array(1, 3)),
+      Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f)),
+      Array(Array(4, 6), Array(5), Array(4, 6)),
+      Array(Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f))
+    ))
+    val reconstruction = requestSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[PullDotProdFM])
+    val pullDotProd = reconstruction.asInstanceOf[PullDotProdFM]
+    pullDotProd.iUser should equal(Array(Array(0), Array(0), Array(1, 3)))
+    pullDotProd.wUser should equal(Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f)))
+    pullDotProd.iItem should equal(Array(Array(4, 6), Array(5), Array(4, 6)))
+    pullDotProd.wItem should equal(Array(Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f)))
+  }
+
   it should "serialize and deserialize a PullMatrix" in {
     val requestSerializer = new RequestSerializer()
     val bytes = requestSerializer.toBinary(PullMatrix(Array(0, 1, 2), Array(3, 4, 5)))
@@ -138,6 +155,17 @@ class SerializationSpec extends FlatSpec with Matchers {
     pushAdjust.gPlus should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
     pushAdjust.gMinus should equal(Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f))
     pushAdjust.seed should equal(1L)
+  }
+
+  it should "serialize and deserialize a PushAdjustFM" in {
+    val requestSerializer = new RequestSerializer()
+    val bytes = requestSerializer.toBinary(PushAdjustFM(2, Array(0.1f, 0.2f, 0.3f), 15))
+    val reconstruction = requestSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[PushAdjustFM])
+    val pushAdjust = reconstruction.asInstanceOf[PushAdjustFM]
+    pushAdjust.id should equal(2)
+    pushAdjust.g should equal(Array(0.1f, 0.2f, 0.3f))
+    pushAdjust.cacheKey should equal(15)
   }
 
   it should "serialize and deserialize a PushMatrixDouble" in {
@@ -270,5 +298,16 @@ class SerializationSpec extends FlatSpec with Matchers {
     val responseDotProd = reconstruction.asInstanceOf[ResponseDotProd]
     responseDotProd.fPlus should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
     responseDotProd.fMinus should equal(Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f))
+  }
+
+  it should "serialize and deserialize a ResponseDotProdFM" in {
+    val responseSerializer = new ResponseSerializer()
+    val bytes = responseSerializer.toBinary(ResponseDotProdFM(
+      Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f), 15))
+    val reconstruction = responseSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[ResponseDotProdFM])
+    val responseDotProd = reconstruction.asInstanceOf[ResponseDotProdFM]
+    responseDotProd.f should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
+    responseDotProd.cacheKey should equal(15)
   }
 }

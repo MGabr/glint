@@ -4,9 +4,20 @@
 Glint is a high performance [Scala](http://www.scala-lang.org/) parameter server built using [Akka](http://akka.io/).
 The aim is to make it easy to develop performant distributed machine learning algorithms using the parameter server architecture. One of the major goals is compatibility with [Spark](http://spark.apache.org/).
 
-This fork adds support for column partitioning, running a Glint cluster on Spark and a specific Word2Vec matrix with server side operations for network-efficient distributed Word2Vec training for large vocabularies.
-[Glint-word2vec](https://github.com/MGabr/glint-word2vec) is a Spark ML package using this fork.
+## Added functionality
 
+This fork adds the following functionality
+
+* Updated dependencies, especially Akka.
+* Further Spark integration. Automatically starting Glint servers on Spark workers
+or running Glint servers as separate Spark applications.
+* Saving of parameter server data to and loading from HDFS.
+* Partitioning of matrices by columns.
+* [BigWord2VecMatrix](https://mgabr.github.io/glint/latest/api/#glint.models.client.BigWord2VecMatrix)
+with operations for network-efficient distributed Word2Vec training for large vocabularies.
+Used in the Spark ML package [Glint-word2vec](https://github.com/MGabr/glint-word2vec).
+* [BigFMPairMatrix](https://mgabr.github.io/glint/latest/api/#glint.models.client.BigFMPairMatrix)
+with operations for network-efficient distributed pairwise factorization machine training for large models.
 
 ## Compile
 To use the current version you should compile the system manually, publish it to a local repository and include it in your project through sbt. Clone this repository and run:

@@ -28,6 +28,14 @@ class RequestSerializer extends GlintSerializer {
         buf.putIntArrayArray(x.wOutput)
         buf.putLong(x.seed)
 
+      case x: PullDotProdFM =>
+        buf.put(SerializationConstants.pullDotProdFMByte)
+        buf.putInt(x.iUser.length)
+        buf.putIntArrayArray(x.iUser)
+        buf.putFloatArrayArray(x.wUser)
+        buf.putIntArrayArray(x.iItem)
+        buf.putFloatArrayArray(x.wItem)
+
       case x: PullMatrix =>
         buf.put(SerializationConstants.pullMatrixByte)
         buf.putInt(x.rows.length)
@@ -68,6 +76,13 @@ class RequestSerializer extends GlintSerializer {
         buf.putFloatArray(x.gPlus)
         buf.putFloatArray(x.gMinus)
         buf.putLong(x.seed)
+
+      case x: PushAdjustFM =>
+        buf.put(SerializationConstants.pushAdjustFMByte)
+        buf.putInt(x.g.length)
+        buf.putInt(x.id)
+        buf.putFloatArray(x.g)
+        buf.putInt(x.cacheKey)
 
       case x: PushMatrixDouble =>
         buf.put(SerializationConstants.pushMatrixDoubleByte)
@@ -146,6 +161,13 @@ class RequestSerializer extends GlintSerializer {
         val seed = buf.getLong()
         PullDotProd(wInput, wOutput, seed)
 
+      case SerializationConstants.pullDotProdFMByte =>
+        val iUser = buf.getIntArrayArray(objectSize)
+        val wUser = buf.getFloatArrayArray(objectSize)
+        val iItem = buf.getIntArrayArray(objectSize)
+        val wItem = buf.getFloatArrayArray(objectSize)
+        PullDotProdFM(iUser, wUser, iItem, wItem)
+
       case SerializationConstants.pullMatrixByte =>
         val rows = buf.getIntArray(objectSize)
         val cols = buf.getIntArray(objectSize)
@@ -180,6 +202,12 @@ class RequestSerializer extends GlintSerializer {
         val gMinus = buf.getFloatArray(gMinusSize)
         val seed = buf.getLong()
         PushAdjust(id, wInput, wOutput, gPlus, gMinus, seed)
+
+      case SerializationConstants.pushAdjustFMByte =>
+        val id = buf.getInt()
+        val g = buf.getFloatArray(objectSize)
+        val cacheKey = buf.getInt()
+        PushAdjustFM(id, g, cacheKey)
 
       case SerializationConstants.pushMatrixDoubleByte =>
         val id = buf.getInt()

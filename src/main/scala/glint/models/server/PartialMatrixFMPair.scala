@@ -17,30 +17,37 @@ import spire.implicits.cforRange
 
 import scala.collection.mutable
 import scala.concurrent.Future
+import scala.math.sqrt
 import scala.util.Random
 
 /**
-  * A partial matrix holding floats and supporting specific messages for
+  * A partial matrix holding floats and supporting specific messages for efficient distributed FM-Pair training
   *
-  * @param partition    The partition
-  * @param aggregate    The type of aggregation to apply
-  * @param hdfsPath     The HDFS base path from which the partial matrix' initial data should be loaded from
+  * @param partition The partition
+  * @param aggregate The type of aggregation to apply
+  * @param hdfsPath The HDFS base path from which the partial matrix' initial data should be loaded from
   * @param hadoopConfig The serializable Hadoop configuration to use for loading the initial data from HDFS
+  * @param args The [[glint.FMPairArguments FMPairArguments]]
+  * @param numFeatures The number of features
+  * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
+  *                          determining good array pool sizes against garbage collection.
+  * @param trainable Whether the matrix is trainable, requiring more data (Adagrad buffers)
   */
 private[glint] class PartialMatrixFMPair(partition: Partition,
-                                         rows: Int,
                                          aggregate: Aggregate,
                                          hdfsPath: Option[String],
                                          hadoopConfig: Option[SerializableHadoopConfiguration],
                                          val args: FMPairArguments,
+                                         val numFeatures: Int,
+                                         val avgActiveFeatures: Int,
                                          val trainable: Boolean)
-  extends PartialMatrixFloat(partition, rows, partition.size, aggregate, hdfsPath, hadoopConfig) {
+  extends PartialMatrixFloat(partition, numFeatures, partition.size, aggregate, hdfsPath, hadoopConfig) {
 
   @transient
   private lazy val blas = new F2jBLAS
 
   /**
-    * The random number generator used for initializing the input latent factors matrix
+    * The random number generator used for initializing the latent factors matrix
     */
   val random = new Random(partition.index)
 
@@ -75,9 +82,8 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     override def initialValue(): FloatArrayPool = new FloatArrayPool(args.batchSize * cols)
   }
 
-  // TODO: how long
   private val threadLocalIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize)
+    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * avgActiveFeatures)
   }
 
   private val cache = new ConcurrentHashMap[
@@ -107,8 +113,8 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       save(push.path, push.hadoopConfig, push.trainable)
       updateFinished(push.id)
     case pull: PullDotProdFM =>
-      lastCacheKey += 1
       val cacheKey = lastCacheKey
+      lastCacheKey += 1
       Future {
         val f = dotprod(pull.iUser, pull.wUser, pull.iItem, pull.wItem, cacheKey)
         ResponseDotProdFM(f, cacheKey)
@@ -133,7 +139,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
-      val meta = FMPairMetadata(args, trainable && saveTrainable)
+      val meta = FMPairMetadata(args, numFeatures, avgActiveFeatures, trainable && saveTrainable)
       hdfs.saveFMPairMatrixMetadata(hdfsPath, hadoopConfig.conf, meta)
     }
 
@@ -146,10 +152,10 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
   /**
     * Computes the partial dot products
     *
-    * @param iUser    The user feature indices
-    * @param wUser    The user feature weights
-    * @param iItem    The item feature indices
-    * @param wItem    The item feature weights
+    * @param iUser The user feature indices
+    * @param wUser The user feature weights
+    * @param iItem The item feature indices
+    * @param wItem The item feature weights
     * @param cacheKey The key to cache the indices and weights
     * @return The partial dot products
     */
@@ -164,14 +170,12 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     val sUser = sumsArrayPool.get()
     val sItem = sumsArrayPool.get()
 
-    val f = new Array[Float](args.batchSize)
+    val f = new Array[Float](iUser.length)
 
     cforRange(0 until iUser.length)(i => {
-      val iu = iUser(i);
-      val wu = wUser(i);
-      val ii = iItem(i);
-      val wi = wItem(i);
-      val sOffset = i * args.k
+      val iu = iUser(i); val wu = wUser(i)
+      val ii = iItem(i); val wi = wItem(i)
+      val sOffset = i * cols
       cforRange(0 until iu.length)(j => {
         blas.saxpy(cols, wu(j), v, iu(j) * cols, 1, sUser, sOffset, 1)
       })
@@ -182,17 +186,17 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     })
 
     cache.put(cacheKey, (iUser, wUser, sUser, iItem, wItem, sItem))
-
     f
   }
 
   /**
-    * Adjusts the weights according to the received partial gradient updates
+    * Adjusts the weights according to the received partial gradient updates.
+    * Uses an Adagrad learning rate and frequency adaptive L2 regularization
     *
-    * @param g        The general BPR gradient per training instance in the batch
+    * @param g The general BPR gradient per training instance in the batch
     * @param cacheKey The key to retrieve the cached indices and weights
     */
-  def adjust(g: Array[Float], cacheKey: Long): Unit = {
+  def adjust(g: Array[Float], cacheKey: Int): Unit = {
     val (iUser, wUser, sUser, iItem, wItem, sItem) = cache.get(cacheKey)
     cache.remove(cacheKey)
 
@@ -207,15 +211,17 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     val vUpdates = updateArraysArrayPool.get()
 
     // indices of partial gradient updates to be applied
-    val vIndices = indicesArrayPool.get() // TODO: maximum size
+    var indicesLength = 0
+    cforRange(0 until iUser.length)(i => {
+      indicesLength += iUser(i).length
+    })
+    val vIndices = indicesArrayPool.get(indicesLength)
     var vIndex = 0
 
     cforRange(0 until iUser.length)(i => {
-      val iu = iUser(i);
-      val wu = wUser(i);
-      val ii = iItem(i);
-      val wi = wItem(i);
-      val sOffset = i * args.k
+      val iu = iUser(i); val wu = wUser(i)
+      val ii = iItem(i); val wi = wItem(i)
+      val sOffset = i * cols
       val gb = g(i)
 
       cforRange(0 until iu.length)(j => {
@@ -247,8 +253,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       val colsi = cols * i
       cforRange(0 until cols)(j => {
         val offsetJ = colsi + j
-        v(offsetJ) = (vUpdatesI(j) - args.regRate * v(offsetJ)) *
-          args.initLearningRate / Math.sqrt(b(offsetJ) + 1e-07).toFloat
+        v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ) + 1e-07).toFloat
         b(offsetJ) = vUpdatesI(j) * vUpdatesI(j)
       })
 
