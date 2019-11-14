@@ -5,6 +5,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 import glint.models.client.BigVector
+import org.apache.hadoop.conf.Configuration
 
 /**
   * A [[glint.models.client.BigVector BigVector]] whose messages are limited to a specific maximum message size. This
@@ -79,4 +80,15 @@ class GranularBigVector[V: ClassTag](underlying: BigVector[V],
     Future.sequence(ab.toIterator).transform(x => x.forall(y => y), err => err)
   }
 
+  /**
+   * Saves the vector to HDFS
+   *
+   * @param hdfsPath The HDFS base path where the vector should be saved
+   * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+   * @param ec The implicit execution context in which to execute the request
+   * @return A future whether the vector was successfully saved
+   */
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    underlying.save(hdfsPath, hadoopConfig)
+  }
 }

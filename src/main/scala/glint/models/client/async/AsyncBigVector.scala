@@ -9,9 +9,13 @@ import breeze.linalg.DenseVector
 import breeze.math.Semiring
 import com.typesafe.config.Config
 import glint.StartedActorSystems
-import glint.messages.server.request.PullVector
+import glint.messages.server.request.{PullVector, PushSave}
 import glint.models.client.BigVector
 import glint.partitioning.{Partition, Partitioner}
+import glint.serialization.SerializableHadoopConfiguration
+import glint.util.hdfs
+import glint.util.hdfs.VectorMetadata
+import org.apache.hadoop.conf.Configuration
 import spire.implicits._
 
 import scala.concurrent.duration._
@@ -126,6 +130,28 @@ abstract class AsyncBigVector[@specialized V: Semiring : ClassTag, R: ClassTag, 
     */
   def nrOfPartitions: Int = {
     partitioner.all().length
+  }
+
+  /**
+   * Saves the vector to HDFS
+   *
+   * @param hdfsPath The HDFS base path where the vector should be saved
+   * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+   * @param ec The implicit execution context in which to execute the request
+   * @return A future whether the vector was successfully saved
+   */
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    val meta = VectorMetadata(size, (_, _) => partitioner)
+    hdfs.saveVectorMetadata(hdfsPath, hadoopConfig, meta)
+
+    val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
+
+    val pushes = partitioner.all().map {
+      case partition =>
+        val fsm = PushFSM[PushSave](id => PushSave(id, hdfsPath, serHadoopConfig), models(partition.index))
+        fsm.run()
+    }.toIterator
+    Future.sequence(pushes).transform(results => true, err => err)
   }
 
   /**

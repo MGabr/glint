@@ -209,7 +209,7 @@ class Client(val config: Config,
   }
 
   /**
-    * Loads a saved distributed matrix (indexed by (row: Long, col: Long)) for specified type of values.
+    * Loads a saved distributed matrix for specified type of values.
     * Keep in mind that there will be no error thrown when specifying a wrong type
     * but the loaded matrix will not work as intended.
     *
@@ -383,37 +383,19 @@ class Client(val config: Config,
       trainable)
   }
 
-  /**
-    * Constructs a distributed vector (indexed by key: Long) for specified type of values
-    *
-    * @param keys The number of rows
-    * @param modelsPerServer The number of partial models to store per parameter server (default: 1)
-    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
-    * @return The constructed [[glint.models.client.BigVector BigVector]]
-    */
-  def vector[V: Numerical : TypeTag](keys: Long, modelsPerServer: Int = 1): BigVector[V] = {
-    vector[V](keys, modelsPerServer, (partitions: Int, keys: Long) => RangePartitioner(partitions, keys))
-  }
+  private def vector[V: Numerical : TypeTag](keys: Long,
+                                             modelsPerServer: Int,
+                                             createPartitioner: (Int, Long) => Partitioner,
+                                             hdfsPath: Option[String],
+                                             hadoopConfig: Option[Configuration]): BigVector[V] = {
 
-  /**
-    * Constructs a distributed vector (indexed by key: Long) for specified type of values
-    *
-    * @param keys The number of keys
-    * @param modelsPerServer The number of partial models to store per parameter server
-    * @param createPartitioner A function that creates a [[glint.partitioning.Partitioner partitioner]] that partitions
-    *                          keys
-    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
-    * @return The constructed [[glint.models.client.BigVector BigVector]]
-    */
-  def vector[V: Numerical : TypeTag](keys: Long,
-                                     modelsPerServer: Int,
-                                     createPartitioner: (Int, Long) => Partitioner): BigVector[V] = {
+    val serHadoopConfig = hadoopConfig.map(new SerializableHadoopConfiguration(_))
 
     val propFunction = Numerical.asString[V] match {
-      case "Int" => (partition: Partition) => Props(classOf[PartialVectorInt], partition)
-      case "Long" => (partition: Partition) => Props(classOf[PartialVectorLong], partition)
-      case "Float" => (partition: Partition) => Props(classOf[PartialVectorFloat], partition)
-      case "Double" => (partition: Partition) => Props(classOf[PartialVectorDouble], partition)
+      case "Int" => (partition: Partition) => Props(classOf[PartialVectorInt], partition, hdfsPath, serHadoopConfig)
+      case "Long" => (partition: Partition) => Props(classOf[PartialVectorLong], partition, hdfsPath, serHadoopConfig)
+      case "Float" => (partition: Partition) => Props(classOf[PartialVectorFloat], partition, hdfsPath, serHadoopConfig)
+      case "Double" => (partition: Partition) => Props(classOf[PartialVectorDouble], partition, hdfsPath, serHadoopConfig)
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
@@ -430,6 +412,49 @@ class Client(val config: Config,
     }
 
     create[BigVector[V]](keys, modelsPerServer, createPartitioner, propFunction, objFunction)
+  }
+
+  /**
+    * Constructs a distributed vector (indexed by key: Long) for specified type of values
+    *
+    * @param keys The number of rows
+    * @param modelsPerServer The number of partial models to store per parameter server (default: 1)
+    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
+    * @return The constructed [[glint.models.client.BigVector BigVector]]
+    */
+  def vector[V: Numerical : TypeTag](keys: Long, modelsPerServer: Int = 1): BigVector[V] = {
+    vector(keys, modelsPerServer, (partitions: Int, keys: Long) => RangePartitioner(partitions, keys))
+  }
+
+  /**
+    * Constructs a distributed vector (indexed by key: Long) for specified type of values
+    *
+    * @param keys The number of keys
+    * @param modelsPerServer The number of partial models to store per parameter server
+    * @param createPartitioner A function that creates a [[glint.partitioning.Partitioner partitioner]] that partitions
+    *                          keys
+    * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
+    * @return The constructed [[glint.models.client.BigVector BigVector]]
+    */
+  def vector[V: Numerical : TypeTag](keys: Long,
+                                     modelsPerServer: Int,
+                                     createPartitioner: (Int, Long) => Partitioner): BigVector[V] = {
+    vector(keys, modelsPerServer, createPartitioner, None, None)
+  }
+
+  /**
+   * Loads a saved distributed vector for specified type of values.
+   * Keep in mind that there will be no error thrown when specifying a wrong type
+   * but the loaded vector will not work as intended.
+   *
+   * @param hdfsPath The HDFS base path from which the vectors initial data should be loaded from
+   * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
+   * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
+   * @return The constructed [[glint.models.client.BigVector BigVector]]
+   */
+  def loadVector[V: Numerical : TypeTag](hdfsPath: String, hadoopConfig: Configuration): BigVector[V] = {
+    val m = hdfs.loadVectorMetadata(hdfsPath, hadoopConfig)
+    vector(m.size, 1, m.createPartitioner, Some(hdfsPath), Some(hadoopConfig))
   }
 
   /**

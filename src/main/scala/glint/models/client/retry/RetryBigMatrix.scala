@@ -83,9 +83,9 @@ class RetryBigMatrix[@specialized V](underlying: BigMatrix[V], val attempts: Int
   /**
     * Saves the matrix to HDFS
     *
-    * @param hdfsPath     The HDFS base path where the matrix should be saved
+    * @param hdfsPath The HDFS base path where the matrix should be saved
     * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
-    * @param ec           The implicit execution context in which to execute the request
+    * @param ec The implicit execution context in which to execute the request
     * @return A future whether the matrix was successfully saved
     */
   override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {

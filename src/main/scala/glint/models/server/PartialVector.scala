@@ -2,6 +2,8 @@ package glint.models.server
 
 import akka.actor.{Actor, ActorLogging}
 import glint.partitioning.Partition
+import glint.serialization.SerializableHadoopConfiguration
+import glint.util.hdfs
 import spire.algebra.Semiring
 import spire.implicits._
 
@@ -13,8 +15,10 @@ import scala.reflect.ClassTag
   * @param partition The partition
   * @tparam V The type of value to store
   */
-private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag](partition: Partition) extends Actor
-  with ActorLogging with PushLogic {
+private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag]
+(partition: Partition,
+ val hdfsPath: Option[String],
+ val hadoopConfig: Option[SerializableHadoopConfiguration]) extends Actor with ActorLogging with PushLogic {
 
   /**
     * The size of this partial vector
@@ -22,9 +26,9 @@ private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag]
   val size: Int = partition.size
 
   /**
-    * The data matrix containing the elements
+    * The data vector containing the elements
     */
-  val data: Array[V]
+  var data: Array[V]
 
   /**
     * Updates the data of this partial model by aggregating given keys and values into it
@@ -55,6 +59,32 @@ private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag]
       i += 1
     }
     a
+  }
+
+  /**
+   * Saves the data of the partial vector to HDFS
+   *
+   * @param hdfsPath The HDFS base path the partial vector data should be saved to
+   * @param hadoopConfig The serializable Hadoop configuration to use for saving to HDFS
+   */
+  def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration): Unit = {
+    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, data)
+  }
+
+  /**
+   * Gets a loaded data vector if there is a HDFS path and a Hadoop configuration
+   * Otherwise initializes a new data vector
+   *
+   * @param initialize The function to initialize the data vector
+   * @param pathPostfix The path postfix added when loading the data vector. Use the same postfix used for saving
+   * @return The data vector
+   */
+  def loadOrInitialize(initialize: => Array[V], pathPostfix: String = "/glint/data/"): Array[V] = {
+    if (hdfsPath.isDefined && hadoopConfig.isDefined) {
+      hdfs.loadPartitionData(hdfsPath.get, hadoopConfig.get.conf, partition.index, pathPostfix)
+    } else {
+      initialize
+    }
   }
 
   log.info(s"Constructed PartialVector[${implicitly[ClassTag[V]]}] of size $size (partition id: ${partition.index})")

@@ -2,14 +2,15 @@ package glint.vector
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
-import glint.SystemTest
+import glint.{HdfsTest, SystemTest}
 import glint.models.client.BigVector
-import org.scalatest.{FlatSpec, Matchers}
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.scalatest.{FlatSpec, Matchers, Inspectors}
 
 /**
   * BigVector test specification
   */
-class BigVectorSpec extends FlatSpec with SystemTest with Matchers {
+class BigVectorSpec extends FlatSpec with SystemTest with HdfsTest with Matchers with Inspectors {
 
   "A BigVector" should "store Double values" in withMaster { _ =>
     withServer { _ =>
@@ -127,4 +128,49 @@ class BigVectorSpec extends FlatSpec with SystemTest with Matchers {
     }
   }
 
+  it should "save data to file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        val model = client.vector[Long](9)
+
+        var result = whenReady(model.push(Array(0L, 2L, 5L, 8L), Array(0, -1, 900800700600L, -100200300400500L))) {
+          identity
+        }
+        assert(result)
+        result = whenReady(model.save("testdata", hadoopConfig)) {
+          identity
+        }
+        assert(result)
+
+        val fs = FileSystem.get(hadoopConfig)
+        val paths = Seq(
+          "testdata",
+          "testdata/glint",
+          "testdata/glint/metadata",
+          "testdata/glint/data/0",
+          "testdata/glint/data/1",
+          "testdata/glint/data/2"
+        )
+        forAll (paths) {path => fs.exists(new Path(path)) shouldBe true }
+      }
+    }
+  }
+
+  it should "load data from file" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+        if (!FileSystem.get(hadoopConfig).exists(new Path("testdata"))) {
+          pending
+        }
+
+        val loadedModel = client.loadVector[Long]("testdata", hadoopConfig)
+
+        val future = loadedModel.pull(Array(0L, 2L, 5L, 8L))
+        val value = whenReady(future) {
+          identity
+        }
+        value should equal(Array(0, -1, 900800700600L, -100200300400500L))
+      }
+    }
+  }
 }

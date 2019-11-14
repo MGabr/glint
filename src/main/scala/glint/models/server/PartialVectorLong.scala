@@ -1,8 +1,10 @@
 package glint.models.server
 
-import glint.messages.server.request.{PullVector, PushVectorLong}
+import glint.messages.server.request.{PullVector, PushVectorLong, PushSave}
 import glint.messages.server.response.ResponseLong
 import glint.partitioning.Partition
+import glint.serialization.SerializableHadoopConfiguration
+import glint.util.hdfs
 import spire.implicits._
 
 /**
@@ -10,14 +12,24 @@ import spire.implicits._
   *
   * @param partition The partition
   */
-private[glint] class PartialVectorLong(partition: Partition) extends PartialVector[Long](partition) {
+private[glint] class PartialVectorLong(partition: Partition,
+                                       hdfsPath: Option[String],
+                                       hadoopConfig: Option[SerializableHadoopConfiguration])
+  extends PartialVector[Long](partition, hdfsPath, hadoopConfig) {
 
-  override val data: Array[Long] = new Array[Long](size)
+  override var data: Array[Long] = _
+
+  override def preStart(): Unit = {
+    data = loadOrInitialize(new Array[Long](size))
+  }
 
   override def receive: Receive = {
     case pull: PullVector => sender ! ResponseLong(get(pull.keys))
     case push: PushVectorLong =>
       update(push.keys, push.values)
+      updateFinished(push.id)
+    case push: PushSave =>
+      save(push.path, push.hadoopConfig)
       updateFinished(push.id)
     case x => handleLogic(x, sender)
   }

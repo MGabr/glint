@@ -1,6 +1,7 @@
 package glint.models.client
 
 import akka.util.Timeout
+import org.apache.hadoop.conf.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,11 +41,20 @@ trait BigVector[V] extends Serializable {
   def push(keys: Array[Long], values: Array[V])(implicit ec: ExecutionContext): Future[Boolean]
 
   /**
+   * Saves the vector to HDFS
+   *
+   * @param hdfsPath The HDFS base path where the vector should be saved
+   * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+   * @param ec The implicit execution context in which to execute the request
+   * @return A future whether the vector was successfully saved
+   */
+  def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean]
+
+  /**
     * Destroys the big vector and its resources on the parameter server
     *
     * @param ec The implicit execution context in which to execute the request
     * @return A future whether the vector was successfully destroyed
     */
   def destroy()(implicit ec: ExecutionContext): Future[Boolean]
-
 }

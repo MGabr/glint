@@ -34,10 +34,10 @@ trait BigFMPairMatrix extends BigMatrix[Float] {
   /**
     * Saves the matrix to HDFS
     *
-    * @param hdfsPath     The HDFS base path where the matrix should be saved
+    * @param hdfsPath The HDFS base path where the matrix should be saved
     * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
-    * @param trainable    Whether the saved matrix should be retrainable, requiring more data being saved
-    * @param ec           The implicit execution context in which to execute the request
+    * @param trainable Whether the saved matrix should be retrainable, requiring more data being saved
+    * @param ec The implicit execution context in which to execute the request
     * @return A future whether the matrix was successfully saved
     */
   def save(hdfsPath: String, hadoopConfig: Configuration, trainable: Boolean)

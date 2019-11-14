@@ -3,6 +3,7 @@ package glint.mocking
 import akka.pattern.AskTimeoutException
 import akka.util.Timeout
 import glint.models.client.BigVector
+import org.apache.hadoop.conf.Configuration
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -97,6 +98,18 @@ class MockBigVector[V: ClassTag](keys: Int, cols: Int, default: V, aggregate: (V
         array
       }
     }
+  }
+
+  /**
+   * Saves the vector to HDFS
+   *
+   * @param hdfsPath The HDFS base path where the vector should be saved
+   * @param hadoopConfig The Hadoop configuration to use for saving the data to HDFS
+   * @param ec The implicit execution context in which to execute the request
+   * @return A future whether the vector was successfully saved
+   */
+  override def save(hdfsPath: String, hadoopConfig: Configuration)(implicit ec: ExecutionContext): Future[Boolean] = {
+    Future { true }
   }
 
   /**

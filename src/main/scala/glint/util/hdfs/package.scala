@@ -39,6 +39,19 @@ package object hdfs {
     load(path + pathPostfix, config).asInstanceOf[MatrixMetadata]
   }
 
+  def saveVectorMetadata(path: String,
+                         config: Configuration,
+                         metadata: VectorMetadata,
+                         pathPostfix: String = "/glint/metadata"): Unit = {
+    save(path + pathPostfix, config, metadata)
+  }
+
+  def loadVectorMetadata(path: String,
+                         config: Configuration,
+                         pathPostfix: String = "/glint/metadata"): VectorMetadata = {
+    load(path + pathPostfix, config).asInstanceOf[VectorMetadata]
+  }
+
   def saveWord2VecMatrixMetadata(path: String,
                                  config: Configuration,
                                  metadata: Word2VecMatrixMetadata,
