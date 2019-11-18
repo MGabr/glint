@@ -17,7 +17,7 @@ class RequestSerializer extends GlintSerializer {
   override def toBinary(o: AnyRef, buf: ByteBuffer): Unit = {
     o match {
       case x: PullAverageRows =>
-        buf.put(SerializationConstants.pullAverageRows)
+        buf.put(SerializationConstants.pullAverageRowsByte)
         buf.putInt(x.rows.length)
         buf.putIntArrayArray(x.rows)
 
@@ -48,17 +48,23 @@ class RequestSerializer extends GlintSerializer {
         buf.putIntArray(x.rows)
 
       case x: PullMultiply =>
-        buf.put(SerializationConstants.pullMultiply)
+        buf.put(SerializationConstants.pullMultiplyByte)
         buf.putInt(x.vector.length)
         buf.putFloatArray(x.vector)
         buf.putInt(x.startRow)
         buf.putInt(x.endRow)
 
       case x: PullNormDots =>
-        buf.put(SerializationConstants.pullNormDots)
+        buf.put(SerializationConstants.pullNormDotsByte)
         buf.putInt(0) // dummy value
         buf.putInt(x.startRow)
         buf.putInt(x.endRow)
+
+      case x: PullSumFM =>
+        buf.put(SerializationConstants.pullSumFMByte)
+        buf.putInt(x.indices.length)
+        buf.putIntArrayArray(x.indices)
+        buf.putFloatArrayArray(x.weights)
 
       case x: PullVector =>
         buf.put(SerializationConstants.pullVectorByte)
@@ -151,7 +157,7 @@ class RequestSerializer extends GlintSerializer {
     val objectSize = buf.getInt()
 
     objectType match {
-      case SerializationConstants.`pullAverageRows` =>
+      case SerializationConstants.pullAverageRowsByte =>
         val keys = buf.getIntArrayArray(objectSize)
         PullAverageRows(keys)
 
@@ -177,16 +183,21 @@ class RequestSerializer extends GlintSerializer {
         val rows = buf.getIntArray(objectSize)
         PullMatrixRows(rows)
 
-      case SerializationConstants.pullMultiply =>
+      case SerializationConstants.pullMultiplyByte =>
         val vector = buf.getFloatArray(objectSize)
         val startRow = buf.getInt()
         val endRow = buf.getInt()
         PullMultiply(vector, startRow, endRow)
 
-      case SerializationConstants.pullNormDots =>
+      case SerializationConstants.pullNormDotsByte =>
         val startRow = buf.getInt()
         val endRow = buf.getInt()
         PullNormDots(startRow, endRow)
+
+      case SerializationConstants.pullSumFMByte =>
+        val indices = buf.getIntArrayArray(objectSize)
+        val weights = buf.getFloatArrayArray(objectSize)
+        PullSumFM(indices, weights)
 
       case SerializationConstants.pullVectorByte =>
         val keys = buf.getIntArray(objectSize)

@@ -140,7 +140,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
       val meta = FMPairMetadata(args, numFeatures, avgActiveFeatures, trainable && saveTrainable)
-      hdfs.saveFMPairMatrixMetadata(hdfsPath, hadoopConfig.conf, meta)
+      hdfs.saveFMPairMetadata(hdfsPath, hadoopConfig.conf, meta)
     }
 
     hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, v, pathPostfix = "/glint/data/v/")
@@ -254,7 +254,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       cforRange(0 until cols)(j => {
         val offsetJ = colsi + j
         v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ) + 1e-07).toFloat
-        b(offsetJ) = vUpdatesI(j) * vUpdatesI(j)
+        b(offsetJ) += vUpdatesI(j) * vUpdatesI(j)
       })
 
       updatesArrayPool.putClear(vUpdates(i))

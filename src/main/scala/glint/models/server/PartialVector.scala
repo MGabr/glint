@@ -31,6 +31,12 @@ private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag]
   var data: Array[V]
 
   /**
+   * The execution context in which asynchronously handled message can be executed.
+   * This leads to all partial vectors on a server sharing the thread pool in a fair way
+   */
+  implicit val ec = context.dispatcher
+
+  /**
     * Updates the data of this partial model by aggregating given keys and values into it
     *
     * @param keys The keys

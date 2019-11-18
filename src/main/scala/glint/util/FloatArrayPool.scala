@@ -27,6 +27,16 @@ private[glint] class FloatArrayPool(length: Int) {
   }
 
   /**
+   * Puts a new array to the pool. The array values have to be zero or it has to be accepted that arrays with non-zero
+   * values will be returned by [[get() get]].
+   *
+   * @param array An array of pool length
+   */
+  def put(array: Array[Float]): Unit = {
+    arrays.enqueue(array)
+  }
+
+  /**
     * Puts a new array to the pool and clears it to zero values.
     *
     * @param array An array of pool length

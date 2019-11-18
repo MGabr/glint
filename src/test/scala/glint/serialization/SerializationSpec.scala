@@ -130,6 +130,19 @@ class SerializationSpec extends FlatSpec with Matchers {
     pullNormDots.endRow shouldBe 100
   }
 
+  it should "serialize and deserialize a PullSumFM" in {
+    val requestSerializer = new RequestSerializer()
+    val bytes = requestSerializer.toBinary(PullSumFM(
+      Array(Array(0, 4, 6), Array(0, 5), Array(1, 3, 4, 6)),
+      Array(Array(1.0f, 1.0f, 0.3f), Array(1.0f, 1.0f), Array(1.0f, 0.25f, 1.0f, 0.3f))
+    ))
+    val reconstruction = requestSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[PullSumFM])
+    val pullSumFM = reconstruction.asInstanceOf[PullSumFM]
+    pullSumFM.indices should equal(Array(Array(0, 4, 6), Array(0, 5), Array(1, 3, 4, 6)))
+    pullSumFM.weights should equal(Array(Array(1.0f, 1.0f, 0.3f), Array(1.0f, 1.0f), Array(1.0f, 0.25f, 1.0f, 0.3f)))
+  }
+
   it should "serialize and deserialize a PullVector" in {
     val requestSerializer = new RequestSerializer()
     val bytes = requestSerializer.toBinary(PullVector(Array(0, 16, 2, 5)))
@@ -306,8 +319,19 @@ class SerializationSpec extends FlatSpec with Matchers {
       Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f), 15))
     val reconstruction = responseSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[ResponseDotProdFM])
-    val responseDotProd = reconstruction.asInstanceOf[ResponseDotProdFM]
-    responseDotProd.f should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
-    responseDotProd.cacheKey should equal(15)
+    val responseDotProdFM = reconstruction.asInstanceOf[ResponseDotProdFM]
+    responseDotProdFM.f should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
+    responseDotProdFM.cacheKey should equal(15)
+  }
+
+  it should "serialize and deserialize a ResponsePullSumFM" in {
+    val responseSerializer = new ResponseSerializer()
+    val bytes = responseSerializer.toBinary(ResponsePullSumFM(
+      Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f), 15))
+    val reconstruction = responseSerializer.fromBinary(bytes)
+    assert(reconstruction.isInstanceOf[ResponsePullSumFM])
+    val responsePullSumFM = reconstruction.asInstanceOf[ResponsePullSumFM]
+    responsePullSumFM.s should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
+    responsePullSumFM.cacheKey should equal(15)
   }
 }
