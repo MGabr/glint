@@ -4,18 +4,18 @@ version := "0.2-SNAPSHOT"
 
 organization := "com.github.mgabr"
 
-scalaVersion := "2.11.8"
-val scalaMajorMinorVersion = "2.11"
+scalaVersion := "2.12.8"
+val scalaMajorMinorVersion = "2.12"
 
 fork in Test := true
 
 // Spark
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.0" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.4.0" % "provided"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.6.5" % "provided"
+libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.7.7" % "provided"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.6.5" % "provided"
+libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.7.7" % "provided"
 
 
 // BLAS support
@@ -35,9 +35,9 @@ libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.5.20"
 
 // Retry
 
-resolvers += "softprops-maven" at "http://dl.bintray.com/content/softprops/maven"
+// resolvers += "softprops-maven" at "http://dl.bintray.com/content/softprops/maven"
 
-libraryDependencies += "me.lessis" %% "retry" % "0.2.0"
+libraryDependencies += "com.softwaremill.retry" %% "retry" % "0.3.3"
 
 
 // Breeze
@@ -49,23 +49,23 @@ libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.13.2"
 
 // Unit tests
 
-libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1" % "it,test"
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.8" % "it,test"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "it,test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "it,test"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.6.5" % "test" classifier "tests"
+libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.7.7" % "test" classifier "tests"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.6.5" % "test" classifier "tests"
+libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.7.7" % "test" classifier "tests"
 
 
 // Performance benchmarking
 
-libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.8.2" % "provided"
+libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.19" % "provided"
 
 
 // Scala option parser
 
-libraryDependencies += "com.github.scopt" %% "scopt" % "3.6.0"
+libraryDependencies += "com.github.scopt" %% "scopt" % "3.7.0"
 
 
 // Logging, backend only as test dependency since the backend provided by spark is used otherwise
