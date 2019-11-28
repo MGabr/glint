@@ -1,18 +1,14 @@
 package glint.models.client.async
 
 import akka.actor.ActorRef
-import breeze.linalg.{DenseVector, Vector}
-import breeze.numerics.sqrt
 import com.github.fommil.netlib.F2jBLAS
 import com.typesafe.config.Config
 import glint.messages.server.request._
 import glint.messages.server.response.ResponsePullSumFM
 import glint.models.client.BigFMPairVector
-import glint.models.server.aggregate.Aggregate
 import glint.partitioning.{Partition, Partitioner}
 import glint.serialization.SerializableHadoopConfiguration
 import org.apache.hadoop.conf.Configuration
-import spire.implicits.cforRange
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,7 +48,7 @@ class AsyncBigFMPairVector(partitioner: Partitioner,
     Future.sequence(pushes).transform(results => true, err => err)
   }
 
-  override def pullSum(keys: Array[Array[Int]], weights: Array[Array[Float]])
+  override def pullSum(keys: Array[Array[Int]], weights: Array[Array[Float]], cache: Boolean = true)
                       (implicit ec: ExecutionContext): Future[(Array[Float], Array[Int])] = {
 
     // send pullSum pull requests to all partitions
@@ -68,7 +64,7 @@ class AsyncBigFMPairVector(partitioner: Partitioner,
             subIndices.map(j => weights(i)(j)).toArray
           }
 
-          val pullMessage = PullSumFM(localKeys, localWeights)
+          val pullMessage = PullSumFM(localKeys, localWeights, cache)
           val fsm = PullFSM[PullSumFM, ResponsePullSumFM](pullMessage, models(partition.index))
           fsm.run().map(r => (r, partition))
       }
@@ -89,14 +85,14 @@ class AsyncBigFMPairVector(partitioner: Partitioner,
     Future.sequence(pulls).transform(aggregateSuccess, err => err)
   }
 
-  override def adjust(g: Array[Float], cacheKeys: Array[Int])(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def pushSum(g: Array[Float], cacheKeys: Array[Int])(implicit ec: ExecutionContext): Future[Boolean] = {
 
     require(trainable, "The vector has to be trainable to support adjust")
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
-      val fsm = PushFSM[PushAdjustFM](id =>
-        PushAdjustFM(id, g, cacheKeys(partition.index)), models(partition.index), parallelActor = true)
+      val fsm = PushFSM[PushSumFM](id =>
+        PushSumFM(id, g, cacheKeys(partition.index)), models(partition.index), parallelActor = true)
       fsm.run()
     }
 

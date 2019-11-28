@@ -65,7 +65,7 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * avgActiveFeatures)
   }
 
-  private val cache = new ConcurrentHashMap[Int, (Array[Array[Int]], Array[Array[Float]])]()
+  private val cachePullSum = new ConcurrentHashMap[Int, (Array[Array[Int]], Array[Array[Float]])]()
 
   private var lastCacheKey = 0
 
@@ -92,12 +92,12 @@ private[glint] class PartialVectorFMPair(partition: Partition,
       val cacheKey = lastCacheKey
       lastCacheKey += 1
       Future {
-        val s = pullSum(pull.indices, pull.weights, cacheKey)
+        val s = pullSum(pull.indices, pull.weights, cacheKey, pull.cache)
         ResponsePullSumFM(s, cacheKey)
       } pipeTo sender()
-    case push: PushAdjustFM =>
+    case push: PushSumFM =>
       Future {
-        adjust(push.g, push.cacheKey)
+        pushSum(push.g, push.cacheKey)
         updateFinished(push.id)
         AcknowledgeReceipt(push.id)
       } pipeTo sender()
@@ -124,7 +124,15 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     }
   }
 
-  def pullSum(indices: Array[Array[Int]], weights: Array[Array[Float]], cacheKey: Int): Array[Float] = {
+  /**
+   * Pull the weighted partial sums of the feature indices
+   *
+   * @param indices The feature indices
+   * @param weights The feature weights
+   * @param cache Whether the indices and weights should be cached. Not required for recommendation
+   * @return The weighted partial sums of the feature indices
+   */
+  def pullSum(indices: Array[Array[Int]], weights: Array[Array[Float]], cacheKey: Int, cache: Boolean): Array[Float] = {
     val s = new Array[Float](indices.length)
 
     cforRange(0 until indices.length)(i => {
@@ -134,13 +142,21 @@ private[glint] class PartialVectorFMPair(partition: Partition,
       })
     })
 
-    cache.put(cacheKey, (indices, weights))
+    if (cache) {
+      cachePullSum.put(cacheKey, (indices, weights))
+    }
     s
   }
 
-  def adjust(g: Array[Float], cacheKey: Int): Unit = {
-    val (indices, weights) = cache.get(cacheKey)
-    cache.remove(cacheKey)
+  /**
+   * Adjust the weights according to the received gradient updates
+   *
+   * @param g The BPR gradient per training instance in the batch
+   * @param cacheKey The key to retrieve the cached indices and weights
+   */
+  def pushSum(g: Array[Float], cacheKey: Int): Unit = {
+    val (indices, weights) = cachePullSum.get(cacheKey)
+    cachePullSum.remove(cacheKey)
 
     // used to prevent garbage collection
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()

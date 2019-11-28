@@ -1,8 +1,9 @@
 package glint.matrix
 
 import breeze.linalg._
+import breeze.numerics.sigmoid
 import com.github.fommil.netlib.F2jBLAS
-import glint.{HdfsTest, SystemTest, Word2VecArguments, TolerantFloat}
+import glint.{HdfsTest, SystemTest, TolerantFloat, Word2VecArguments}
 import glint.FMPairArguments
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
@@ -84,7 +85,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
           identity
         }
 
-        val g = f.map(e => exp(-e)).map(e => (e / (1 + e)).toFloat)  // general BPR gradient
+        val g = f.map(e => exp(-e)).map(e => (e / (1 + e)).toFloat)  // utility function BPR gradient
 
         val result = whenReady(model.adjust(g, cacheKeys)) {
           identity
@@ -103,6 +104,82 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
           init(4) + args.lr / ada * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3)) - args.factorsReg * init(4)),
           init(5) + args.lr / ada * (g(1) * init(0) - args.factorsReg * init(5)),
           init(6) + args.lr / ada * (0.3f * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3))) - args.factorsReg * init(6))
+        ))
+      }
+    }
+  }
+
+  it should "compute sums" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+
+        val args = FMPairArguments(k=7, batchSize=3)
+        val numFeatures = 7
+        val model = client.fmpairMatrix(args, numFeatures)
+
+        val indices = Array(Array(0), Array(0), Array(1, 3), Array(4, 6), Array(5), Array(4, 6))
+        val weights = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f), Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f))
+
+        val (s, cacheKeys) = whenReady(model.pullSum(indices, weights)) {
+          identity
+        }
+
+        s should equal(Array(
+          init(0),
+          init(0),
+          init(1) + 0.25f * init(3),
+          init(4) + 0.3f * init(6),
+          init(5),
+          init(4) + 0.3f * init(6)
+        ).map(_.toArray))
+        cacheKeys should equal(Array(0, 0, 0))
+      }
+    }
+  }
+
+  it should "adjust weights by sums" in withMaster { _ =>
+    withServers(3) { _ =>
+      withClient { client =>
+
+        val args = FMPairArguments(k=7, batchSize=3)
+        val numFeatures = 7
+        val model = client.fmpairMatrix(args, numFeatures)
+
+        val indices = Array(Array(0), Array(0), Array(1, 3), Array(4, 6), Array(5), Array(4, 6))
+        val weights = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f), Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f))
+
+        val (s, cacheKeys) = whenReady(model.pullSum(indices, weights)) {
+          identity
+        }
+
+        // cross-batch BPR gradient
+        // breeze "x dot y" instead of "sum(x *:* y)" seems to have floating point precision problems and returns 0.0
+        val sUsersMatrix = DenseMatrix(s.slice(0, s.length / 2) :_*)
+        val sItemsMatrix = DenseMatrix(s.slice(s.length / 2, s.length) :_*)
+        val gzMatrix = sigmoid(-(sUsersMatrix * sItemsMatrix.t))
+        val gUsersMatrix = gzMatrix * sItemsMatrix
+        val gItemsMatrix = gzMatrix.t * sUsersMatrix
+        val gMatrix = DenseMatrix.vertcat(gUsersMatrix, gItemsMatrix)
+        val g = gMatrix.t.toArray.grouped(7).toArray  // transpose for row-major instead of column-major
+
+        val result = whenReady(model.pushSum(g, cacheKeys)) {
+          identity
+        }
+        assert(result)
+
+        val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
+
+        val ada = sqrt(0.1 + 1e-07).toFloat  // initial Adagrad learning rate
+        val gVectors = g.map(DenseVector(_))
+
+        values should equal(Array(
+          init(0) + args.lr / ada * (gVectors(0) + gVectors(1) - args.factorsReg * init(0)),
+          init(1) + args.lr / ada * (gVectors(2) - args.factorsReg * init(1)),
+          init(2),
+          init(3) + args.lr / ada * (0.25f * gVectors(2) - args.factorsReg * init(3)),
+          init(4) + args.lr / ada * (gVectors(3) + gVectors(5) - args.factorsReg * init(4)),
+          init(5) + args.lr / ada * (gVectors(4) - args.factorsReg * init(5)),
+          init(6) + args.lr / ada * (0.3f * gVectors(3) + 0.3f * gVectors(5) - args.factorsReg * init(6))
         ))
       }
     }

@@ -29,7 +29,11 @@ class RequestSerializer extends GlintSerializer {
         buf.putLong(x.seed)
 
       case x: PullDotProdFM =>
-        buf.put(SerializationConstants.pullDotProdFMByte)
+        if (x.cache) {
+          buf.put(SerializationConstants.pullDotProdFMCacheByte)
+        } else {
+          buf.put(SerializationConstants.pullDotProdFMByte)
+        }
         buf.putInt(x.iUser.length)
         buf.putIntArrayArray(x.iUser)
         buf.putFloatArrayArray(x.wUser)
@@ -61,7 +65,11 @@ class RequestSerializer extends GlintSerializer {
         buf.putInt(x.endRow)
 
       case x: PullSumFM =>
-        buf.put(SerializationConstants.pullSumFMByte)
+        if (x.cache) {
+          buf.put(SerializationConstants.pullSumFMCacheByte)
+        } else {
+          buf.put(SerializationConstants.pullSumFMByte)
+        }
         buf.putInt(x.indices.length)
         buf.putIntArrayArray(x.indices)
         buf.putFloatArrayArray(x.weights)
@@ -122,6 +130,13 @@ class RequestSerializer extends GlintSerializer {
         buf.putIntArray(x.cols)
         buf.putLongArray(x.values)
 
+      case x: PushSumFM =>
+        buf.put(SerializationConstants.pushSumFMByte)
+        buf.putInt(x.g.length)
+        buf.putInt(x.id)
+        buf.putFloatArray(x.g)
+        buf.putInt(x.cacheKey)
+
       case x: PushVectorDouble =>
         buf.put(SerializationConstants.pushVectorDoubleByte)
         buf.putInt(x.keys.length)
@@ -172,7 +187,14 @@ class RequestSerializer extends GlintSerializer {
         val wUser = buf.getFloatArrayArray(objectSize)
         val iItem = buf.getIntArrayArray(objectSize)
         val wItem = buf.getFloatArrayArray(objectSize)
-        PullDotProdFM(iUser, wUser, iItem, wItem)
+        PullDotProdFM(iUser, wUser, iItem, wItem, false)
+
+      case SerializationConstants.pullDotProdFMCacheByte =>
+        val iUser = buf.getIntArrayArray(objectSize)
+        val wUser = buf.getFloatArrayArray(objectSize)
+        val iItem = buf.getIntArrayArray(objectSize)
+        val wItem = buf.getFloatArrayArray(objectSize)
+        PullDotProdFM(iUser, wUser, iItem, wItem, true)
 
       case SerializationConstants.pullMatrixByte =>
         val rows = buf.getIntArray(objectSize)
@@ -197,7 +219,12 @@ class RequestSerializer extends GlintSerializer {
       case SerializationConstants.pullSumFMByte =>
         val indices = buf.getIntArrayArray(objectSize)
         val weights = buf.getFloatArrayArray(objectSize)
-        PullSumFM(indices, weights)
+        PullSumFM(indices, weights, false)
+
+      case SerializationConstants.pullSumFMCacheByte =>
+        val indices = buf.getIntArrayArray(objectSize)
+        val weights = buf.getFloatArrayArray(objectSize)
+        PullSumFM(indices, weights, true)
 
       case SerializationConstants.pullVectorByte =>
         val keys = buf.getIntArray(objectSize)
@@ -247,6 +274,12 @@ class RequestSerializer extends GlintSerializer {
         val cols = buf.getIntArray(objectSize)
         val values = buf.getLongArray(objectSize)
         PushMatrixLong(id, rows, cols, values)
+
+      case SerializationConstants.pushSumFMByte =>
+        val id = buf.getInt()
+        val g = buf.getFloatArray(objectSize)
+        val cacheKey = buf.getInt()
+        PushSumFM(id, g, cacheKey)
 
       case SerializationConstants.pushVectorDoubleByte =>
         val id = buf.getInt()

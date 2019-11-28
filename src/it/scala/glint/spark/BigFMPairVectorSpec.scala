@@ -80,7 +80,7 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
 
       val g = s.map(e => exp(-e)).map(e => (e / (1 + e)).toFloat)  // general BPR gradient
 
-      val result = whenReady(model.adjust(g, cacheKeys)) {
+      val result = whenReady(model.pushSum(g, cacheKeys)) {
         identity
       }
       assert(result)

@@ -15,9 +15,9 @@ import scala.concurrent.{ExecutionContext, Future}
  *   val indices = Array(Array(0, 7, 10, 21, 23))
  *   val weights = Array(Array(1.0, 0.5, 0.5, 1.0, -1.0))
  *
- *   val (f, cacheKeys) = vector.pullSum(indices, weights)  // compute sums for gradient update
- *   val g = ...(f)  // compute whole BPR gradient
- *   vector.adjust(g, cacheKeys)  // adjust vector by gradient updates
+ *   val (f, cacheKeys) = vector.pullSum(indices, weights)
+ *   val g = ...(f)  // compute BPR utility function gradient
+ *   vector.pushSum(g, cacheKeys)
  *
  *   vector.destroy() // Destroy vector, freeing up memory on the parameter server
  * }}}
@@ -42,14 +42,15 @@ trait BigFMPairVector extends BigVector[Float] {
           (implicit ec: ExecutionContext): Future[Boolean]
 
   /**
-   * Pull the weighted sums of the feature indices.
+   * Pull the weighted sums of the feature indices
    *
    * @param keys The feature indices
    * @param weights The feature weights
+   * @param cache Whether the indices and weights should be cached. Not required for recommendation
    * @param ec The implicit execution context in which to execute the request
-   * @return A future containing the weighted sums of the feature indices
+   * @return A future containing the weighted sums of the feature indices and the cache keys for the adjust operation
    */
-  def pullSum(keys: Array[Array[Int]], weights: Array[Array[Float]])
+  def pullSum(keys: Array[Array[Int]], weights: Array[Array[Float]], cache: Boolean = true)
              (implicit ec: ExecutionContext): Future[(Array[Float], Array[Int])]
 
   /**
@@ -60,5 +61,5 @@ trait BigFMPairVector extends BigVector[Float] {
    * @param ec The implicit execution context in which to execute the request
    * @return A future containing either the success or failure of the operation
    */
-  def adjust(g: Array[Float], cacheKeys: Array[Int])(implicit ec: ExecutionContext): Future[Boolean]
+  def pushSum(g: Array[Float], cacheKeys: Array[Int])(implicit ec: ExecutionContext): Future[Boolean]
 }

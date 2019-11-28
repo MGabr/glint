@@ -7,7 +7,7 @@ import com.github.fommil.netlib.F2jBLAS
 import glint.FMPairArguments
 import glint.messages.server.logic.AcknowledgeReceipt
 import glint.messages.server.request._
-import glint.messages.server.response.{ResponseDotProdFM, ResponseFloat, ResponseRowsFloat}
+import glint.messages.server.response.{ResponseDotProdFM, ResponseFloat, ResponsePullSumFM, ResponseRowsFloat}
 import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
@@ -86,9 +86,11 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * avgActiveFeatures)
   }
 
-  private val cache = new ConcurrentHashMap[
+  private val cacheDotProd = new ConcurrentHashMap[
     Int,
     (Array[Array[Int]], Array[Array[Float]], Array[Float], Array[Array[Int]], Array[Array[Float]], Array[Float])]()
+
+  private val cachePullSum = new ConcurrentHashMap[Int, (Array[Array[Int]], Array[Array[Float]])]()
 
   private var lastCacheKey = 0
 
@@ -104,8 +106,10 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     * a nearly optimal rate of convergence when the optimization problem is sparse.
     */
   override def receive: Receive = {
-    case pull: PullMatrix => sender ! ResponseFloat(get(pull.rows, pull.cols))
-    case pull: PullMatrixRows => sender ! ResponseRowsFloat(getRows(pull.rows), cols)
+    case pull: PullMatrix =>
+      sender ! ResponseFloat(get(pull.rows, pull.cols))
+    case pull: PullMatrixRows =>
+      sender ! ResponseRowsFloat(getRows(pull.rows), cols)
     case push: PushMatrixFloat =>
       update(push.rows, push.cols, push.values)
       updateFinished(push.id)
@@ -116,7 +120,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       val cacheKey = lastCacheKey
       lastCacheKey += 1
       Future {
-        val f = dotprod(pull.iUser, pull.wUser, pull.iItem, pull.wItem, cacheKey)
+        val f = dotprod(pull.iUser, pull.wUser, pull.iItem, pull.wItem, cacheKey, pull.cache)
         ResponseDotProdFM(f, cacheKey)
       } pipeTo sender()
     case push: PushAdjustFM =>
@@ -125,7 +129,21 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
         updateFinished(push.id)
         AcknowledgeReceipt(push.id)
       } pipeTo sender()
-    case x => handleLogic(x, sender)
+    case pull: PullSumFM =>
+      val cacheKey = lastCacheKey
+      lastCacheKey += 1
+      Future {
+        val s = pullSum(pull.indices, pull.weights, cacheKey, pull.cache)
+        ResponsePullSumFM(s, cacheKey)
+      } pipeTo sender()
+    case push: PushSumFM =>
+      Future {
+        pushSum(push.g, push.cacheKey)
+        updateFinished(push.id)
+        AcknowledgeReceipt(push.id)
+      } pipeTo sender()
+    case x =>
+      handleLogic(x, sender)
   }
 
   /**
@@ -157,13 +175,15 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     * @param iItem The item feature indices
     * @param wItem The item feature weights
     * @param cacheKey The key to cache the indices and weights
+    * @param cache Whether the indices and weights should be cached
     * @return The partial dot products
     */
   def dotprod(iUser: Array[Array[Int]],
               wUser: Array[Array[Float]],
               iItem: Array[Array[Int]],
               wItem: Array[Array[Float]],
-              cacheKey: Int): Array[Float] = {
+              cacheKey: Int,
+              cache: Boolean): Array[Float] = {
 
     // used to prevent garbage collection
     val sumsArrayPool = threadLocalSumsArrayPool.get()
@@ -185,20 +205,25 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       f(i) = blas.sdot(cols, sUser, sOffset, 1, sItem, sOffset, 1)
     })
 
-    cache.put(cacheKey, (iUser, wUser, sUser, iItem, wItem, sItem))
+    if (cache) {
+      cacheDotProd.put(cacheKey, (iUser, wUser, sUser, iItem, wItem, sItem))
+    } else {
+      sumsArrayPool.putClear(sUser)
+      sumsArrayPool.putClear(sItem)
+    }
     f
   }
 
   /**
-    * Adjusts the weights according to the received partial gradient updates.
+    * Adjusts the weights according to the received gradient updates.
     * Uses an Adagrad learning rate and frequency adaptive L2 regularization
     *
     * @param g The general BPR gradient per training instance in the batch
     * @param cacheKey The key to retrieve the cached indices and weights
     */
   def adjust(g: Array[Float], cacheKey: Int): Unit = {
-    val (iUser, wUser, sUser, iItem, wItem, sItem) = cache.get(cacheKey)
-    cache.remove(cacheKey)
+    val (iUser, wUser, sUser, iItem, wItem, sItem) = cacheDotProd.get(cacheKey)
+    cacheDotProd.remove(cacheKey)
 
     // used to prevent garbage collection
     val sumsArrayPool = threadLocalSumsArrayPool.get()
@@ -213,7 +238,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     // indices of partial gradient updates to be applied
     var indicesLength = 0
     cforRange(0 until iUser.length)(i => {
-      indicesLength += iUser(i).length
+      indicesLength += iUser(i).length + iItem(i).length
     })
     val vIndices = indicesArrayPool.get(indicesLength)
     var vIndex = 0
@@ -245,6 +270,91 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
     sumsArrayPool.putClear(sUser)
     sumsArrayPool.putClear(sItem)
+
+    // apply partial gradient updates
+    cforRange(0 until vIndex)(vi => {
+      val i = vIndices(vi)
+      val vUpdatesI = vUpdates(i)
+      val colsi = cols * i
+      cforRange(0 until cols)(j => {
+        val offsetJ = colsi + j
+        v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ) + 1e-07).toFloat
+        b(offsetJ) += vUpdatesI(j) * vUpdatesI(j)
+      })
+
+      updatesArrayPool.putClear(vUpdates(i))
+      vUpdates(i) = null
+    })
+
+    updateArraysArrayPool.put(vUpdates)
+    indicesArrayPool.putClearUntil(vIndices, vIndex)
+  }
+
+  /**
+   * Pull the weighted partial sums of the feature indices
+   *
+   * @param indices The feature indices
+   * @param weights The feature weights
+   * @param cacheKey The key to cache the indices and weights
+   * @param cache Whether the indices, weights and sums should be cached
+   * @return A future containing the weighted sums of the feature indices
+   */
+  def pullSum(indices: Array[Array[Int]], weights: Array[Array[Float]], cacheKey: Int, cache: Boolean): Array[Float] = {
+    val s = new Array[Float](indices.length * cols)
+
+    cforRange(0 until indices.length)(i => {
+      val ii = indices(i); val wi = weights(i)
+      val sOffset = i * cols
+      cforRange(0 until ii.length)(j => {
+        blas.saxpy(cols, wi(j), v, ii(j) * cols, 1, s, sOffset, 1)
+      })
+    })
+
+    if (cache) {
+      cachePullSum.put(cacheKey, (indices, weights))
+    }
+    s
+  }
+
+  /**
+   * Adjusts the weights according to the received partial sum gradient updates
+   *
+   * @param g The partial BPR gradients per training instance in the batch
+   * @param cacheKey The key to retrieve the cached indices and weights
+   */
+  def pushSum(g: Array[Float], cacheKey: Int): Unit = {
+    val (indices, weights) = cachePullSum.get(cacheKey)
+    cachePullSum.remove(cacheKey)
+
+    // used to prevent garbage collection
+    val updateArraysArrayPool = threadLocalUpdateArraysArrayPool.get()
+    val updatesArrayPool = threadLocalUpdatesArrayPool.get()
+    val indicesArrayPool = threadLocalIndicesArrayPool.get()
+
+    // matrix holding partial gradient updates to be applied at the end
+    // only create arrays on demand for rows which are updated
+    val vUpdates = updateArraysArrayPool.get()
+
+    // indices of partial gradient updates to be applied
+    var indicesLength = 0
+    cforRange(0 until indices.length)(i => {
+      indicesLength += indices(i).length
+    })
+    val vIndices = indicesArrayPool.get(indicesLength)
+    var vIndex = 0
+
+    cforRange(0 until indices.length)(i => {
+      val ii = indices(i); val wi = weights(i)
+      val gOffset = i * cols
+      cforRange(0 until ii.length)(j => {
+        if (vUpdates(ii(j)) == null) {
+          vUpdates(ii(j)) = updatesArrayPool.get()
+          vIndices(vIndex) = ii(j)
+          vIndex += 1
+        }
+        blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates(ii(j)), 0, 1)
+      })
+    })
 
     // apply partial gradient updates
     cforRange(0 until vIndex)(vi => {

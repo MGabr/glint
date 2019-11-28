@@ -28,8 +28,11 @@ private[glint] object SerializationConstants {
   val pullAverageRowsByte: Byte = 0x0F
 
   val pullDotProdFMByte: Byte = 0x10
-  val pullSumFMByte: Byte = 0x11
+  val pullDotProdFMCacheByte: Byte = 0x11
   val pushAdjustFMByte: Byte = 0x12
+  val pullSumFMByte: Byte = 0x13
+  val pullSumFMCacheByte: Byte = 0x14
+  val pushSumFMByte: Byte = 0x15
 
   val responseDoubleByte: Byte = 0x20
   val responseFloatByte: Byte = 0x21

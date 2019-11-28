@@ -1,12 +1,10 @@
 package glint.models.client.async
 
 import akka.actor.ActorRef
-import breeze.linalg.{DenseVector, Vector}
-import breeze.numerics.sqrt
 import com.github.fommil.netlib.F2jBLAS
 import com.typesafe.config.Config
 import glint.messages.server.request._
-import glint.messages.server.response.ResponseDotProdFM
+import glint.messages.server.response.{ResponseDotProdFM, ResponsePullSumFM}
 import glint.models.client.BigFMPairMatrix
 import glint.models.server.aggregate.Aggregate
 import glint.partitioning.{Partition, Partitioner}
@@ -57,14 +55,15 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
   override def dotprod(iUser: Array[Array[Int]],
                        wUser: Array[Array[Float]],
                        iItem: Array[Array[Int]],
-                       wItem: Array[Array[Float]])
+                       wItem: Array[Array[Float]],
+                       cache: Boolean = true)
                       (implicit ec: ExecutionContext): Future[(Array[Float], Array[Int])] = {
 
     require(trainable, "The matrix has to be trainable to support dotprod")
 
     // Send dotprod pull requests to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
-      val pullMessage = PullDotProdFM(iUser, wUser, iItem, wItem)
+      val pullMessage = PullDotProdFM(iUser, wUser, iItem, wItem, cache)
       val fsm = PullFSM[PullDotProdFM, ResponseDotProdFM](pullMessage, matrices(partition.index))
       fsm.run().map(r => (r, partition))
     }
@@ -93,6 +92,64 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
     val pushes = partitioner.all().toIterable.map { partition =>
       val fsm = PushFSM[PushAdjustFM](id =>
         PushAdjustFM(id, g, cacheKeys(partition.index)), matrices(partition.index), parallelActor = true)
+      fsm.run()
+    }
+
+    // Combine and aggregate futures
+    Future.sequence(pushes).transform(results => true, err => err)
+  }
+
+  override def pullSum(keys: Array[Array[Int]], weights: Array[Array[Float]], cache: Boolean = true)
+                      (implicit ec: ExecutionContext): Future[(Array[Array[Float]], Array[Int])] = {
+
+    require(trainable, "The matrix has to be trainable to support dotprod")
+
+    // Send pull sum requests to all partitions
+    val pulls = partitioner.all().toIterable.map { partition =>
+      val pullMessage = PullSumFM(keys, weights, cache)
+      val fsm = PullFSM[PullSumFM, ResponsePullSumFM](pullMessage, matrices(partition.index))
+      fsm.run().map(r => (r, partition))
+    }
+
+    // Define aggregator for concatenating partial sums of successful responses
+    def aggregateSuccess(responses: Iterable[(ResponsePullSumFM, Partition)]): (Array[Array[Float]], Array[Int]) = {
+      val s = Array.ofDim[Float](keys.length, cols.toInt)
+      val cacheKeys = new Array[Int](numPartitions)
+      for ((response, partition) <- responses) {
+        val partitionCols = partition.size
+        cforRange(0 until keys.length)(i => {
+          cforRange(0 until partitionCols)(j => {
+            s(i)(partition.localColToGlobal(j).toInt) = response.s(i * partitionCols + j)
+          })
+        })
+        cacheKeys(partition.index) = response.cacheKey
+      }
+      (s, cacheKeys)
+    }
+
+    // Combine and aggregate futures
+    Future.sequence(pulls).transform(aggregateSuccess, err => err)
+  }
+
+  override def pushSum(g: Array[Array[Float]], cacheKeys: Array[Int])
+                      (implicit ec: ExecutionContext): Future[Boolean] = {
+
+    require(trainable, "The matrix has to be trainable to support adjust")
+
+    // Send partial push sum requests to all partitions
+    val pushes = partitioner.all().toIterable.map { partition =>
+      val partitionSize = partition.size
+      val localG = new Array[Float](g.length * partitionSize)
+      cforRange(0 until cols.toInt)(j => {
+        if (partition.contains(j)) {
+          cforRange(0 until g.length)(i => {
+            localG(i * partitionSize + partition.globalColToLocal(j)) = g(i)(j)
+          })
+        }
+      })
+
+      val fsm = PushFSM[PushSumFM](id => PushSumFM(id, localG, cacheKeys(partition.index)), matrices(partition.index),
+        parallelActor = true)
       fsm.run()
     }
 

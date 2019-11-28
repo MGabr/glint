@@ -79,7 +79,8 @@ class SerializationSpec extends FlatSpec with Matchers {
       Array(Array(0), Array(0), Array(1, 3)),
       Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f)),
       Array(Array(4, 6), Array(5), Array(4, 6)),
-      Array(Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f))
+      Array(Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f)),
+      false
     ))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PullDotProdFM])
@@ -88,6 +89,7 @@ class SerializationSpec extends FlatSpec with Matchers {
     pullDotProd.wUser should equal(Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f)))
     pullDotProd.iItem should equal(Array(Array(4, 6), Array(5), Array(4, 6)))
     pullDotProd.wItem should equal(Array(Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f)))
+    pullDotProd.cache should equal(false)
   }
 
   it should "serialize and deserialize a PullMatrix" in {
@@ -134,13 +136,15 @@ class SerializationSpec extends FlatSpec with Matchers {
     val requestSerializer = new RequestSerializer()
     val bytes = requestSerializer.toBinary(PullSumFM(
       Array(Array(0, 4, 6), Array(0, 5), Array(1, 3, 4, 6)),
-      Array(Array(1.0f, 1.0f, 0.3f), Array(1.0f, 1.0f), Array(1.0f, 0.25f, 1.0f, 0.3f))
+      Array(Array(1.0f, 1.0f, 0.3f), Array(1.0f, 1.0f), Array(1.0f, 0.25f, 1.0f, 0.3f)),
+      true
     ))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PullSumFM])
     val pullSumFM = reconstruction.asInstanceOf[PullSumFM]
     pullSumFM.indices should equal(Array(Array(0, 4, 6), Array(0, 5), Array(1, 3, 4, 6)))
     pullSumFM.weights should equal(Array(Array(1.0f, 1.0f, 0.3f), Array(1.0f, 1.0f), Array(1.0f, 0.25f, 1.0f, 0.3f)))
+    pullSumFM.cache should equal(true)
   }
 
   it should "serialize and deserialize a PullVector" in {

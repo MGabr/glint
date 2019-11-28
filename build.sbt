@@ -35,8 +35,6 @@ libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.5.20"
 
 // Retry
 
-// resolvers += "softprops-maven" at "http://dl.bintray.com/content/softprops/maven"
-
 libraryDependencies += "com.softwaremill.retry" %% "retry" % "0.3.3"
 
 

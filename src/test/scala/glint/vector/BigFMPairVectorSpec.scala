@@ -69,7 +69,7 @@ class BigFMPairVectorSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val g = s.map(e => exp(-e)).map(e => (e / (1 + e)).toFloat)  // general BPR gradient
 
-        val result = whenReady(model.adjust(g, cacheKeys)) {
+        val result = whenReady(model.pushSum(g, cacheKeys)) {
           identity
         }
         assert(result)
