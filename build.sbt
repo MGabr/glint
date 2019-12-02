@@ -4,8 +4,8 @@ version := "0.2-SNAPSHOT"
 
 organization := "com.github.mgabr"
 
-scalaVersion := "2.12.8"
-val scalaMajorMinorVersion = "2.12"
+scalaVersion := "2.11.8"
+val scalaMajorMinorVersion = "2.11"
 
 fork in Test := true
 
@@ -13,9 +13,9 @@ fork in Test := true
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.4.0" % "provided"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.7.7" % "provided"
+libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.6.5" % "provided"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.7.7" % "provided"
+libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.6.5" % "provided"
 
 
 // BLAS support
