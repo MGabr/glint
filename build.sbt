@@ -51,9 +51,9 @@ libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.8" % "it,test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "it,test"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.7.7" % "test" classifier "tests"
+libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % "2.6.5" % "test" classifier "tests"
 
-libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.7.7" % "test" classifier "tests"
+libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.6.5" % "test" classifier "tests"
 
 
 // Performance benchmarking
