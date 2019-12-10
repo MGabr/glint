@@ -102,8 +102,6 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
   override def pullSum(keys: Array[Array[Int]], weights: Array[Array[Float]], cache: Boolean = true)
                       (implicit ec: ExecutionContext): Future[(Array[Array[Float]], Array[Int])] = {
 
-    require(trainable, "The matrix has to be trainable to support dotprod")
-
     // Send pull sum requests to all partitions
     val pulls = partitioner.all().toIterable.map { partition =>
       val pullMessage = PullSumFM(keys, weights, cache)
@@ -134,7 +132,7 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
   override def pushSum(g: Array[Array[Float]], cacheKeys: Array[Int])
                       (implicit ec: ExecutionContext): Future[Boolean] = {
 
-    require(trainable, "The matrix has to be trainable to support adjust")
+    require(trainable, "The matrix has to be trainable to support pushSum")
 
     // Send partial push sum requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>

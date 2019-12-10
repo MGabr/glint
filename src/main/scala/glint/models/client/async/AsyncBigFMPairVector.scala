@@ -87,7 +87,7 @@ class AsyncBigFMPairVector(partitioner: Partitioner,
 
   override def pushSum(g: Array[Float], cacheKeys: Array[Int])(implicit ec: ExecutionContext): Future[Boolean] = {
 
-    require(trainable, "The vector has to be trainable to support adjust")
+    require(trainable, "The vector has to be trainable to support pushSum")
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
