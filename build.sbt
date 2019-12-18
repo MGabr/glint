@@ -45,6 +45,13 @@ libraryDependencies += "org.scalanlp" %% "breeze" % "0.13.2"
 libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.13.2"
 
 
+// Efficient eclipse collections
+
+libraryDependencies += "org.eclipse.collections" % "eclipse-collections-api" % "10.0.0"
+
+libraryDependencies += "org.eclipse.collections" % "eclipse-collections" % "10.0.0"
+
+
 // Unit tests
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.8" % "it,test"

@@ -10,7 +10,9 @@ import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs.Word2VecMatrixMetadata
-import glint.util.{FloatArrayPool, FloatArraysArrayPool, IntArrayPool, hdfs}
+import glint.util.{FloatArrayPool, hdfs}
+import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure
+import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
 import spire.implicits.cforRange
 
 import scala.collection.mutable
@@ -87,24 +89,52 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     }
   }
 
+
   /**
-    * Array pools used to prevent garbage collection.
+    * Array pools and maps used to prevent garbage collection.
     * Thread local so that they can be used in asynchronously handled messages
     */
-  private val threadLocalNegExamplesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.n)
-  }
-  private val threadLocalUIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize)
-  }
-  private val threadLocalVIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * args.window * (args.n + 1))
-  }
-  private val threadLocalUpdateArraysArrayPool = new ThreadLocal[FloatArraysArrayPool] {
-    override def initialValue(): FloatArraysArrayPool = new FloatArraysArrayPool(rows)
-  }
   private val threadLocalUpdatesArrayPool = new ThreadLocal[FloatArrayPool] {
     override def initialValue(): FloatArrayPool = new FloatArrayPool(cols)
+  }
+
+  private val threadLocalUUpdatesMap = new ThreadLocal[IntObjectHashMap[Array[Float]]] {
+    override def initialValue() = new IntObjectHashMap[Array[Float]](args.batchSize * args.window * (args.n + 1) * 10)
+  }
+
+  private val threadLocalVUpdatesMap = new ThreadLocal[IntObjectHashMap[Array[Float]]] {
+    override def initialValue() = new IntObjectHashMap[Array[Float]](args.batchSize * args.window * (args.n + 1) * 10)
+  }
+
+
+  /**
+   * Update procedures which updates the weights according to the supplied partial gradient updates.
+   *
+   * They are defined as thread local implementations to avoid the creation of an anonymous implementation
+   * on each method call.
+   */
+  private val threadLocalUUpdateProcedure = new ThreadLocal[IntObjectProcedure[Array[Float]]] {
+    override def initialValue(): IntObjectProcedure[Array[Float]] = new IntObjectProcedure[Array[Float]] {
+
+      private val updatesArrayPool = threadLocalUpdatesArrayPool.get()
+
+      override def value(i: Int, uUpdatesI: Array[Float]): Unit = {
+        blas.saxpy(cols, 1.0f, uUpdatesI, 0, 1, u, i * cols, 1)
+        updatesArrayPool.putClear(uUpdatesI)
+      }
+    }
+  }
+
+  private val threadLocalVUpdateProcedure = new ThreadLocal[IntObjectProcedure[Array[Float]]] {
+    override def initialValue(): IntObjectProcedure[Array[Float]] = new IntObjectProcedure[Array[Float]] {
+
+      private val updatesArrayPool = threadLocalUpdatesArrayPool.get()
+
+      override def value(i: Int, vUpdatesI: Array[Float]): Unit = {
+        blas.saxpy(cols, 1.0f, vUpdatesI, 0, 1, v, i * cols, 1)
+        updatesArrayPool.putClear(vUpdatesI)
+      }
+    }
   }
 
 
@@ -200,28 +230,24 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   }
 
   /**
-    * Gets random negative words
+    * Get random negative word
     *
-    * @param random The random number generator used for generating negative words
-    * @param wOut The index of the output word which should not be among the random examples
-    * @param arrayPool The array pool to use for creating the negative examples array
-    * @return The negative words
+    * @param random The random number generator to use
+    * @param wOut The index of the output word which should not be a random negative word
+    * @return The negative word
     */
-  private def negativeExamples(random: Random, wOut: Int, arrayPool: IntArrayPool): Array[Int] = {
-    val examples = arrayPool.get()
-    cforRange(0 until examples.length)(i => {
-      var nextRandom = random.nextInt(args.unigramTableSize)
-      var nOut = table(nextRandom)
-      while (nOut == wOut) {
-        nextRandom = random.nextInt(args.unigramTableSize)
-        nOut = table(nextRandom)
-      }
-      if (nOut == 0) {
-        nOut = nextRandom % (vocabSize - 1) + 1
-      }
-      examples(i) = nOut
-    })
-    examples
+  @inline
+  private def negativeExample(random: Random, wOut: Int): Int = {
+    var nextRandom = random.nextInt(args.unigramTableSize)
+    var nOut = table(nextRandom)
+    while (nOut == wOut) {
+      nextRandom = random.nextInt(args.unigramTableSize)
+      nOut = table(nextRandom)
+    }
+    if (nOut == 0) {
+      nOut = nextRandom % (vocabSize - 1) + 1
+    }
+    nOut
   }
 
   /**
@@ -244,27 +270,21 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     var pos = 0
     var neg = 0
 
-    // used to prevent garbage collection
-    val negExamplesArrayPool = threadLocalNegExamplesArrayPool.get()
-
     cforRange(0 until wInput.length)(i => {
       val wIn = wInput(i)
       cforRange(0 until wOutput(i).length)(j => {
         val wOut = wOutput(i)(j)
 
-        // generate n random negative examples for wOut
-        val nOutput = negativeExamples(random, wOut, negExamplesArrayPool)
-
-        // compute partial dot products for positive and negative words
+        // compute partial dot product for positive word
         fPlus(pos) = blas.sdot(cols, u, wIn * cols, 1, v, wOut * cols, 1)
         pos += 1
-        cforRange(0 until nOutput.length)(k => {
-          val nOut = nOutput(k)
+
+        // compute partial dot products for n random negative words
+        cforRange(0 until args.n)(k => {
+          val nOut = negativeExample(random, wOut)
           fMinus(neg) = blas.sdot(cols, u, wIn * cols, 1, v, nOut * cols, 1)
           neg += 1
         })
-
-        negExamplesArrayPool.put(nOutput)
       })
     })
 
@@ -292,88 +312,39 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     var pos = 0
     var neg = 0
 
-    // used to prevent garbage collection
-    val updateArraysArrayPool = threadLocalUpdateArraysArrayPool.get()
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
-    val uIndicesArrayPool = threadLocalUIndicesArrayPool.get()
-    val vIndicesArrayPool = threadLocalVIndicesArrayPool.get()
-    val negExamplesArrayPool = threadLocalNegExamplesArrayPool.get()
 
-    // matrices holding partial gradient updates to be applied at the end
-    // only create arrays on demand for rows which are updated
-    val uUpdates = updateArraysArrayPool.get()
-    val vUpdates = updateArraysArrayPool.get()
-
-    // indices of partial gradient updates to be applied
-    val uIndices = uIndicesArrayPool.get()
-    val vIndices = vIndicesArrayPool.get()
-
-    var uIndex = 0
-    var vIndex = 0
+    val uUpdates = threadLocalUUpdatesMap.get()
+    val vUpdates = threadLocalVUpdatesMap.get()
 
     cforRange(0 until wInput.length)(i => {
       val wIn = wInput(i)
-      if (uUpdates(wIn) == null) {
-        uUpdates(wIn) = updatesArrayPool.get()
-        uIndices(uIndex) = wIn
-        uIndex += 1
-      }
+      val uUpdatesWIn = uUpdates.getIfAbsentPut(wIn, updatesArrayPool.get())
 
       cforRange(0 until wOutput(i).length)(j => {
         val wOut = wOutput(i)(j)
-        if (vUpdates(wOut) == null) {
-          vUpdates(wOut) = updatesArrayPool.get()
-          vIndices(vIndex) = wOut
-          vIndex += 1
-        }
 
         // add partial gradient updates for positive word
-        blas.saxpy(cols, gPlus(pos), v, wOut * cols, 1, uUpdates(wIn), 0, 1)
-        blas.saxpy(cols, gPlus(pos), u, wIn * cols, 1, vUpdates(wOut), 0, 1)
+        blas.saxpy(cols, gPlus(pos), v, wOut * cols, 1, uUpdatesWIn, 0, 1)
+        blas.saxpy(cols, gPlus(pos), u, wIn * cols, 1, vUpdates.getIfAbsentPut(wOut, updatesArrayPool.get()), 0, 1)
         pos += 1
 
-        // generate n random negative examples for wOut
-        val nOutput = negativeExamples(random, wOut, negExamplesArrayPool)
-
-        cforRange(0 until nOutput.length)(k => {
-          val nOut = nOutput(k)
-          if (vUpdates(nOut) == null) {
-            vUpdates(nOut) = updatesArrayPool.get()
-            vIndices(vIndex) = nOut
-            vIndex += 1
-          }
-
-          // add partial gradient updates for negative word
-          blas.saxpy(cols, gMinus(neg), v, nOut * cols, 1, uUpdates(wIn), 0, 1)
-          blas.saxpy(cols, gMinus(neg), u, wIn * cols, 1, vUpdates(nOut), 0, 1)
+        // add partial gradient updates for the same n random negative words
+        cforRange(0 until args.n)(k => {
+          val nOut = negativeExample(random, wOut)
+          blas.saxpy(cols, gMinus(neg), v, nOut * cols, 1, uUpdatesWIn, 0, 1)
+          blas.saxpy(cols, gMinus(neg), u, wIn * cols, 1, vUpdates.getIfAbsentPut(nOut, updatesArrayPool.get()), 0, 1)
           neg += 1
         })
-
-        negExamplesArrayPool.put(nOutput)
       })
     })
 
     // apply partial gradient updates
-    cforRange(0 until uIndex)(ui => {
-      val i = uIndices(ui)
-      if (uUpdates(i) != null) {
-        blas.saxpy(cols, 1.0f, uUpdates(i), 0, 1, u, i * cols, 1)
-        updatesArrayPool.putClear(uUpdates(i))
-        uUpdates(i) = null
-      }
-    })
-    cforRange(0 until vIndex)(vi => {
-      val i = vIndices(vi)
-      if (vUpdates(i) != null) {
-        blas.saxpy(cols, 1.0f, vUpdates(i), 0, 1, v, i * cols, 1)
-        updatesArrayPool.putClear(vUpdates(i))
-        vUpdates(i) = null
-      }
-    })
-    updateArraysArrayPool.put(uUpdates)
-    updateArraysArrayPool.put(vUpdates)
-    uIndicesArrayPool.putClearUntil(uIndices, uIndex)
-    vIndicesArrayPool.putClearUntil(vIndices, vIndex)
+    uUpdates.forEachKeyValue(threadLocalUUpdateProcedure.get())
+    vUpdates.forEachKeyValue(threadLocalVUpdateProcedure.get())
+
+    uUpdates.clear()
+    vUpdates.clear()
   }
 
   /**

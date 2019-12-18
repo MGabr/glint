@@ -6,12 +6,14 @@ import akka.pattern.pipe
 import glint.FMPairArguments
 import glint.messages.server.logic.AcknowledgeReceipt
 import glint.messages.server.request._
-import glint.messages.server.response.{ResponsePullSumFM, ResponseFloat, ResponseRowsFloat}
+import glint.messages.server.response.{ResponseFloat, ResponsePullSumFM, ResponseRowsFloat}
 import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs.FMPairMetadata
-import glint.util.{FloatArrayPool, IntArrayPool, hdfs}
+import glint.util.{FloatArrayPool, hdfs}
+import org.eclipse.collections.api.block.procedure.primitive.IntFloatProcedure
+import org.eclipse.collections.impl.map.mutable.primitive.IntFloatHashMap
 import spire.implicits.cforRange
 
 import scala.collection.mutable
@@ -57,17 +59,39 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     }
   }
 
-  private val threadLocalUpdatesArrayPool = new ThreadLocal[FloatArrayPool] {
-    override def initialValue(): FloatArrayPool = new FloatArrayPool(size)
+
+  /**
+   * Thread local map to avoid garbage collection
+   */
+  private val threadLocalUpdatesMap = new ThreadLocal[IntFloatHashMap] {
+    override def initialValue() = new IntFloatHashMap(args.batchSize * avgActiveFeatures)
   }
 
-  private val threadLocalIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * avgActiveFeatures)
+
+  /**
+   * Update procedure which updates the weights according to the supplied partial gradient updates.
+   * Uses an Adagrad learning rate and frequency adaptive L2 regularization.
+   *
+   * This is defined as thread local implementation to avoid the creation of an anonymous implementation
+   * on each method call.
+   */
+  private val threadLocalUpdateProcedure = new ThreadLocal[IntFloatProcedure] {
+    override def initialValue(): IntFloatProcedure = new IntFloatProcedure {
+      override def value(i: Int, wUpdateI: Float): Unit = {
+        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / sqrt(b(i) + 1e-07).toFloat
+        b(i) += wUpdateI * wUpdateI
+      }
+    }
   }
 
+
+  /**
+   * Cache to avoid duplicate transmission of indices and weights
+   */
   private val cachePullSum = new ConcurrentHashMap[Int, (Array[Array[Int]], Array[Array[Float]])]()
 
   private var lastCacheKey = 0
+
 
   /**
    * Receives and handles incoming messages
@@ -158,41 +182,15 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     val (indices, weights) = cachePullSum.get(cacheKey)
     cachePullSum.remove(cacheKey)
 
-    // used to prevent garbage collection
-    val updatesArrayPool = threadLocalUpdatesArrayPool.get()
-    val indicesArrayPool = threadLocalIndicesArrayPool.get()
-
-    // partial gradient updates to be applied at the end
-    val wUpdates = updatesArrayPool.get()
-
-    // indices of partial gradient updates to be applied
-    var indicesLength = 0
-    cforRange(0 until indices.length)(i => {
-      indicesLength += indices(i).length
-    })
-    val wIndices = indicesArrayPool.get(indicesLength)
-    var wIndex = 0
+    val wUpdates = threadLocalUpdatesMap.get()
 
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i); val gi = g(i)
       cforRange(0 until ii.length)(j => {
-        if (wUpdates(ii(j)) == 0.0f) {
-          wIndices(wIndex) = ii(j)
-          wIndex += 1
-        }
-        wUpdates(ii(j)) += gi * wi(j)
+        wUpdates.addToValue(ii(j), gi * wi(j))
       })
     })
 
-    // apply partial gradient updates
-    cforRange(0 until wIndex)(wi => {
-      val i = wIndices(wi)
-      w(i) += (wUpdates(i) - args.linearReg * w(i)) * args.lr / sqrt(b(i) + 1e-07).toFloat
-      b(i) += wUpdates(i) * wUpdates(i)
-      wUpdates(i) = 0.0f
-    })
-
-    updatesArrayPool.put(wUpdates)
-    indicesArrayPool.putClearUntil(wIndices, wIndex)
+    wUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
   }
 }

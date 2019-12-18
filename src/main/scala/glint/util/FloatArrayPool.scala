@@ -1,8 +1,8 @@
 package glint.util
 
-import spire.implicits.cforRange
+import java.util
 
-import scala.collection.mutable
+import spire.implicits.cforRange
 
 /**
   * A pool storing float arrays of the same length which can be used to prevent garbage collection
@@ -11,7 +11,7 @@ import scala.collection.mutable
   */
 private[glint] class FloatArrayPool(length: Int) {
 
-  private val arrays = mutable.Queue[Array[Float]]()
+  private val arrays = new util.ArrayDeque[Array[Float]]()
 
   /**
     * Gets an array from the pool or creates a new one if there are no arrays left in the pool
@@ -19,8 +19,8 @@ private[glint] class FloatArrayPool(length: Int) {
     * @return An array of zero values and pool length
     */
   def get(): Array[Float] = {
-    if (arrays.nonEmpty) {
-      arrays.dequeue()
+    if (!arrays.isEmpty) {
+      arrays.pop()
     } else {
       new Array[Float](length)
     }
@@ -33,7 +33,7 @@ private[glint] class FloatArrayPool(length: Int) {
    * @param array An array of pool length
    */
   def put(array: Array[Float]): Unit = {
-    arrays.enqueue(array)
+    arrays.push(array)
   }
 
   /**
@@ -45,6 +45,6 @@ private[glint] class FloatArrayPool(length: Int) {
     cforRange(0 until length)(i => {
       array(i) = 0.0f
     })
-    arrays.enqueue(array)
+    arrays.push(array)
   }
 }

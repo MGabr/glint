@@ -12,7 +12,9 @@ import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs.FMPairMetadata
-import glint.util.{FloatArrayPool, FloatArraysArrayPool, IntArrayPool, hdfs}
+import glint.util.{FloatArrayPool, hdfs}
+import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure
+import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
 import spire.implicits.cforRange
 
 import scala.collection.mutable
@@ -70,22 +72,51 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     }
   }
 
-  private val threadLocalUpdateArraysArrayPool = new ThreadLocal[FloatArraysArrayPool] {
-    override def initialValue(): FloatArraysArrayPool = new FloatArraysArrayPool(rows)
+
+  /**
+   * Thread local array pools and maps to avoid garbage collection
+   */
+  private val threadLocalSumsArrayPool = new ThreadLocal[FloatArrayPool] {
+    override def initialValue(): FloatArrayPool = new FloatArrayPool(args.batchSize * cols)
   }
 
   private val threadLocalUpdatesArrayPool = new ThreadLocal[FloatArrayPool] {
     override def initialValue(): FloatArrayPool = new FloatArrayPool(cols)
   }
 
-  private val threadLocalSumsArrayPool = new ThreadLocal[FloatArrayPool] {
-    override def initialValue(): FloatArrayPool = new FloatArrayPool(args.batchSize * cols)
+  private val threadLocalUpdatesMap = new ThreadLocal[IntObjectHashMap[Array[Float]]] {
+    override def initialValue() = new IntObjectHashMap[Array[Float]](args.batchSize * avgActiveFeatures * 10)
   }
 
-  private val threadLocalIndicesArrayPool = new ThreadLocal[IntArrayPool] {
-    override def initialValue(): IntArrayPool = new IntArrayPool(args.batchSize * avgActiveFeatures)
+
+  /**
+   * Update procedure which updates the weights according to the supplied partial gradient updates.
+   * Uses an Adagrad learning rate and frequency adaptive L2 regularization.
+   *
+   * This is defined as thread local implementation to avoid the creation of an anonymous implementation
+   * on each method call.
+   */
+  private val threadLocalUpdateProcedure = new ThreadLocal[IntObjectProcedure[Array[Float]]] {
+    override def initialValue(): IntObjectProcedure[Array[Float]] = new IntObjectProcedure[Array[Float]] {
+
+      private val updatesArrayPool = threadLocalUpdatesArrayPool.get()
+
+      override def value(i: Int, vUpdatesI: Array[Float]): Unit = {
+        val colsi = cols * i
+        cforRange(0 until cols)(j => {
+          val offsetJ = colsi + j
+          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ) + 1e-07).toFloat
+          b(offsetJ) += vUpdatesI(j) * vUpdatesI(j)
+        })
+        updatesArrayPool.putClear(vUpdatesI)
+      }
+    }
   }
 
+
+  /**
+   * Caches to avoid duplicate transmission of indices and weights
+   */
   private val cacheDotProd = new ConcurrentHashMap[
     Int,
     (Array[Array[Int]], Array[Array[Float]], Array[Float], Array[Array[Int]], Array[Array[Float]], Array[Float])]()
@@ -93,6 +124,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
   private val cachePullSum = new ConcurrentHashMap[Int, (Array[Array[Int]], Array[Array[Float]])]()
 
   private var lastCacheKey = 0
+
 
   /**
     * Receives and handles incoming messages
@@ -148,7 +180,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
   /**
     * A synchronized set of received message ids.
-    * Required since pushAdjust messages are handled asynchronously without synchronization
+    * Required since pushAdjust and pushSum messages are handled asynchronously without synchronization
     */
   override val receipt: mutable.HashSet[Int] = new mutable.HashSet[Int] with mutable.SynchronizedSet[Int]
 
@@ -225,23 +257,10 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     val (iUser, wUser, sUser, iItem, wItem, sItem) = cacheDotProd.get(cacheKey)
     cacheDotProd.remove(cacheKey)
 
-    // used to prevent garbage collection
+    // use pools to prevent garbage collection
     val sumsArrayPool = threadLocalSumsArrayPool.get()
-    val updateArraysArrayPool = threadLocalUpdateArraysArrayPool.get()
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
-    val indicesArrayPool = threadLocalIndicesArrayPool.get()
-
-    // matrix holding partial gradient updates to be applied at the end
-    // only create arrays on demand for rows which are updated
-    val vUpdates = updateArraysArrayPool.get()
-
-    // indices of partial gradient updates to be applied
-    var indicesLength = 0
-    cforRange(0 until iUser.length)(i => {
-      indicesLength += iUser(i).length + iItem(i).length
-    })
-    val vIndices = indicesArrayPool.get(indicesLength)
-    var vIndex = 0
+    val vUpdates = threadLocalUpdatesMap.get()
 
     cforRange(0 until iUser.length)(i => {
       val iu = iUser(i); val wu = wUser(i)
@@ -250,44 +269,19 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       val gb = g(i)
 
       cforRange(0 until iu.length)(j => {
-        if (vUpdates(iu(j)) == null) {
-          vUpdates(iu(j)) = updatesArrayPool.get()
-          vIndices(vIndex) = iu(j)
-          vIndex += 1
-        }
-        blas.saxpy(cols, gb * wu(j), sItem, sOffset, 1, vUpdates(iu(j)), 0, 1)
+        blas.saxpy(cols, gb * wu(j), sItem, sOffset, 1, vUpdates.getIfAbsentPut(iu(j), updatesArrayPool.get()), 0, 1)
       })
 
       cforRange(0 until ii.length)(j => {
-        if (vUpdates(ii(j)) == null) {
-          vUpdates(ii(j)) = updatesArrayPool.get()
-          vIndices(vIndex) = ii(j)
-          vIndex += 1
-        }
-        blas.saxpy(cols, gb * wi(j), sUser, sOffset, 1, vUpdates(ii(j)), 0, 1)
+        blas.saxpy(cols, gb * wi(j), sUser, sOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.get()), 0, 1)
       })
     })
+
+    vUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
 
     sumsArrayPool.putClear(sUser)
     sumsArrayPool.putClear(sItem)
-
-    // apply partial gradient updates
-    cforRange(0 until vIndex)(vi => {
-      val i = vIndices(vi)
-      val vUpdatesI = vUpdates(i)
-      val colsi = cols * i
-      cforRange(0 until cols)(j => {
-        val offsetJ = colsi + j
-        v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ) + 1e-07).toFloat
-        b(offsetJ) += vUpdatesI(j) * vUpdatesI(j)
-      })
-
-      updatesArrayPool.putClear(vUpdates(i))
-      vUpdates(i) = null
-    })
-
-    updateArraysArrayPool.put(vUpdates)
-    indicesArrayPool.putClearUntil(vIndices, vIndex)
+    vUpdates.clear()
   }
 
   /**
@@ -326,52 +320,18 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     val (indices, weights) = cachePullSum.get(cacheKey)
     cachePullSum.remove(cacheKey)
 
-    // used to prevent garbage collection
-    val updateArraysArrayPool = threadLocalUpdateArraysArrayPool.get()
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
-    val indicesArrayPool = threadLocalIndicesArrayPool.get()
-
-    // matrix holding partial gradient updates to be applied at the end
-    // only create arrays on demand for rows which are updated
-    val vUpdates = updateArraysArrayPool.get()
-
-    // indices of partial gradient updates to be applied
-    var indicesLength = 0
-    cforRange(0 until indices.length)(i => {
-      indicesLength += indices(i).length
-    })
-    val vIndices = indicesArrayPool.get(indicesLength)
-    var vIndex = 0
+    val vUpdates = threadLocalUpdatesMap.get()
 
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i)
       val gOffset = i * cols
       cforRange(0 until ii.length)(j => {
-        if (vUpdates(ii(j)) == null) {
-          vUpdates(ii(j)) = updatesArrayPool.get()
-          vIndices(vIndex) = ii(j)
-          vIndex += 1
-        }
-        blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates(ii(j)), 0, 1)
+        blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.get()), 0, 1)
       })
     })
 
-    // apply partial gradient updates
-    cforRange(0 until vIndex)(vi => {
-      val i = vIndices(vi)
-      val vUpdatesI = vUpdates(i)
-      val colsi = cols * i
-      cforRange(0 until cols)(j => {
-        val offsetJ = colsi + j
-        v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ) + 1e-07).toFloat
-        b(offsetJ) += vUpdatesI(j) * vUpdatesI(j)
-      })
-
-      updatesArrayPool.putClear(vUpdates(i))
-      vUpdates(i) = null
-    })
-
-    updateArraysArrayPool.put(vUpdates)
-    indicesArrayPool.putClearUntil(vIndices, vIndex)
+    vUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
+    vUpdates.clear()
   }
 }
