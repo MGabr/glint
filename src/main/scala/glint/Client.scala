@@ -32,7 +32,7 @@ import scala.reflect.runtime.universe.TypeTag
 
 /**
   * The client provides the functions needed to spawn large distributed matrices and vectors on the parameter servers.
-  * Use the companion object to construct a Client object from a configuration file.
+  * Use the companion object to construct a Client object from a configuration file
   *
   * @constructor Use the companion object to construct a Client object
   * @param config The configuration
@@ -57,7 +57,7 @@ class Client(val config: Config,
     * @param createPartitioner A function that creates a partitioner based on a number of keys and partitions
     * @param generateServerProp A function that generates a server prop of a partial model for a particular partition
     * @param generateClientObject A function that generates a client object based on the partitioner and spawned models
-    * @param generateRouter
+    * @param generateRouter A function that generates a reference to routers to each spawned model routees
     * @tparam M The final model type to generate
     * @return The generated model
     */
@@ -207,7 +207,7 @@ class Client(val config: Config,
   /**
     * Loads a saved distributed matrix for specified type of values.
     * Keep in mind that there will be no error thrown when specifying a wrong type
-    * but the loaded matrix will not work as intended.
+    * but the loaded matrix will not work as intended
     *
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
@@ -240,8 +240,8 @@ class Client(val config: Config,
     val routerFunction = (models: Array[ActorRef]) => {
       val routerModelFutures = models.map(model => {
         (model ? RouteesList()).map { case routeeModels: Array[ActorRef] =>
-          system.actorOf(
-            PartialMatrixWord2VecGroup(routeeModels.map(_.path.toSerializationFormat).toIndexedSeq).props())
+          system.actorOf(PartialMatrixWord2VecGroup(
+            routeeModels.map(r => r.path.toSerializationFormatWithAddress(r.path.address)).toIndexedSeq).props())
         }
       }).toSeq
       Future.sequence(routerModelFutures).map(_.toArray)
@@ -335,7 +335,8 @@ class Client(val config: Config,
     val routerFunction = (models: Array[ActorRef]) => {
       val routerModelFutures = models.map(model => {
         (model ? RouteesList()).map { case routeeModels: Array[ActorRef] =>
-          system.actorOf(PartialMatrixFMPairGroup(routeeModels.map(_.path.toSerializationFormat).toIndexedSeq).props())
+          system.actorOf(PartialMatrixFMPairGroup(
+            routeeModels.map(r => r.path.toSerializationFormatWithAddress(r.path.address)).toIndexedSeq).props())
         }
       }).toSeq
       Future.sequence(routerModelFutures).map(_.toArray)
@@ -496,7 +497,8 @@ class Client(val config: Config,
     val routerFunction = (models: Array[ActorRef]) => {
       val routerModelFutures = models.map(model => {
         (model ? RouteesList()).map { case routeeModels: Array[ActorRef] =>
-          system.actorOf(PartialVectorFMPairGroup(routeeModels.map(_.path.toSerializationFormat).toIndexedSeq).props())
+          system.actorOf(PartialVectorFMPairGroup(
+            routeeModels.map(r => r.path.toSerializationFormatWithAddress(r.path.address)).toIndexedSeq).props())
         }
       }).toSeq
       Future.sequence(routerModelFutures).map(_.toArray)
