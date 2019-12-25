@@ -1,29 +1,19 @@
 package glint.models.server
 
-import glint.messages.server.request.{PullMatrix, PullMatrixRows, PushMatrixFloat, PushSave}
+import akka.routing.Routee
+import glint.messages.server.request.{PullMatrix, PullMatrixRows, PushMatrixFloat}
 import glint.messages.server.response.{ResponseFloat, ResponseRowsFloat}
-import glint.models.server.aggregate.Aggregate
-import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
 import spire.implicits._
 
-/**
-  * A partial matrix holding floats
-  *
-  * @param partition The partition
-  * @param rows The number of rows
-  * @param cols The number of columns
-  * @param aggregate The type of aggregation to apply
-  * @param hdfsPath The HDFS base path from which the partial matrix' initial data should be loaded from
-  * @param hadoopConfig The serializable Hadoop configuration to use for loading the initial data from HDFS
-  */
-private[glint] class PartialMatrixFloat(partition: Partition,
+import scala.collection.immutable
+
+private[glint] class PartialMatrixFloat(partitionId: Int,
                                         rows: Int,
                                         cols: Int,
-                                        aggregate: Aggregate,
                                         hdfsPath: Option[String],
                                         hadoopConfig: Option[SerializableHadoopConfiguration])
-  extends PartialMatrix[Float](partition, rows, cols, aggregate, hdfsPath, hadoopConfig) {
+  extends PartialMatrix[Float](partitionId, rows, cols, hdfsPath, hadoopConfig) {
 
   override var data: Array[Float] = _
 
@@ -31,16 +21,45 @@ private[glint] class PartialMatrixFloat(partition: Partition,
     data = loadOrInitialize(Array.fill[Float](rows * cols)(0.0f))
   }
 
-  override def receive: Receive = {
-    case pull: PullMatrix => sender ! ResponseFloat(get(pull.rows, pull.cols))
-    case pull: PullMatrixRows => sender ! ResponseRowsFloat(getRows(pull.rows), cols)
+  private def floatReceive: Receive = {
+    case pull: PullMatrix =>
+      sender ! ResponseFloat(get(pull.rows, pull.cols))
+    case pull: PullMatrixRows =>
+      sender ! ResponseRowsFloat(getRows(pull.rows), cols)
     case push: PushMatrixFloat =>
       update(push.rows, push.cols, push.values)
       updateFinished(push.id)
-    case push: PushSave =>
-      save(push.path, push.hadoopConfig)
-      updateFinished(push.id)
-    case x => handleLogic(x, sender)
   }
 
+  override def receive: Receive = floatReceive.orElse(super.receive)
+}
+
+private[glint] class PartialMatrixFloatRoutee(routeeId: Int,
+                                              partitionId: Int,
+                                              rows: Int,
+                                              cols: Int,
+                                              data: Array[Float])
+  extends PartialMatrixRoutee[Float](routeeId, partitionId, rows, cols, data) {
+
+  private def floatReceive: Receive = {
+    case pull: PullMatrix =>
+      sender ! ResponseFloat(get(pull.rows, pull.cols))
+    case pull: PullMatrixRows =>
+      sender ! ResponseRowsFloat(getRows(pull.rows), cols)
+    case push: PushMatrixFloat =>
+      update(push.rows, push.cols, push.values)
+      updateFinished(push.id)
+  }
+
+  override def receive: Receive = floatReceive.orElse(super.receive)
+}
+
+private[glint] class PartialMatrixFloatRoutingLogic extends PartialMatrixRoutingLogic {
+
+  override def select(message: Any, routees: immutable.IndexedSeq[Routee]): Routee = {
+    message match {
+      case push: PushMatrixFloat => routees(push.id >> 16)
+      case _ => super.select(message, routees)
+    }
+  }
 }

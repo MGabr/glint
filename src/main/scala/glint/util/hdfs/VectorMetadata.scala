@@ -1,8 +1,6 @@
 package glint.util.hdfs
 
-import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partitioner
-import glint.partitioning.by.PartitionBy.PartitionBy
 
 /**
  * Metadata of a vector

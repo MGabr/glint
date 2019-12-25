@@ -5,6 +5,7 @@ import glint.SystemTest
 import glint.mocking.MockBigMatrix
 import glint.models.client.retry.RetryBigMatrix
 import org.scalatest.{FlatSpec, Matchers}
+import spire.implicits._
 
 /**
   * RetryBigMatrix test specification
@@ -35,7 +36,7 @@ class RetryBigMatrixSpec extends FlatSpec with SystemTest with Matchers {
   it should "retry when a pull fails" in {
 
     // Construct a mock matrix that we will intentionally fail
-    val model = new MockBigMatrix[Double](50, 10, 0.0, _ + _)
+    val model = new MockBigMatrix[Double](50, 10, 0.0)
     val retryModel = new RetryBigMatrix[Double](model, 3)
 
     // Intentionally fail the next 3 pulls, the request should still go through because of retries
@@ -53,7 +54,7 @@ class RetryBigMatrixSpec extends FlatSpec with SystemTest with Matchers {
   it should "retry when a push fails" in {
 
     // Construct a mock matrix that we will intentionally fail
-    val model = new MockBigMatrix[Double](50, 10, 0.0, _ + _)
+    val model = new MockBigMatrix[Double](50, 10, 0.0)
     val retryModel = new RetryBigMatrix[Double](model, 3)
 
     // Intentionally fail the next 2 pushes, the request should still go through because of retries
@@ -71,7 +72,7 @@ class RetryBigMatrixSpec extends FlatSpec with SystemTest with Matchers {
   it should "fail when a push retries too many times" in {
 
     // Construct a mock matrix that we will intentionally fail
-    val model = new MockBigMatrix[Double](50, 10, 0.0, _ + _)
+    val model = new MockBigMatrix[Double](50, 10, 0.0)
     val retryModel = new RetryBigMatrix[Double](model, 3)
 
     // Intentionally fail the next 2 pushes, the request should still go through because of retries
@@ -88,7 +89,7 @@ class RetryBigMatrixSpec extends FlatSpec with SystemTest with Matchers {
   it should "fail when a pull retries too many times" in {
 
     // Construct a mock matrix that we will intentionally fail
-    val model = new MockBigMatrix[Double](50, 10, 0.0, _ + _)
+    val model = new MockBigMatrix[Double](50, 10, 0.0)
     val retryModel = new RetryBigMatrix[Double](model, 3)
 
     // Intentionally fail the next 2 pushes, the request should still go through because of retries

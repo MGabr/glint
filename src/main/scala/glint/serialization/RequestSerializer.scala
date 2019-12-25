@@ -81,22 +81,17 @@ class RequestSerializer extends GlintSerializer {
 
       case x: PushAdjust =>
         buf.put(SerializationConstants.pushAdjustByte)
-        buf.putInt(x.wInput.length)
         buf.putInt(x.gPlus.length)
         buf.putInt(x.gMinus.length)
         buf.putInt(x.id)
-        buf.putIntArray(x.wInput)
-        buf.putIntArrayArray(x.wOutput)
         buf.putFloatArray(x.gPlus)
         buf.putFloatArray(x.gMinus)
-        buf.putLong(x.seed)
 
       case x: PushAdjustFM =>
         buf.put(SerializationConstants.pushAdjustFMByte)
         buf.putInt(x.g.length)
         buf.putInt(x.id)
         buf.putFloatArray(x.g)
-        buf.putInt(x.cacheKey)
 
       case x: PushMatrixDouble =>
         buf.put(SerializationConstants.pushMatrixDoubleByte)
@@ -135,7 +130,6 @@ class RequestSerializer extends GlintSerializer {
         buf.putInt(x.g.length)
         buf.putInt(x.id)
         buf.putFloatArray(x.g)
-        buf.putInt(x.cacheKey)
 
       case x: PushVectorDouble =>
         buf.put(SerializationConstants.pushVectorDoubleByte)
@@ -231,21 +225,17 @@ class RequestSerializer extends GlintSerializer {
         PullVector(keys)
 
       case SerializationConstants.pushAdjustByte =>
-        val gPlusSize = buf.getInt()
+        val gPlusSize = objectSize
         val gMinusSize = buf.getInt()
         val id = buf.getInt()
-        val wInput = buf.getIntArray(objectSize)
-        val wOutput = buf.getIntArrayArray(objectSize)
         val gPlus = buf.getFloatArray(gPlusSize)
         val gMinus = buf.getFloatArray(gMinusSize)
-        val seed = buf.getLong()
-        PushAdjust(id, wInput, wOutput, gPlus, gMinus, seed)
+        PushAdjust(id, gPlus, gMinus)
 
       case SerializationConstants.pushAdjustFMByte =>
         val id = buf.getInt()
         val g = buf.getFloatArray(objectSize)
-        val cacheKey = buf.getInt()
-        PushAdjustFM(id, g, cacheKey)
+        PushAdjustFM(id, g)
 
       case SerializationConstants.pushMatrixDoubleByte =>
         val id = buf.getInt()
@@ -278,8 +268,7 @@ class RequestSerializer extends GlintSerializer {
       case SerializationConstants.pushSumFMByte =>
         val id = buf.getInt()
         val g = buf.getFloatArray(objectSize)
-        val cacheKey = buf.getInt()
-        PushSumFM(id, g, cacheKey)
+        PushSumFM(id, g)
 
       case SerializationConstants.pushVectorDoubleByte =>
         val id = buf.getInt()

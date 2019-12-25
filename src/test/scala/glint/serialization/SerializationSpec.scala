@@ -159,30 +159,25 @@ class SerializationSpec extends FlatSpec with Matchers {
   it should "serialize and deserialize a PushAdjust" in {
     val requestSerializer = new RequestSerializer()
     val bytes = requestSerializer.toBinary(PushAdjust(
-      2, Array(0, 1, 2), Array(Array(0, 1), Array(0, 1, 2), Array(1, 2)),
+      2,
       Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f),
-      Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f),
-      1L))
+      Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushAdjust])
     val pushAdjust = reconstruction.asInstanceOf[PushAdjust]
     pushAdjust.id should equal(2)
-    pushAdjust.wInput should equal(Array(0, 1, 2))
-    pushAdjust.wOutput should equal(Array(Array(0, 1), Array(0, 1, 2), Array(1, 2)))
     pushAdjust.gPlus should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
     pushAdjust.gMinus should equal(Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f))
-    pushAdjust.seed should equal(1L)
   }
 
   it should "serialize and deserialize a PushAdjustFM" in {
     val requestSerializer = new RequestSerializer()
-    val bytes = requestSerializer.toBinary(PushAdjustFM(2, Array(0.1f, 0.2f, 0.3f), 15))
+    val bytes = requestSerializer.toBinary(PushAdjustFM(2, Array(0.1f, 0.2f, 0.3f)))
     val reconstruction = requestSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[PushAdjustFM])
     val pushAdjust = reconstruction.asInstanceOf[PushAdjustFM]
     pushAdjust.id should equal(2)
     pushAdjust.g should equal(Array(0.1f, 0.2f, 0.3f))
-    pushAdjust.cacheKey should equal(15)
   }
 
   it should "serialize and deserialize a PushMatrixDouble" in {
@@ -309,12 +304,14 @@ class SerializationSpec extends FlatSpec with Matchers {
     val responseSerializer = new ResponseSerializer()
     val bytes = responseSerializer.toBinary(ResponseDotProd(
       Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f),
-      Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f)))
+      Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f),
+      1))
     val reconstruction = responseSerializer.fromBinary(bytes)
     assert(reconstruction.isInstanceOf[ResponseDotProd])
     val responseDotProd = reconstruction.asInstanceOf[ResponseDotProd]
     responseDotProd.fPlus should equal(Array(0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f))
     responseDotProd.fMinus should equal(Array(0.0f, 0.01f, 0.1f, 0.11f, 0.2f, 0.21f, 0.3f, 0.31f, 0.4f, 0.41f, 0.5f, 0.51f, 0.6f, 0.61f))
+    responseDotProd.cacheKey should equal(1)
   }
 
   it should "serialize and deserialize a ResponseDotProdFM" in {

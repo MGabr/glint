@@ -64,7 +64,6 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
           sum(init(0) *:* init(5)),
           sum((init(1) + 0.25f * init(3)) *:* (init(4) + 0.3f * init(6)))
         ))
-        cacheKeys should equal(Array(0, 0, 0))
       }
     }
   }
@@ -132,7 +131,6 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
           init(5),
           init(4) + 0.3f * init(6)
         ).map(_.toArray))
-        cacheKeys should equal(Array(0, 0, 0))
       }
     }
   }

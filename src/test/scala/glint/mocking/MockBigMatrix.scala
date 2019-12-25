@@ -1,10 +1,11 @@
 package glint.mocking
 
 import akka.pattern.AskTimeoutException
-import akka.util.Timeout
 import breeze.linalg.{DenseVector, Vector}
 import glint.models.client.BigMatrix
 import org.apache.hadoop.conf.Configuration
+import spire.algebra.{Order, Semiring}
+import spire.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -13,18 +14,17 @@ import scala.reflect.ClassTag
   * A mock big matrix that stores all data internally
   *
   * @param nrOfRows The number of rows
-  * @param cols The number of cols
+  * @param nrOfCols The number of cols
   * @param default The default value
-  * @param aggregate Aggregation function for combining two values (typically addition)
   * @tparam V The type of values to store
   */
-class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
-                                 aggregate: (V, V) => V) extends BigMatrix[V] {
+class MockBigMatrix[@specialized V: Semiring : Order : ClassTag](nrOfRows: Int, nrOfCols: Int, default: V)
+  extends BigMatrix[V] {
 
   val rows: Long = nrOfRows
   val cols: Long = nrOfCols
 
-  private val data = Array.fill[Array[V]](nrOfRows)(Array.fill[V](nrOfCols)(default))
+  private val data: Array[Array[V]] = Array.fill[Array[V]](nrOfRows)(Array.fill[V](nrOfCols)(default))
   private var destroyed: Boolean = false
 
   /**
@@ -45,7 +45,6 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
     * Pulls a set of rows
     *
     * @param rows The indices of the rows
-    * @param timeout The timeout for this request
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the vectors representing the rows
     */
@@ -69,7 +68,6 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
   /**
     * Destroys the big matrix and its resources on the parameter server
     *
-    * @param timeout The timeout for this request
     * @param ec The implicit execution context in which to execute the request
     * @return A future whether the matrix was successfully destroyed
     */
@@ -84,7 +82,6 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
     * @param rows The indices of the rows
     * @param cols The indices of the columns
     * @param values The values to update
-    * @param timeout The timeout for this request
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing either the success or failure of the operation
     */
@@ -100,7 +97,7 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
         while (i < rows.length) {
           val row = rows(i).toInt
           val col = cols(i).toInt
-          data(row)(col) = aggregate(data(row)(col), values(i))
+          data(row)(col) += values(i)
           i += 1
         }
         true
@@ -113,7 +110,6 @@ class MockBigMatrix[V: ClassTag](nrOfRows: Int, nrOfCols: Int, default: V,
     *
     * @param rows The indices of the rows
     * @param cols The corresponding indices of the columns
-    * @param timeout The timeout for this request
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing the values of the elements at given rows, columns
     */

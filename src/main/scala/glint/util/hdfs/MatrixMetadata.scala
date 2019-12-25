@@ -1,6 +1,5 @@
 package glint.util.hdfs
 
-import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partitioner
 import glint.partitioning.by.PartitionBy.PartitionBy
 
@@ -10,6 +9,5 @@ import glint.partitioning.by.PartitionBy.PartitionBy
   */
 case class MatrixMetadata(rows: Long,
                           cols: Long,
-                          aggregate: Aggregate,
                           partitionBy: PartitionBy,
                           createPartitioner: (Int, Long) => Partitioner)

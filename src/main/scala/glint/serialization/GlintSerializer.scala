@@ -7,7 +7,7 @@ import akka.serialization.{ByteBufferSerializer, SerializerWithStringManifest}
 abstract class GlintSerializer extends SerializerWithStringManifest with ByteBufferSerializer {
 
   override def toBinary(o: AnyRef): Array[Byte] = {
-    val buf = ByteBuffer.allocate(1024*1024)
+    val buf = ByteBuffer.allocate(1024*1024)  // TODO: ? error for higher batch size
     toBinary(o, buf)
     buf.flip()
     val bytes = new Array[Byte](buf.remaining)

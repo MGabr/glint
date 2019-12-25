@@ -6,7 +6,6 @@ import com.typesafe.config.Config
 import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProdFM, ResponsePullSumFM}
 import glint.models.client.BigFMPairMatrix
-import glint.models.server.aggregate.Aggregate
 import glint.partitioning.{Partition, Partitioner}
 import glint.serialization.SerializableHadoopConfiguration
 import org.apache.hadoop.conf.Configuration
@@ -17,11 +16,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class AsyncBigFMPairMatrix(partitioner: Partitioner,
                            matrices: Array[ActorRef],
                            config: Config,
-                           aggregate: Aggregate,
                            rows: Long,
                            cols: Long,
                            val trainable: Boolean)
-  extends AsyncBigMatrixFloat(partitioner, matrices, config, aggregate, rows, cols) with BigFMPairMatrix {
+  extends AsyncBigMatrixFloat(partitioner, matrices, config, rows, cols) with BigFMPairMatrix {
 
   @transient
   private lazy val blas = new F2jBLAS
@@ -90,9 +88,8 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
-      val fsm = PushFSM[PushAdjustFM](id =>
-        PushAdjustFM(id, g, cacheKeys(partition.index)), matrices(partition.index), parallelActor = true)
-      fsm.run()
+      val fsm = PushFSM[PushAdjustFM](id => PushAdjustFM(id, g), matrices(partition.index))
+      fsm.run(cacheKeys(partition.index))
     }
 
     // Combine and aggregate futures
@@ -146,9 +143,8 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
         }
       })
 
-      val fsm = PushFSM[PushSumFM](id => PushSumFM(id, localG, cacheKeys(partition.index)), matrices(partition.index),
-        parallelActor = true)
-      fsm.run()
+      val fsm = PushFSM[PushSumFM](id => PushSumFM(id, localG), matrices(partition.index))
+      fsm.run(cacheKeys(partition.index))
     }
 
     // Combine and aggregate futures

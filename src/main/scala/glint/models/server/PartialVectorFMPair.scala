@@ -2,71 +2,37 @@ package glint.models.server
 
 import java.util.concurrent.ConcurrentHashMap
 
-import akka.pattern.pipe
-import glint.FMPairArguments
-import glint.messages.server.logic.AcknowledgeReceipt
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.dispatch.Dispatchers
+import akka.routing.{Group, Routee, Router}
+import glint.messages.server.logic.RouteesList
 import glint.messages.server.request._
-import glint.messages.server.response.{ResponseFloat, ResponsePullSumFM, ResponseRowsFloat}
-import glint.models.server.aggregate.Aggregate
-import glint.partitioning.Partition
+import glint.messages.server.response.ResponsePullSumFM
 import glint.serialization.SerializableHadoopConfiguration
+import glint.util.hdfs
 import glint.util.hdfs.FMPairMetadata
-import glint.util.{FloatArrayPool, hdfs}
+import glint.{FMPairArguments, Server}
 import org.eclipse.collections.api.block.procedure.primitive.IntFloatProcedure
 import org.eclipse.collections.impl.map.mutable.primitive.IntFloatHashMap
 import spire.implicits.cforRange
 
-import scala.collection.mutable
-import scala.concurrent.Future
+import scala.collection.immutable
 import scala.math.sqrt
 import scala.util.Random
 
-/**
- * A partial vector holding floats
- *
- * @param partition The partition
- */
-private[glint] class PartialVectorFMPair(partition: Partition,
-                                         hdfsPath: Option[String],
-                                         hadoopConfig: Option[SerializableHadoopConfiguration],
-                                         val args: FMPairArguments,
-                                         val numFeatures: Int,
-                                         val avgActiveFeatures: Int,
-                                         val trainable: Boolean)
-  extends PartialVectorFloat(partition, hdfsPath,  hadoopConfig) {
+trait PartialVectorFMPairLogic {
 
-  /**
-   * The random number generator used for initializing the latent factors matrix
-   */
-  val random = new Random(partition.index)
+  val partitionId: Int
+  val args: FMPairArguments
+  val numFeatures: Int
+  val avgActiveFeatures: Int
+  val trainable: Boolean
 
-  /**
-   * The linear weights vector
-   */
-  var w: Array[Float] = _
+  var w: Array[Float]
+  var b: Array[Float]
 
-  /**
-   * The Adagrad buffers of the linear weights vector
-   */
-  var b: Array[Float] = _
-
-  override def preStart(): Unit = {
-    w = loadOrInitialize(Array.fill(size)(random.nextFloat() * 0.2f - 0.1f), pathPostfix = "/glint/data/w/")
-    data = w
-
-    if (trainable) {
-      b = loadOrInitialize(Array.fill(size)(0.1f), pathPostfix = "/glint/data/wb/")
-    }
-  }
-
-
-  /**
-   * Thread local map to avoid garbage collection
-   */
-  private val threadLocalUpdatesMap = new ThreadLocal[IntFloatHashMap] {
-    override def initialValue() = new IntFloatHashMap(args.batchSize * avgActiveFeatures)
-  }
-
+  /** Map to avoid garbage collection */
+  private val updatesMap = new IntFloatHashMap(args.batchSize * avgActiveFeatures)
 
   /**
    * Update procedure which updates the weights according to the supplied partial gradient updates.
@@ -75,78 +41,15 @@ private[glint] class PartialVectorFMPair(partition: Partition,
    * This is defined as thread local implementation to avoid the creation of an anonymous implementation
    * on each method call.
    */
-  private val threadLocalUpdateProcedure = new ThreadLocal[IntFloatProcedure] {
-    override def initialValue(): IntFloatProcedure = new IntFloatProcedure {
-      override def value(i: Int, wUpdateI: Float): Unit = {
-        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / sqrt(b(i) + 1e-07).toFloat
-        b(i) += wUpdateI * wUpdateI
-      }
+  private val updateProcedure = new IntFloatProcedure {
+    override def value(i: Int, wUpdateI: Float): Unit = {
+      w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / sqrt(b(i) + 1e-07).toFloat
+      b(i) += wUpdateI * wUpdateI
     }
   }
 
-
-  /**
-   * Cache to avoid duplicate transmission of indices and weights
-   */
+  /** Cache to avoid duplicate transmission of indices and weights */
   private val cachePullSum = new ConcurrentHashMap[Int, (Array[Array[Int]], Array[Array[Float]])]()
-
-  private var lastCacheKey = 0
-
-
-  /**
-   * Receives and handles incoming messages
-   *
-   * The specific messages for efficient distributed FM-Pair training (pullSum and pushSum) are executed
-   * asynchronously and then send their result back to the sender. This means that we lose the Akka concurrency
-   * guarantees and the dotprod and adjust methods access the actors state as shared mutable state
-   * without any synchronization and locking. These methods can therefore overwrite each others gradient updates.
-   *
-   * This is, however, required to achieve good performance. As explained in papers like HOGWILD! this still achieves
-   * a nearly optimal rate of convergence when the optimization problem is sparse.
-   */
-  override def receive: Receive = {
-    case pull: PullVector => sender ! ResponseFloat(get(pull.keys))
-    case push: PushVectorFloat =>
-      update(push.keys, push.values)
-      updateFinished(push.id)
-    case push: PushSaveTrainable =>
-      save(push.path, push.hadoopConfig, push.trainable)
-      updateFinished(push.id)
-    case pull: PullSumFM =>
-      val cacheKey = lastCacheKey
-      lastCacheKey += 1
-      Future {
-        val s = pullSum(pull.indices, pull.weights, cacheKey, pull.cache)
-        ResponsePullSumFM(s, cacheKey)
-      } pipeTo sender()
-    case push: PushSumFM =>
-      Future {
-        pushSum(push.g, push.cacheKey)
-        updateFinished(push.id)
-        AcknowledgeReceipt(push.id)
-      } pipeTo sender()
-    case x => handleLogic(x, sender)
-  }
-
-  /**
-   * A synchronized set of received message ids.
-   * Required since pushSum messages are handled asynchronously without synchronization
-   */
-  override val receipt: mutable.HashSet[Int] = new mutable.HashSet[Int] with mutable.SynchronizedSet[Int]
-
-  def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration, saveTrainable: Boolean): Unit = {
-
-    // the partial matrix holding the first partition also saves metadata
-    if (partition.index == 0) {
-      val meta = FMPairMetadata(args, numFeatures, avgActiveFeatures, trainable && saveTrainable)
-      hdfs.saveFMPairMetadata(hdfsPath, hadoopConfig.conf, meta)
-    }
-
-    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, w, pathPostfix = "/glint/data/w/")
-    if (trainable && saveTrainable) {
-      hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, b, pathPostfix = "/glint/data/wb/")
-    }
-  }
 
   /**
    * Pull the weighted partial sums of the feature indices
@@ -182,15 +85,146 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     val (indices, weights) = cachePullSum.get(cacheKey)
     cachePullSum.remove(cacheKey)
 
-    val wUpdates = threadLocalUpdatesMap.get()
-
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i); val gi = g(i)
       cforRange(0 until ii.length)(j => {
-        wUpdates.addToValue(ii(j), gi * wi(j))
+        updatesMap.addToValue(ii(j), gi * wi(j))
       })
     })
 
-    wUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
+    updatesMap.forEachKeyValue(updateProcedure)
+    updatesMap.clear()
   }
+
+  def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration, saveTrainable: Boolean): Unit = {
+    // the partial matrix holding the first partition also saves metadata
+    if (partitionId == 0) {
+      val meta = FMPairMetadata(args, numFeatures, avgActiveFeatures, trainable && saveTrainable)
+      hdfs.saveFMPairMetadata(hdfsPath, hadoopConfig.conf, meta)
+    }
+
+    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partitionId, w, pathPostfix = "/glint/data/w/")
+    if (trainable && saveTrainable) {
+      hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partitionId, b, pathPostfix = "/glint/data/wb/")
+    }
+  }
+}
+
+/**
+ * A partial vector holding floats and supporting specific messages for efficient distributed FMPair training
+ */
+private[glint] class PartialVectorFMPair(partitionId: Int,
+                                         size: Int,
+                                         hdfsPath: Option[String],
+                                         hadoopConfig: Option[SerializableHadoopConfiguration],
+                                         val args: FMPairArguments,
+                                         val numFeatures: Int,
+                                         val avgActiveFeatures: Int,
+                                         val trainable: Boolean)
+  extends PartialVectorFloat(partitionId, size, hdfsPath,  hadoopConfig) with PartialVectorFMPairLogic {
+
+  /** The linear weights vector */
+  var w: Array[Float] = _
+
+  /** The Adagrad buffers of the linear weights vector */
+  var b: Array[Float] = _
+
+  /** The routees which access the above vectors as shared mutable state */
+  var routees: Array[ActorRef] = Array()
+
+  override def preStart(): Unit = {
+    val random = new Random(partitionId)
+    w = loadOrInitialize(Array.fill(size)(random.nextFloat() * 0.2f - 0.1f), pathPostfix = "/glint/data/w/")
+    data = w
+
+    if (trainable) {
+      b = loadOrInitialize(Array.fill(size)(0.1f), pathPostfix = "/glint/data/wb/")
+    }
+
+    routees = (0 until Server.cores).toArray.map(routeeId =>
+      context.system.actorOf(Props(classOf[PartialVectorFMPairRoutee], partitionId, routeeId,
+        args, numFeatures, avgActiveFeatures, trainable, w, b)))
+  }
+
+  private def fmpairReceive: Receive = {
+    case pull: PullSumFM =>
+      val id = nextId()
+      sender ! ResponsePullSumFM(pullSum(pull.indices, pull.weights, id, pull.cache), id)
+    case push: PushSumFM =>
+      pushSum(push.g, push.id)
+      updateFinished(push.id)
+    case push: PushSaveTrainable =>
+      save(push.path, push.hadoopConfig, push.trainable)
+      updateFinished(push.id)
+    case RouteesList() =>
+      sender ! routees
+  }
+
+  override def receive: Receive = fmpairReceive.orElse(super.receive)
+
+  override def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration): Unit = {
+    save(hdfsPath, hadoopConfig, true)
+  }
+}
+
+/**
+ * A routee actor which accesses the shared mutable state of a partial FMPair vector
+ *
+ * @param w: The shared mutable partial linear weights
+ * @param b: The shared mutable Adagrad buffers of the partial linear weights
+ */
+private[glint] class PartialVectorFMPairRoutee(partitionId: Int,
+                                               routeeId: Int,
+                                               val args: FMPairArguments,
+                                               val numFeatures: Int,
+                                               val avgActiveFeatures: Int,
+                                               val trainable: Boolean,
+                                               var w: Array[Float],
+                                               var b: Array[Float])
+  extends PartialVectorFloatRoutee(partitionId, routeeId, w) with PartialVectorFMPairLogic {
+
+  private def fmpairReceive: Receive = {
+    case pull: PullSumFM =>
+      val id = nextId()
+      sender ! ResponsePullSumFM(pullSum(pull.indices, pull.weights, id, pull.cache), id)
+    case push: PushSumFM =>
+      pushSum(push.g, push.id)
+      updateFinished(push.id)
+    case push: PushSaveTrainable =>
+      save(push.path, push.hadoopConfig, push.trainable)
+      updateFinished(push.id)
+  }
+
+  override def receive: Receive = fmpairReceive.orElse(super.receive)
+
+  override def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration): Unit = {
+    save(hdfsPath, hadoopConfig, true)
+  }
+}
+
+/**
+ * Routing logic for partial FMPair vector routee actors
+ */
+private[glint] class PartialVectorFMPairRoutingLogic extends PartialVectorFloatRoutingLogic {
+  override def select(message: Any, routees: immutable.IndexedSeq[Routee]): Routee = {
+    message match {
+      case push: PushSumFM => routees(push.id >> 16)
+      case push: PushSaveTrainable => routees(push.id >> 16)
+      case _ => super.select(message, routees)
+    }
+  }
+}
+
+/**
+ * A group router for partial FMPair vector routee actors
+ *
+ * @param paths The paths of the routees
+ */
+private[glint] case class PartialVectorFMPairGroup(paths: immutable.Iterable[String]) extends Group {
+
+  override def paths(system: ActorSystem): immutable.Iterable[String] = paths
+
+  override def createRouter(system: ActorSystem): Router = new Router(new PartialVectorFMPairRoutingLogic)
+
+  override def routerDispatcher: String = Dispatchers.DefaultDispatcherId
 }

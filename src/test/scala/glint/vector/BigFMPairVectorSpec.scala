@@ -15,7 +15,7 @@ class BigFMPairVectorSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
   val init = Array(0.046193548f, 0.066288196f, 0.046175636f, -0.07990537f, 0.046229385f, -0.0413247f, 0.08028952f)
 
-  "A BigFMPairMatrix" should "initialize values randomly" in withMaster { _ =>
+  "A BigFMPairVector" should "initialize values randomly" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
         val args = FMPairArguments(batchSize=3)
@@ -48,7 +48,6 @@ class BigFMPairVectorSpec extends FlatSpec with SystemTest with HdfsTest with Ma
           init(0) + init(5),
           init(1) + 0.25f * init(3) + init(4) + 0.3f * init(6)
         ))
-        cacheKeys should equal(Array(0, 0, 0))
       }
     }
   }

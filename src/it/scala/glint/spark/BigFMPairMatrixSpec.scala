@@ -61,7 +61,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
         sum(init(0) *:* init(90000)),
         sum((init(5) + 0.25f * init(9000)) *:* (init(50000) + 0.3f * init(90100)))
       ))
-      cacheKeys should equal(Array(0, 0))
+      cacheKeys should equal(Array(1, 1))
     } finally {
       client.terminateOnSpark(sc)
     }

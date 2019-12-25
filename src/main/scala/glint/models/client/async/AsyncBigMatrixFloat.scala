@@ -5,7 +5,6 @@ import breeze.linalg.{DenseVector, Vector}
 import com.typesafe.config.Config
 import glint.messages.server.request.PushMatrixFloat
 import glint.messages.server.response.ResponseFloat
-import glint.models.server.aggregate.Aggregate
 import glint.partitioning.Partitioner
 import spire.implicits.cfor
 
@@ -15,10 +14,9 @@ import spire.implicits.cfor
 private[glint] class AsyncBigMatrixFloat(partitioner: Partitioner,
                                          matrices: Array[ActorRef],
                                          config: Config,
-                                         aggregate: Aggregate,
                                          rows: Long,
                                          cols: Long)
-  extends AsyncBigMatrix[Float, ResponseFloat, PushMatrixFloat](partitioner, matrices, config, aggregate, rows, cols) {
+  extends AsyncBigMatrix[Float, ResponseFloat, PushMatrixFloat](partitioner, matrices, config, rows, cols) {
 
   /**
     * Converts the values in given response starting at index start to index end to a vector
