@@ -233,7 +233,7 @@ private[glint] class PartialMatrixFMPair(partitionId: Int,
 
     routees = (0 until Server.cores).toArray.map(routeeId =>
       context.system.actorOf(Props(classOf[PartialMatrixFMPairRoutee], routeeId, partitionId, rows, cols,
-        args, numFeatures, avgActiveFeatures, trainable, v, b)))
+        args, numFeatures, avgActiveFeatures, trainable, v, b).withDispatcher("pinned-dispatcher")))
   }
 
   private def fmpairReceive: Receive = {

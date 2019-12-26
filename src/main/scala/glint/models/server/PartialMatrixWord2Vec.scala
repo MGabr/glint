@@ -289,7 +289,7 @@ private[glint] class PartialMatrixWord2Vec(partitionId: Int,
 
     routees = (0 until Server.cores).toArray.map(routeeId =>
       context.system.actorOf(Props(classOf[PartialMatrixWord2VecRoutee], routeeId, partitionId, rows, cols,
-        args, trainable, vocabCns, u, v, table)))
+        args, trainable, vocabCns, u, v, table).withDispatcher("pinned-dispatcher")))
   }
 
   /**
