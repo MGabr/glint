@@ -3,7 +3,8 @@ package glint.messages.server.request
 /**
  * A push sum request for FM-Pair
  *
- * @param id The push identification and cache key to retrieve the cached indices and weights
+ * @param id The push identification
  * @param g The partial gradients per training instance in the batch
+ * @param cacheKey The key to retrieve the cached indices and weights
  */
-private[glint] case class PushSumFM(id: Integer, g: Array[Float]) extends Request
+private[glint] case class PushSumFM(id: Integer, g: Array[Float], cacheKey: Int) extends Request

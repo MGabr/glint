@@ -54,7 +54,7 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     * @return A future containing the gradient updates
     */
   override def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long)
-                      (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float], Array[Int])] = {
+                      (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float])] = {
     underlying.dotprod(wInput, wOutput, seed)
   }
 
@@ -64,15 +64,20 @@ class GranularBigWord2VecMatrix(underlying: BigWord2VecMatrix, maximumMessageSiz
     *
     * Makes no attempt to keep individual network messages smaller than `maximumMessageSize`!
     *
+    * @param wInput The indices of the input words
+    * @param wOutput The indices of the output words per input word
     * @param gPlus The gradient updates for the input and output word combinations
     * @param gMinus The gradient updates for the input and random neighbour word combinations
-    * @param cacheKeys The keys to retrieve the cached indices and weights
+    * @param seed The same seed that was used for generating random negative words for the dot products
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing either the success or failure of the operation
     */
-  override def adjust(gPlus: Array[Float], gMinus: Array[Float], cacheKeys: Array[Int])
-                     (implicit ec: ExecutionContext): Future[Boolean] = {
-    underlying.adjust(gPlus, gMinus, cacheKeys)
+  override def adjust(wInput: Array[Int],
+                      wOutput: Array[Array[Int]],
+                      gPlus: Array[Float],
+                      gMinus: Array[Float],
+                      seed: Long)(implicit ec: ExecutionContext): Future[Boolean] = {
+    underlying.adjust(wInput, wOutput, gPlus, gMinus, seed)
   }
 
   /**

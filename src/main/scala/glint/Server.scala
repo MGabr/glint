@@ -31,9 +31,6 @@ private[glint] class Server extends Actor with ActorLogging {
   */
 private[glint] object Server extends StrictLogging {
 
-  /** The number of cores available to the server on this JVM */
-  var cores: Int = _
-
   private val lock = new Semaphore(1)
 
   /**
@@ -44,8 +41,6 @@ private[glint] object Server extends StrictLogging {
     * @return A future containing the started actor system and reference to the server actor
     */
   def run(config: Config, cores: Int = Runtime.getRuntime.availableProcessors()): Future[(ActorSystem, ActorRef)] = {
-    this.cores = cores
-
     implicit val ec = ExecutionContext.Implicits.global
     val system = startActorSystem(config, cores)
     try {
@@ -106,8 +101,6 @@ private[glint] object Server extends StrictLogging {
     */
   def runOnce(config: Config, cores: Int): Future[Option[(ActorSystem, ActorRef, Partition)]] = {
     lock.acquire()
-    this.cores = cores
-
     implicit val ec = ExecutionContext.Implicits.global
     implicit val timeout = Timeout(config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
     val future = if (!StartedActorSystems.hasStartedServer) {
@@ -131,7 +124,6 @@ private[glint] object Server extends StrictLogging {
     } else {
       Future.successful(None)
     }
-
     lock.release()
     future
   }
@@ -144,4 +136,5 @@ private[glint] object Server extends StrictLogging {
     val masterSystem = config.getString("glint.partition-master.system")
     system.actorSelection(s"akka://${masterSystem}@${masterHost}:${masterPort}/user/${masterName}")
   }
+
 }

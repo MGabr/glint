@@ -80,7 +80,6 @@ class ResponseSerializer extends GlintSerializer {
         buf.putInt(x.fMinus.length)
         buf.putFloatArray(x.fPlus)
         buf.putFloatArray(x.fMinus)
-        buf.putInt(x.cacheKey)
 
       case x: ResponseDotProdFM =>
         buf.put(SerializationConstants.responseDotProdFMByte)
@@ -121,8 +120,7 @@ class ResponseSerializer extends GlintSerializer {
         val fMinusSize = buf.getInt()
         val fPlus = buf.getFloatArray(objectSize)
         val fMinus = buf.getFloatArray(fMinusSize)
-        val cacheKey = buf.getInt()
-        ResponseDotProd(fPlus, fMinus, cacheKey)
+        ResponseDotProd(fPlus, fMinus)
 
       case SerializationConstants.responseDotProdFMByte =>
         val f = buf.getFloatArray(objectSize)

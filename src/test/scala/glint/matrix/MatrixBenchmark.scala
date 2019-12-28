@@ -1,10 +1,13 @@
 package glint.matrix
 
 import akka.actor.ActorSystem
-import akka.testkit.TestActorRef
-import glint.models.server.PartialMatrixDouble
-import glint.partitioning.by.PartitionBy
+import glint.SystemTest
+import glint.models.server.aggregate.AggregateAdd
+import glint.models.server.{PartialMatrix, PartialMatrixDouble}
+import glint.partitioning.cyclic.CyclicPartition
 import glint.partitioning.range.RangePartition
+import akka.testkit.TestActorRef
+import glint.partitioning.by.PartitionBy
 import org.scalameter.api._
 import org.scalameter.picklers.Implicits._
 import org.scalameter.{Bench, Gen}
@@ -24,7 +27,7 @@ class MatrixBenchmark extends Bench.OfflineReport {
   val rangePartition = RangePartition(0, 0, 10000, PartitionBy.ROW) // 10000 elements
 
   // Construct matrices for range and cyclic partitions
-  val rangeMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(rangePartition.index, 10000, 300, None, None))
+  val rangeMatrixDoubleRef = TestActorRef(new PartialMatrixDouble(rangePartition, 10000, 300, AggregateAdd(), None, None))
   val rangeMatrixDouble = rangeMatrixDoubleRef.underlyingActor
 
   // Sizes and data

@@ -91,8 +91,9 @@ class AsyncBigFMPairVector(partitioner: Partitioner,
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
-      val fsm = PushFSM[PushSumFM](id => PushSumFM(id, g), models(partition.index))
-      fsm.run(cacheKeys(partition.index))
+      val fsm = PushFSM[PushSumFM](id =>
+        PushSumFM(id, g, cacheKeys(partition.index)), models(partition.index), parallelActor = true)
+      fsm.run()
     }
 
     // Combine and aggregate futures

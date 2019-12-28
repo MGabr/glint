@@ -1,32 +1,47 @@
 package glint.models.server
 
 import akka.actor.{Actor, ActorLogging}
-import akka.routing.Routee
-import glint.messages.server.request.PushSave
+import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs
-import spire.algebra.{Order, Semiring}
+import spire.algebra.Semiring
 import spire.implicits._
 
-import scala.collection.immutable
 import scala.reflect.ClassTag
 
-private[glint] trait PartialVectorLogic[@specialized V] {
+/**
+  * A partial model representing a part of some vector
+  *
+  * @param partition The partition
+  * @tparam V The type of value to store
+  */
+private[glint] abstract class PartialVector[@specialized V: Semiring : ClassTag]
+(partition: Partition,
+ val hdfsPath: Option[String],
+ val hadoopConfig: Option[SerializableHadoopConfiguration]) extends Actor with ActorLogging with PushLogic {
 
-  implicit val semiring: Semiring[V]
-  implicit val order: Order[V]
-  implicit val classTag: ClassTag[V]
+  /**
+    * The size of this partial vector
+    */
+  val size: Int = partition.size
 
-  val partitionId: Int
-
+  /**
+    * The data vector containing the elements
+    */
   var data: Array[V]
 
   /**
-   * Updates the data of this partial model by aggregating given keys and values into it
-   *
-   * @param keys The keys
-   * @param values The values
+   * The execution context in which asynchronously handled message can be executed.
+   * This leads to all partial vectors on a server sharing the thread pool in a fair way
    */
+  implicit val ec = context.dispatcher
+
+  /**
+    * Updates the data of this partial model by aggregating given keys and values into it
+    *
+    * @param keys The keys
+    * @param values The values
+    */
   def update(keys: Array[Int], values: Array[V]): Boolean = {
     var i = 0
     while (i < keys.length) {
@@ -37,11 +52,11 @@ private[glint] trait PartialVectorLogic[@specialized V] {
   }
 
   /**
-   * Gets the data of this partial model
-   *
-   * @param keys The keys
-   * @return The values
-   */
+    * Gets the data of this partial model
+    *
+    * @param keys The keys
+    * @return The values
+    */
   def get(keys: Array[Int]): Array[V] = {
     var i = 0
     val a = new Array[V](keys.length)
@@ -59,35 +74,7 @@ private[glint] trait PartialVectorLogic[@specialized V] {
    * @param hadoopConfig The serializable Hadoop configuration to use for saving to HDFS
    */
   def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration): Unit = {
-    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partitionId, data)
-  }
-}
-
-/**
-  * A partial model representing a part of some vector
-  *
-  * @param partitionId The partition
-  * @tparam V The type of value to store
-  */
-private[glint] abstract class PartialVector[@specialized V]
-(val partitionId: Int,
- val size: Int,
- val hdfsPath: Option[String],
- val hadoopConfig: Option[SerializableHadoopConfiguration])
-(implicit val semiring: Semiring[V], val order: Order[V], val classTag: ClassTag[V])
-  extends Actor with ActorLogging with PartialVectorLogic[V] with PushLogic {
-
-  /**
-    * The data vector containing the elements
-    */
-  var data: Array[V]
-
-  override def receive: Receive = {
-    case push: PushSave =>
-      save(push.path, push.hadoopConfig)
-      updateFinished(push.id)
-    case x =>
-      handleLogic(x, sender)
+    hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, data)
   }
 
   /**
@@ -100,42 +87,12 @@ private[glint] abstract class PartialVector[@specialized V]
    */
   def loadOrInitialize(initialize: => Array[V], pathPostfix: String = "/glint/data/"): Array[V] = {
     if (hdfsPath.isDefined && hadoopConfig.isDefined) {
-      hdfs.loadPartitionData(hdfsPath.get, hadoopConfig.get.conf, partitionId, pathPostfix)
+      hdfs.loadPartitionData(hdfsPath.get, hadoopConfig.get.conf, partition.index, pathPostfix)
     } else {
       initialize
     }
   }
 
-  log.info(s"Constructed PartialVector[${implicitly[ClassTag[V]]}] of size $size (partition id: ${partitionId})")
-}
+  log.info(s"Constructed PartialVector[${implicitly[ClassTag[V]]}] of size $size (partition id: ${partition.index})")
 
-/**
- * A routee actor which accesses the shared mutable state of a partial vector
- *
- * @param data: The shared mutable data matrix
- */
-private[glint] abstract class PartialVectorRoutee[@specialized V: Semiring : Order : ClassTag]
-(val partitionId: Int, val routeeId: Int, var data: Array[V])
-(implicit val semiring: Semiring[V], val order: Order[V], val classTag: ClassTag[V])
-  extends Actor with ActorLogging with PartialVectorLogic[V] with RouteePushLogic {
-
-  override def receive: Receive = {
-    case push: PushSave =>
-      save(push.path, push.hadoopConfig)
-      updateFinished(push.id)
-    case x =>
-      handleLogic(x, sender)
-  }
-}
-
-/**
- * Routing logic for partial vector routee actors
- */
-private[glint] class PartialVectorRoutingLogic extends PushRoutingLogic {
-  override def select(message: Any, routees: immutable.IndexedSeq[Routee]): Routee = {
-    message match {
-      case push: PushSave => routees(push.id >> 16)
-      case _ => super.select(message, routees)
-    }
-  }
 }

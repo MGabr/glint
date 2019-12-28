@@ -1,11 +1,9 @@
 package glint.models.server
 
 import akka.actor.ActorRef
-import akka.routing.{RandomRoutingLogic, Routee, RoutingLogic}
 import glint.messages.server.logic._
-import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet
 
-import scala.collection.immutable
+import scala.collection.mutable
 
 /**
   * Encapsulation for common push logic behavior
@@ -15,7 +13,7 @@ trait PushLogic {
   /**
     * A set of received message ids
     */
-  val receipt: IntHashSet = new IntHashSet()
+  val receipt: mutable.HashSet[Int] = mutable.HashSet[Int]()
 
   /**
     * Unique identifier counter
@@ -28,7 +26,7 @@ trait PushLogic {
     * @return The next id
     */
   @inline
-  def nextId(): Int = {
+  private def nextId(): Int = {
     uid += 1
     uid
   }
@@ -67,35 +65,4 @@ trait PushLogic {
     receipt.add(id)
   }
 
-}
-
-/**
- * Encapsulation for common push logic behavior
- * where an additional routee id is included in the unique id for consistent routing to the same routee
- */
-trait RouteePushLogic extends PushLogic {
-
-  val routeeId: Int
-
-  override def nextId(): Int = {
-    uid = (uid + 1) % Short.MaxValue
-    (routeeId << 16) | uid
-  }
-}
-
-/**
- * Routing logic for push routee actors
- */
-private[glint] class PushRoutingLogic extends RoutingLogic {
-
-  private val randomRoutingLogic = RandomRoutingLogic()
-
-  override def select(message: Any, routees: immutable.IndexedSeq[Routee]): Routee = {
-    message match {
-      case AcknowledgeReceipt(id) => routees(id >> 16)
-      case NotAcknowledgeReceipt(id) => routees(id >> 16)
-      case Forget(id) => routees(id >> 16)
-      case _ => randomRoutingLogic.select(message, routees)
-    }
-  }
 }

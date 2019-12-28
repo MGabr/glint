@@ -1,9 +1,12 @@
 package glint.iterators
 
+import akka.util.Timeout
 import glint.SystemTest
 import glint.mocking.MockBigMatrix
 import org.scalatest.{FlatSpec, Matchers}
-import spire.implicits._
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 /**
   * RetryBigMatrix test specification
@@ -15,7 +18,7 @@ class RowIteratorSpec extends FlatSpec with SystemTest with Matchers {
     // Construct mock matrix and data to push into it
     val nrOfRows = 5
     val nrOfCols = 2
-    val mockMatrix = new MockBigMatrix[Long](nrOfRows, nrOfCols, 0)
+    val mockMatrix = new MockBigMatrix[Long](nrOfRows, nrOfCols, 0, _ + _)
 
     val rows   = Array(0L, 0L, 1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L)
     val cols   = Array(0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L)
@@ -41,7 +44,7 @@ class RowIteratorSpec extends FlatSpec with SystemTest with Matchers {
     // Construct mock matrix and data to push into it
     val nrOfRows = 5
     val nrOfCols = 2
-    val mockMatrix = new MockBigMatrix[Long](nrOfRows, nrOfCols, 0)
+    val mockMatrix = new MockBigMatrix[Long](nrOfRows, nrOfCols, 0, _ + _)
 
     val rows = Array(0L, 0L, 1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L)
     val cols = Array(0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L, 1L)
@@ -66,7 +69,7 @@ class RowIteratorSpec extends FlatSpec with SystemTest with Matchers {
   }
 
   it should "not iterate over an empty matrix" in {
-    val mockMatrix = new MockBigMatrix[Double](3, 0, 0)
+    val mockMatrix = new MockBigMatrix[Double](3, 0, 0, _ + _)
 
     val iterator = new RowBlockIterator[Double](mockMatrix, 3)
     assert(!iterator.hasNext)

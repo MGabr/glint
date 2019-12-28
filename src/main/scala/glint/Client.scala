@@ -11,10 +11,10 @@ import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import glint.exceptions.{ModelCreationException, ServerCreationException}
 import glint.messages.master.{ClientList, RegisterClient, ServerList}
-import glint.messages.server.logic.RouteesList
 import glint.models.client.async._
-import glint.models.client._
+import glint.models.client.{BigFMPairMatrix, BigFMPairVector, BigMatrix, BigVector, BigWord2VecMatrix}
 import glint.models.server._
+import glint.models.server.aggregate.{Aggregate, AggregateAdd}
 import glint.partitioning.by.PartitionBy
 import glint.partitioning.by.PartitionBy.PartitionBy
 import glint.partitioning.range.RangePartitioner
@@ -32,7 +32,7 @@ import scala.reflect.runtime.universe.TypeTag
 
 /**
   * The client provides the functions needed to spawn large distributed matrices and vectors on the parameter servers.
-  * Use the companion object to construct a Client object from a configuration file
+  * Use the companion object to construct a Client object from a configuration file.
   *
   * @constructor Use the companion object to construct a Client object
   * @param config The configuration
@@ -57,7 +57,6 @@ class Client(val config: Config,
     * @param createPartitioner A function that creates a partitioner based on a number of keys and partitions
     * @param generateServerProp A function that generates a server prop of a partial model for a particular partition
     * @param generateClientObject A function that generates a client object based on the partitioner and spawned models
-    * @param generateRouter A function that generates a reference to routers to each spawned model routees
     * @tparam M The final model type to generate
     * @return The generated model
     */
@@ -65,14 +64,13 @@ class Client(val config: Config,
                         modelsPerServer: Int,
                         createPartitioner: (Int, Long) => Partitioner,
                         generateServerProp: Partition => Props,
-                        generateClientObject: (Partitioner, Array[ActorRef], Config) => M,
-                        generateRouter: Array[ActorRef] => Future[Array[ActorRef]] = Future.successful): M = {
+                        generateClientObject: (Partitioner, Array[ActorRef], Config) => M): M = {
 
     // Get a list of servers
     val listOfServers = serverList()
 
     // Construct a big model based on the list of servers
-    val bigModelFuture = listOfServers.flatMap { servers =>
+    val bigModelFuture = listOfServers.map { servers =>
 
       // Check if there are servers online
       if (servers.isEmpty) {
@@ -102,16 +100,18 @@ class Client(val config: Config,
       }
 
       // Construct a big model client object
-      generateRouter(models).map(routerModels => generateClientObject(partitioner, routerModels, config))
+      generateClientObject(partitioner, models, config)
     }
 
     // Wait for the big model to finish
     Await.result(bigModelFuture, config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds)
+
   }
 
   private def matrix[V: Numerical : TypeTag](rows: Long,
                                              cols: Long,
                                              modelsPerServer: Int,
+                                             aggregate: Aggregate,
                                              partitionBy: PartitionBy,
                                              createPartitioner: (Int, Long) => Partitioner,
                                              hdfsPath: Option[String],
@@ -121,25 +121,25 @@ class Client(val config: Config,
 
     val propFunction = Numerical.asString[V] match {
       case "Int" => (partition: Partition) =>
-        props(classOf[PartialMatrixInt], partition, rows, cols, partitionBy, hdfsPath, serHadoopConfig)
+        props(classOf[PartialMatrixInt], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case "Long" => (partition: Partition) =>
-        props(classOf[PartialMatrixLong], partition, rows, cols, partitionBy, hdfsPath, serHadoopConfig)
+        props(classOf[PartialMatrixLong], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case "Float" => (partition: Partition) =>
-        props(classOf[PartialMatrixFloat], partition, rows, cols, partitionBy, hdfsPath, serHadoopConfig)
+        props(classOf[PartialMatrixFloat], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case "Double" => (partition: Partition) =>
-        props(classOf[PartialMatrixDouble], partition, rows, cols, partitionBy, hdfsPath, serHadoopConfig)
+        props(classOf[PartialMatrixDouble], partition, rows, cols, aggregate, partitionBy, hdfsPath, serHadoopConfig)
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
     val objFunction = Numerical.asString[V] match {
       case "Int" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixInt(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixInt(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case "Long" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixLong(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixLong(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case "Float" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixFloat(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixFloat(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case "Double" => (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-        new AsyncBigMatrixDouble(partitioner, models, config, rows, cols).asInstanceOf[BigMatrix[V]]
+        new AsyncBigMatrixDouble(partitioner, models, config, aggregate, rows, cols).asInstanceOf[BigMatrix[V]]
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
@@ -151,6 +151,7 @@ class Client(val config: Config,
                        partition: Partition,
                        rows: Long,
                        cols: Long,
+                       aggregate: Aggregate,
                        partitionBy: PartitionBy,
                        hdfsPath: Option[String],
                        hadoopConfig: Option[SerializableHadoopConfiguration]): Props = {
@@ -161,7 +162,7 @@ class Client(val config: Config,
 
     val rowsInt = if (partitionBy == PartitionBy.ROW) partition.size else rows.toInt
     val colsInt = if (partitionBy == PartitionBy.COL) partition.size else cols.toInt
-    Props(matrixClass, partition.index, rowsInt, colsInt, hdfsPath, hadoopConfig)
+    Props(matrixClass, partition, rowsInt, colsInt, aggregate, hdfsPath, hadoopConfig)
   }
 
   /**
@@ -170,6 +171,7 @@ class Client(val config: Config,
     * @param rows The number of rows
     * @param cols The number of columns
     * @param modelsPerServer The number of partial models to store per parameter server (default: 1)
+    * @param aggregate The type of aggregation to perform on this model (default: AggregateAdd)
     * @param partitionBy The key type for partitioning (row or column)
     * @tparam V The type of values to store, must be one of the following: Int, Long, Double or Float
     * @return The constructed [[glint.models.client.BigMatrix BigMatrix]]
@@ -177,9 +179,10 @@ class Client(val config: Config,
   def matrix[V: Numerical : TypeTag](rows: Long,
                                      cols: Long,
                                      modelsPerServer: Int = 1,
+                                     aggregate: Aggregate = AggregateAdd(),
                                      partitionBy: PartitionBy = PartitionBy.ROW): BigMatrix[V] = {
 
-    matrix[V](rows, cols, modelsPerServer, partitionBy,
+    matrix[V](rows, cols, modelsPerServer, aggregate, partitionBy,
       (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, partitionBy))
   }
 
@@ -198,16 +201,17 @@ class Client(val config: Config,
   def matrix[V: Numerical : TypeTag](rows: Long,
                                      cols: Long,
                                      modelsPerServer: Int,
+                                     aggregate: Aggregate,
                                      partitionBy: PartitionBy,
                                      createPartitioner: (Int, Long) => Partitioner): BigMatrix[V] = {
 
-    matrix(rows, cols, modelsPerServer, partitionBy, createPartitioner, None, None)
+    matrix(rows, cols, modelsPerServer, aggregate, partitionBy, createPartitioner, None, None)
   }
 
   /**
     * Loads a saved distributed matrix for specified type of values.
     * Keep in mind that there will be no error thrown when specifying a wrong type
-    * but the loaded matrix will not work as intended
+    * but the loaded matrix will not work as intended.
     *
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
@@ -217,7 +221,7 @@ class Client(val config: Config,
   def loadMatrix[V: Numerical : TypeTag](hdfsPath: String, hadoopConfig: Configuration): BigMatrix[V] = {
 
     val m = hdfs.loadMatrixMetadata(hdfsPath, hadoopConfig)
-    matrix(m.rows, m.cols, 1, m.partitionBy, m.createPartitioner, Some(hdfsPath), Some(hadoopConfig))
+    matrix(m.rows, m.cols, 1, m.aggregate, m.partitionBy, m.createPartitioner, Some(hdfsPath), Some(hadoopConfig))
   }
 
   private def word2vecMatrix(args: Word2VecArguments,
@@ -230,24 +234,14 @@ class Client(val config: Config,
 
     val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
 
-    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixWord2Vec], partition.index, partition.size,
+    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(),
       Some(hdfsPath), Some(serHadoopConfig), args, vocabSize, None, loadVocabCnOnly, trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigWord2VecMatrix(partitioner, models, config, vocabSize, args.vectorSize, args.n,
+      new AsyncBigWord2VecMatrix(partitioner, models, config, AggregateAdd(), vocabSize, args.vectorSize, args.n,
         trainable)
 
-    val routerFunction = (models: Array[ActorRef]) => {
-      val routerModelFutures = models.map(model => {
-        (model ? RouteesList()).map { case routeeModels: Array[ActorRef] =>
-          system.actorOf(PartialMatrixWord2VecGroup(
-            routeeModels.map(r => r.path.toSerializationFormatWithAddress(r.path.address)).toIndexedSeq).props())
-        }
-      }).toSeq
-      Future.sequence(routerModelFutures).map(_.toArray)
-    }
-
-    create[BigWord2VecMatrix](args.vectorSize, 1, createPartitioner, propFunction, objFunction, routerFunction)
+    create[BigWord2VecMatrix](args.vectorSize, 1, createPartitioner, propFunction, objFunction)
   }
 
   /**
@@ -325,24 +319,13 @@ class Client(val config: Config,
 
     val serHadoopConfig = hadoopConfig.map(c => new SerializableHadoopConfiguration(c))
 
-    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixFMPair], partition.index, partition.size,
+    val propFunction = (partition: Partition) => Props(classOf[PartialMatrixFMPair], partition, AggregateAdd(),
       hdfsPath, serHadoopConfig, args, numFeatures, avgActiveFeatures, trainable)
 
-    val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) => {
-      new AsyncBigFMPairMatrix(partitioner, models, config, numFeatures, args.k, trainable)
-    }
+    val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
+      new AsyncBigFMPairMatrix(partitioner, models, config, AggregateAdd(), numFeatures, args.k, trainable)
 
-    val routerFunction = (models: Array[ActorRef]) => {
-      val routerModelFutures = models.map(model => {
-        (model ? RouteesList()).map { case routeeModels: Array[ActorRef] =>
-          system.actorOf(PartialMatrixFMPairGroup(
-            routeeModels.map(r => r.path.toSerializationFormatWithAddress(r.path.address)).toIndexedSeq).props())
-        }
-      }).toSeq
-      Future.sequence(routerModelFutures).map(_.toArray)
-    }
-
-    create[BigFMPairMatrix](args.k, 1, createPartitioner, propFunction, objFunction, routerFunction)
+    create[BigFMPairMatrix](args.k, 1, createPartitioner, propFunction, objFunction)
   }
 
   /**
@@ -409,14 +392,10 @@ class Client(val config: Config,
     val serHadoopConfig = hadoopConfig.map(new SerializableHadoopConfiguration(_))
 
     val propFunction = Numerical.asString[V] match {
-      case "Int" => (partition: Partition) =>
-        Props(classOf[PartialVectorInt], partition.index, partition.size, hdfsPath, serHadoopConfig)
-      case "Long" => (partition: Partition) =>
-        Props(classOf[PartialVectorLong], partition.index, partition.size, hdfsPath, serHadoopConfig)
-      case "Float" => (partition: Partition) =>
-        Props(classOf[PartialVectorFloat], partition.index, partition.size, hdfsPath, serHadoopConfig)
-      case "Double" => (partition: Partition) =>
-        Props(classOf[PartialVectorDouble], partition.index, partition.size, hdfsPath, serHadoopConfig)
+      case "Int" => (partition: Partition) => Props(classOf[PartialVectorInt], partition, hdfsPath, serHadoopConfig)
+      case "Long" => (partition: Partition) => Props(classOf[PartialVectorLong], partition, hdfsPath, serHadoopConfig)
+      case "Float" => (partition: Partition) => Props(classOf[PartialVectorFloat], partition, hdfsPath, serHadoopConfig)
+      case "Double" => (partition: Partition) => Props(classOf[PartialVectorDouble], partition, hdfsPath, serHadoopConfig)
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
@@ -488,23 +467,13 @@ class Client(val config: Config,
 
     val serHadoopConfig = hadoopConfig.map(c => new SerializableHadoopConfiguration(c))
 
-    val propFunction = (partition: Partition) => Props(classOf[PartialVectorFMPair], partition.index, partition.size,
-      hdfsPath, serHadoopConfig, args, numFeatures, avgActiveFeatures, trainable)
+    val propFunction = (partition: Partition) => Props(classOf[PartialVectorFMPair], partition, hdfsPath,
+      serHadoopConfig, args, numFeatures, avgActiveFeatures, trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
       new AsyncBigFMPairVector(partitioner, models, config, numFeatures, trainable)
 
-    val routerFunction = (models: Array[ActorRef]) => {
-      val routerModelFutures = models.map(model => {
-        (model ? RouteesList()).map { case routeeModels: Array[ActorRef] =>
-          system.actorOf(PartialVectorFMPairGroup(
-            routeeModels.map(r => r.path.toSerializationFormatWithAddress(r.path.address)).toIndexedSeq).props())
-        }
-      }).toSeq
-      Future.sequence(routerModelFutures).map(_.toArray)
-    }
-
-    create[BigFMPairVector](numFeatures, 1, createPartitioner, propFunction, objFunction, routerFunction)
+    create[BigFMPairVector](numFeatures, 1, createPartitioner, propFunction, objFunction)
   }
 
   /**
@@ -830,6 +799,7 @@ object Client {
     implicit val ec = ExecutionContext.Implicits.global
 
     val clientTimeout = config.getDuration("glint.client.timeout", TimeUnit.MILLISECONDS) milliseconds
+    val shutdownTimeout = config.getDuration("glint.default.shutdown-timeout", TimeUnit.MILLISECONDS) milliseconds
 
     // Defined upfront for easier error handling
     var masterSystem: Option[ActorSystem] = None
@@ -893,13 +863,12 @@ object Client {
 
   private def word2vecMatrixServersOnSpark(sc: SparkContext,
                                            config: Config,
-                                           clientTimeout: FiniteDuration,
+                                           clientTimeout: Duration,
                                            serverCores: Int,
                                            client: Client,
                                            partitioner: Partitioner,
                                            args: Word2VecArguments,
-                                           bcVocabCns: Broadcast[Array[Int]])
-                                          (implicit ec: ExecutionContext): BigWord2VecMatrix = {
+                                           bcVocabCns: Broadcast[Array[Int]]): BigWord2VecMatrix = {
 
     // Start parameter servers and create partial models on workers
     // Return list of serialized partial model actor references
@@ -911,8 +880,8 @@ object Client {
 
       val partialModelFuture = Server.runOnce(config, serverCores).map {
         case Some((serverSystem, serverRef, partition)) =>
-          val props = Props(classOf[PartialMatrixWord2Vec], partition.index, partition.size,
-            None, Some(serHadoopConfig), args, bcVocabCns.value.length, Some(bcVocabCns.value), false, true)
+          val props = Props(classOf[PartialMatrixWord2Vec], partition, AggregateAdd(), None, Some(serHadoopConfig),
+            args, bcVocabCns.value.length, Some(bcVocabCns.value), false, true)
           val actorRef = serverSystem.actorOf(props.withDeploy(Deploy.local))
           Some((Serialization.serializedActorPath(actorRef), partition.index))
         case None => None
@@ -924,17 +893,8 @@ object Client {
     val extendedActorSystem = SerializationExtension(client.system).system
     val modelActorRefs = models.map(model => extendedActorSystem.provider.resolveActorRef(model))
 
-    // Convert to router actor references
-    implicit val timeout: Timeout = clientTimeout
-    val routerModelFutures = modelActorRefs.map(model => {
-      (model ? RouteesList()).map { case routeeModels: Array[ActorRef] =>
-        client.system.actorOf(PartialVectorFMPairGroup(routeeModels.map(_.path.toSerializationFormat).toIndexedSeq).props())
-      }
-    }).toSeq
-    val routerModelActorRefs =  Await.result(Future.sequence(routerModelFutures).map(_.toArray), clientTimeout)
-
     // Construct big model client object
-    new AsyncBigWord2VecMatrix(partitioner, routerModelActorRefs, config,
+    new AsyncBigWord2VecMatrix(partitioner, modelActorRefs, config, AggregateAdd(),
       bcVocabCns.value.length, args.vectorSize, args.n, true)
   }
 

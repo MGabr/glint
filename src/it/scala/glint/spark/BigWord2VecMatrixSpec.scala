@@ -48,11 +48,24 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
 
       // random negative words will be 709, 857
 
-      var (_, _, cacheKeys) = whenReady(matrix.dotprod(Array(0), Array(Array(999)), seed)) { identity }
-      var result = whenReady(matrix.adjust(Array(0.11f), Array(0.21f, 0.22f), cacheKeys)) { identity }
+      var result = whenReady(matrix.adjust(
+        Array(0),
+        Array(Array(999)),
+        Array(0.11f),
+        Array(0.21f, 0.22f),
+        seed)) {
+        identity
+      }
       assert(result)
-      cacheKeys = whenReady(matrix.dotprod(Array(0), Array(Array(999)), seed)) { identity }._3
-      result = whenReady(matrix.adjust(Array(0.111f), Array(0.211f, 0.221f), cacheKeys)) { identity }
+
+      result = whenReady(matrix.adjust(
+        Array(0),
+        Array(Array(999)),
+        Array(0.111f),
+        Array(0.211f, 0.221f),
+        seed)) {
+        identity
+      }
       assert(result)
 
       val values = whenReady(matrix.pull(
@@ -87,13 +100,24 @@ class BigWord2VecMatrixSpec extends FlatSpec with SparkTest with Matchers with I
 
       val seed = 1
 
-      val (_, _, cacheKeys) = whenReady(matrix.dotprod(Array(0), Array(Array(0)), seed)) { identity }
-      val result = whenReady(matrix.adjust(Array(0.11f), Array(0.21f, 0.22f), cacheKeys)) { identity }
+      val result = whenReady(matrix.adjust(
+        Array(0),
+        Array(Array(0)),
+        Array(0.11f),
+        Array(0.21f, 0.22f),
+        seed)) {
+        identity
+      }
       assert(result)
 
       // random negative words will be 709, 857
 
-      val value = whenReady(matrix.dotprod(Array(0), Array(Array(0)), seed)) { identity }
+      val value = whenReady(matrix.dotprod(
+        Array(0),
+        Array(Array(0)),
+        seed)) {
+        identity
+      }
 
       value._1 should equal(Array(initValues.map(v => v * (0.11f * v)).sum))
       value._2 should equal(Array(initValues.map(v => v * (0.21f * v)).sum, initValues.map(v => v * (0.22f * v)).sum))
