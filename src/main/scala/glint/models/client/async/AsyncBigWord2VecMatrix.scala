@@ -76,7 +76,7 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
   }
 
   override def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long)
-                      (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float])] = {
+                      (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float], Array[Int])] = {
 
     require(trainable, "The matrix has to be trainable to support dotprod")
 
@@ -84,25 +84,25 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
     val pulls = partitioner.all().toIterable.map { partition =>
       val pullMessage = PullDotProd(wInput, wOutput, seed)
       val fsm = PullFSM[PullDotProd, ResponseDotProd](pullMessage, matrices(partition.index))
-      fsm.run()
+      fsm.run().map(r => (r, partition))
     }
 
     // Define aggregator for summing up partial dot products of successful responses
-    def aggregateSuccess(responses: Iterable[ResponseDotProd]): (Array[Float], Array[Float]) = {
-      val responseLength = wOutput.length * n
+    def aggregateSuccess(responses: Iterable[(ResponseDotProd, Partition)]):
+    (Array[Float], Array[Float], Array[Int]) = {
 
-      val length = wOutput.map(_.length).sum
+      val fLength = wOutput.map(_.length).sum
+      val fPlusResults = new Array[Float](fLength)
+      val fMinusResults = new Array[Float](fLength * n)
+      val cacheKeys = new Array[Int](numPartitions)
 
-      val fPlusResults = new Array[Float](length)
-      val fMinusResults = new Array[Float](length * n)
+      for ((response, partition) <- responses) {
+        blas.saxpy(fLength, 1.0f, response.fPlus, 1, fPlusResults, 1)
+        blas.saxpy(fLength * n, 1.0f, response.fMinus, 1, fMinusResults, 1)
+        cacheKeys(partition.index) = response.cacheKey
+      }
 
-      val responsesArray = responses.toArray
-      cforRange(0 until responsesArray.length)(i => {
-        blas.saxpy(length, 1.0f, responsesArray(i).fPlus, 1, fPlusResults, 1)
-        blas.saxpy(length * n, 1.0f, responsesArray(i).fMinus, 1, fMinusResults, 1)
-      })
-
-      (fPlusResults, fMinusResults)
+      (fPlusResults, fMinusResults, cacheKeys)
     }
 
     // Combine and aggregate futures
@@ -110,18 +110,15 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
 
   }
 
-  override def adjust(wInput: Array[Int],
-                      wOutput: Array[Array[Int]],
-                      gPlus: Array[Float],
-                      gMinus: Array[Float],
-                      seed: Long)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def adjust(gPlus: Array[Float], gMinus: Array[Float], cacheKeys: Array[Int])
+                     (implicit ec: ExecutionContext): Future[Boolean] = {
 
     require(trainable, "The matrix has to be trainable to support adjust")
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
-      val fsm = PushFSM[PushAdjust](id =>
-        PushAdjust(id, wInput, wOutput, gPlus, gMinus, seed), matrices(partition.index), parallelActor = true)
+      val pushMessage = PushAdjust(gPlus, gMinus, cacheKeys(partition.index))
+      val fsm = PullFSM[PushAdjust, Boolean](pushMessage, matrices(partition.index))
       fsm.run()
     }
 

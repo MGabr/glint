@@ -57,6 +57,7 @@ class Client(val config: Config,
     * @param createPartitioner A function that creates a partitioner based on a number of keys and partitions
     * @param generateServerProp A function that generates a server prop of a partial model for a particular partition
     * @param generateClientObject A function that generates a client object based on the partitioner and spawned models
+    * @param reverseServers Whether models should be deployed to parameter servers in reverse order
     * @tparam M The final model type to generate
     * @return The generated model
     */
@@ -64,7 +65,8 @@ class Client(val config: Config,
                         modelsPerServer: Int,
                         createPartitioner: (Int, Long) => Partitioner,
                         generateServerProp: Partition => Props,
-                        generateClientObject: (Partitioner, Array[ActorRef], Config) => M): M = {
+                        generateClientObject: (Partitioner, Array[ActorRef], Config) => M,
+                        reverseServers: Boolean = false): M = {
 
     // Get a list of servers
     val listOfServers = serverList()
@@ -76,6 +78,10 @@ class Client(val config: Config,
       if (servers.isEmpty) {
         throw new ModelCreationException("Cannot create a model without active parameter servers")
       }
+
+      if (reverseServers) servers.reverse else servers
+
+    }.map { servers =>
 
       // Construct a partitioner
       var numberOfPartitions = Math.min(keys, modelsPerServer * servers.length).toInt
@@ -387,7 +393,8 @@ class Client(val config: Config,
                                              modelsPerServer: Int,
                                              createPartitioner: (Int, Long) => Partitioner,
                                              hdfsPath: Option[String],
-                                             hadoopConfig: Option[Configuration]): BigVector[V] = {
+                                             hadoopConfig: Option[Configuration],
+                                             reverseServers: Boolean): BigVector[V] = {
 
     val serHadoopConfig = hadoopConfig.map(new SerializableHadoopConfiguration(_))
 
@@ -411,7 +418,7 @@ class Client(val config: Config,
       case x => throw new ModelCreationException(s"Cannot create model for unsupported value type $x")
     }
 
-    create[BigVector[V]](keys, modelsPerServer, createPartitioner, propFunction, objFunction)
+    create[BigVector[V]](keys, modelsPerServer, createPartitioner, propFunction, objFunction, reverseServers)
   }
 
   /**
@@ -439,7 +446,7 @@ class Client(val config: Config,
   def vector[V: Numerical : TypeTag](keys: Long,
                                      modelsPerServer: Int,
                                      createPartitioner: (Int, Long) => Partitioner): BigVector[V] = {
-    vector(keys, modelsPerServer, createPartitioner, None, None)
+    vector(keys, modelsPerServer, createPartitioner, None, None, false)
   }
 
   /**
@@ -454,7 +461,7 @@ class Client(val config: Config,
    */
   def loadVector[V: Numerical : TypeTag](hdfsPath: String, hadoopConfig: Configuration): BigVector[V] = {
     val m = hdfs.loadVectorMetadata(hdfsPath, hadoopConfig)
-    vector(m.size, 1, m.createPartitioner, Some(hdfsPath), Some(hadoopConfig))
+    vector(m.size, 1, m.createPartitioner, Some(hdfsPath), Some(hadoopConfig), false)
   }
 
   private def fmpairVector(args: FMPairArguments,
@@ -473,7 +480,7 @@ class Client(val config: Config,
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
       new AsyncBigFMPairVector(partitioner, models, config, numFeatures, trainable)
 
-    create[BigFMPairVector](numFeatures, 1, createPartitioner, propFunction, objFunction)
+    create[BigFMPairVector](numFeatures, 1, createPartitioner, propFunction, objFunction, true)
   }
 
   /**

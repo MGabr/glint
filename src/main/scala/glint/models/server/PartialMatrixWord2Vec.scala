@@ -3,7 +3,6 @@ package glint.models.server
 import akka.pattern.pipe
 import com.github.fommil.netlib.F2jBLAS
 import glint.Word2VecArguments
-import glint.messages.server.logic.AcknowledgeReceipt
 import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProd, ResponseFloat, ResponseRowsFloat}
 import glint.models.server.aggregate.Aggregate
@@ -12,6 +11,7 @@ import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs.Word2VecMatrixMetadata
 import glint.util.{FloatArrayPool, hdfs}
 import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
 import spire.implicits.cforRange
 
@@ -139,6 +139,14 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
 
   /**
+   * Cache to avoid duplicate transmission of indices and weights
+   */
+  private val cacheDotProd = new ConcurrentHashMap[Int, (Array[Int], Array[Array[Int]], Long)]()
+
+  private var lastCacheKey = 0
+
+
+  /**
     * Receives and handles incoming messages
     *
     * The specific messages for efficient distributed Word2Vec training (dotprod and adjust) are executed
@@ -150,8 +158,10 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * a nearly optimal rate of convergence when the optimization problem is sparse.
     */
   override def receive: Receive = {
-    case pull: PullMatrix => sender ! ResponseFloat(get(pull.rows, pull.cols))
-    case pull: PullMatrixRows => sender ! ResponseRowsFloat(getRows(pull.rows), cols)
+    case pull: PullMatrix =>
+      sender ! ResponseFloat(get(pull.rows, pull.cols))
+    case pull: PullMatrixRows =>
+      sender ! ResponseRowsFloat(getRows(pull.rows), cols)
     case push: PushMatrixFloat =>
       update(push.rows, push.cols, push.values)
       updateFinished(push.id)
@@ -159,20 +169,25 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
       save(push.path, push.hadoopConfig, push.trainable)
       updateFinished(push.id)
     case pull: PullDotProd =>
+      val cacheKey = lastCacheKey
+      lastCacheKey += 1
       Future {
-        val (fPlus, fMinus) = dotprod(pull.wInput, pull.wOutput, pull.seed)
-        ResponseDotProd(fPlus, fMinus)
+        val (fPlus, fMinus) = dotprod(pull.wInput, pull.wOutput, pull.seed, cacheKey)
+        ResponseDotProd(fPlus, fMinus, cacheKey)
       } pipeTo sender()
     case push: PushAdjust =>
       Future {
-        adjust(push.wInput, push.wOutput, push.gPlus, push.gMinus, push.seed)
-        updateFinished(push.id)
-        AcknowledgeReceipt(push.id)
+        adjust(push.gPlus, push.gMinus, push.cacheKey)
+        true
       } pipeTo sender()
-    case pull: PullNormDots => sender ! ResponseFloat(normDots(pull.startRow, pull.endRow))
-    case pull: PullMultiply => sender ! ResponseFloat(multiply(pull.vector, pull.startRow, pull.endRow))
-    case pull: PullAverageRows => sender ! ResponseFloat(pullAverage(pull.rows))
-    case x => handleLogic(x, sender)
+    case pull: PullNormDots =>
+      sender ! ResponseFloat(normDots(pull.startRow, pull.endRow))
+    case pull: PullMultiply =>
+      sender ! ResponseFloat(multiply(pull.vector, pull.startRow, pull.endRow))
+    case pull: PullAverageRows =>
+      sender ! ResponseFloat(pullAverage(pull.rows))
+    case x =>
+      handleLogic(x, sender)
   }
 
   /**
@@ -257,9 +272,15 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * @param wInput The indices of the input words
     * @param wOutput The indices of the output words per input word
     * @param seed The seed for generating random negative words
+    * @param cacheKey The key to retrieve the cached indices and weights
     * @return The gradient updates
     */
-  def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long): (Array[Float], Array[Float]) = {
+  def dotprod(wInput: Array[Int],
+              wOutput: Array[Array[Int]],
+              seed: Long,
+              cacheKey: Int): (Array[Float], Array[Float]) = {
+
+    cacheDotProd.put(cacheKey, (wInput, wOutput, seed))
 
     val random = new Random(seed)
 
@@ -295,17 +316,18 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
     * Adjusts the weights according to the received partial gradient updates
     * for the input and output word as well as the input and random negative words combinations
     *
-    * @param wInput The indices of the input words
-    * @param wOutput The indices of the output words per input word
     * @param gPlus The gradient updates for the input and output word combinations
     * @param gMinus The gradient updates for the input and random negative word combinations
-    * @param seed The same seed that was used for generating random negative words for the partial dot products
+    * @param cacheKey The key to retrieve the cached indices and weights
     */
-  def adjust(wInput: Array[Int],
-             wOutput: Array[Array[Int]],
-             gPlus: Array[Float],
-             gMinus: Array[Float],
-             seed: Long): Unit = {
+  def adjust(gPlus: Array[Float], gMinus: Array[Float], cacheKey: Int): Unit = {
+
+    // for asynchronous exactly-once delivery with PullFSM
+    if (!cacheDotProd.containsKey(cacheKey)) {
+      return
+    }
+    val (wInput, wOutput, seed) = cacheDotProd.get(cacheKey)
+    cacheDotProd.remove(cacheKey)
 
     val random = new Random(seed)
 

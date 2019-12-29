@@ -56,7 +56,7 @@ private[glint] object Server extends StrictLogging {
     logger.debug(s"Starting actor system ${config.getString("glint.server.system")}")
     val name = config.getString("glint.server.system")
     val serverConfig = config.getConfig("glint.server")
-    val ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(cores))
+    val ec = ExecutionContext.fromExecutorService(Executors.newWorkStealingPool(cores))
     val system = ActorSystem(name, config = Some(serverConfig), defaultExecutionContext = Some(ec))
     system.registerOnTermination(new Runnable {
       override def run(): Unit = ec.shutdown()

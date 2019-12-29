@@ -105,7 +105,8 @@ private[glint] class PartialVectorFMPair(partition: Partition,
    * a nearly optimal rate of convergence when the optimization problem is sparse.
    */
   override def receive: Receive = {
-    case pull: PullVector => sender ! ResponseFloat(get(pull.keys))
+    case pull: PullVector =>
+      sender ! ResponseFloat(get(pull.keys))
     case push: PushVectorFloat =>
       update(push.keys, push.values)
       updateFinished(push.id)
@@ -122,8 +123,7 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     case push: PushSumFM =>
       Future {
         pushSum(push.g, push.cacheKey)
-        updateFinished(push.id)
-        AcknowledgeReceipt(push.id)
+        true
       } pipeTo sender()
     case x => handleLogic(x, sender)
   }
@@ -179,6 +179,11 @@ private[glint] class PartialVectorFMPair(partition: Partition,
    * @param cacheKey The key to retrieve the cached indices and weights
    */
   def pushSum(g: Array[Float], cacheKey: Int): Unit = {
+
+    // for asynchronous exactly-once delivery with PullFSM
+    if (!cachePullSum.containsKey(cacheKey)) {
+      return
+    }
     val (indices, weights) = cachePullSum.get(cacheKey)
     cachePullSum.remove(cacheKey)
 

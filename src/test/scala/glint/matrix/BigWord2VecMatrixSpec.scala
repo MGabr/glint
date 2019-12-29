@@ -7,8 +7,8 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 /**
-  * BigWord2VecMatrix test specification
-  */
+ * BigWord2VecMatrix test specification
+ */
 class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Matchers with Inspectors with TolerantFloat {
 
   @transient
@@ -48,13 +48,11 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val seed = 1
 
         // random negative words will be 2, 3, 3
-
-        var result = whenReady(model.adjust(
-          Array(1, 0),
-          Array(Array(0), Array(1)),
+        val (_, _, cacheKeys) = whenReady(model.dotprod(Array(1, 0), Array(Array(0), Array(1)), seed)) { identity }
+        val result = whenReady(model.adjust(
           Array(0.11f, 0.12f),
           Array(0.21f, 0.22f, 0.23f, 0.24f, 0.25f, 0.26f),
-          seed)) {
+          cacheKeys)) {
           identity
         }
         assert(result)
@@ -79,13 +77,11 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         // random negative words will be 2, 3, 3
 
-        var result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(0.21f, 0.22f), seed)) {
-          identity
-        }
+        var (_, _, cacheKeys) = whenReady(model.dotprod(Array(1), Array(Array(1)), seed)) { identity }
+        var result = whenReady(model.adjust(Array(0.11f), Array(0.21f, 0.22f), cacheKeys)) { identity }
         assert(result)
-        result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.111f), Array(0.211f, 0.221f), seed)) {
-          identity
-        }
+        cacheKeys = whenReady(model.dotprod(Array(1), Array(Array(1)), seed)) { identity }._3
+        result = whenReady(model.adjust(Array(0.111f), Array(0.211f, 0.221f), cacheKeys)) { identity }
         assert(result)
         val values = whenReady(model.pull(
           Array(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3),
@@ -118,13 +114,11 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
-        var result = whenReady(model.adjust(Array(1, 0), Array(Array(0), Array(1)), Array(0.11f, 0.12f), Array(), seed)) {
-          identity
-        }
+        var (_, _, cacheKeys) = whenReady(model.dotprod(Array(1, 0), Array(Array(0), Array(1)), seed)) { identity }
+        var result = whenReady(model.adjust(Array(0.11f, 0.12f), Array(), cacheKeys)) { identity }
         assert(result)
-        result = whenReady(model.adjust(Array(1, 0), Array(Array(0), Array(1)), Array(0.111f, 0.121f), Array(), seed)) {
-          identity
-        }
+        cacheKeys = whenReady(model.dotprod(Array(1, 0), Array(Array(0), Array(1)), seed)) { identity }._3
+        result = whenReady(model.adjust(Array(0.111f, 0.121f), Array(), cacheKeys)) { identity }
         assert(result)
 
         val values = whenReady(model.pull(
@@ -160,13 +154,11 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         // random negative words will be 2, 3, 3
 
-        var result = whenReady(model.adjust(Array(1), Array(Array(0)), Array(0.11f), Array(0.21f, 0.22f), seed)) {
-          identity
-        }
+        var (_, _, cacheKeys) = whenReady(model.dotprod(Array(1), Array(Array(0)), seed)) { identity }
+        var result = whenReady(model.adjust(Array(0.11f), Array(0.21f, 0.22f), cacheKeys)) { identity }
         assert(result)
-        result = whenReady(model.adjust(Array(1), Array(Array(0)), Array(0.111f), Array(0.211f, 0.221f), seed)) {
-          identity
-        }
+        cacheKeys = whenReady(model.dotprod(Array(1), Array(Array(0)), seed)) { identity }._3
+        result = whenReady(model.adjust(Array(0.111f), Array(0.211f, 0.221f), cacheKeys)) { identity }
         assert(result)
         val values = whenReady(model.pull(
           Array(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3),
@@ -199,9 +191,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
-        val value = whenReady(model.dotprod(Array(0), Array(Array(1, 0)), seed)) {
-          identity
-        }
+        val value = whenReady(model.dotprod(Array(0), Array(Array(1, 0)), seed)) { identity }
 
         value._1 should equal(Array(0.0f, 0.0f))
         value._2 should equal(Array())
@@ -217,13 +207,10 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
-        val result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), seed)) {
-          identity
-        }
+        val (_, _, cacheKeys) = whenReady(model.dotprod(Array(1), Array(Array(1)), seed)) { identity }
+        val result = whenReady(model.adjust(Array(0.11f), Array(), cacheKeys)) { identity }
         assert(result)
-        val value = whenReady(model.dotprod(Array(1), Array(Array(1, 0)), seed)) {
-          identity
-        }
+        val value = whenReady(model.dotprod(Array(1), Array(Array(1, 0)), seed)) { identity }
 
         value._1 should equal(Array(
           init(1)(0) * (0.11f * init(1)(0)) + init(1)(1) * (0.11f * init(1)(1)) + init(1)(2) * (0.11f * init(1)(2)),
@@ -244,13 +231,10 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         // random negative words will be 2, 3, 3, 2
 
-        val result = whenReady(model.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(0.21f, 0.22f), seed)) {
-          identity
-        }
+        val (_, _, cacheKeys) = whenReady(model.dotprod(Array(1), Array(Array(1)), seed)) { identity }
+        val result = whenReady(model.adjust(Array(0.11f), Array(0.21f, 0.22f), cacheKeys)) { identity }
         assert(result)
-        val value = whenReady(model.dotprod(Array(1), Array(Array(1, 0)), seed)) {
-          identity
-        }
+        val value = whenReady(model.dotprod(Array(1), Array(Array(1, 0)), seed)) { identity }
 
         value._1 should equal(Array(
           init(1)(0) * (0.11f * init(1)(0)) + init(1)(1) * (0.11f * init(1)(1)) + init(1)(2) * (0.11f * init(1)(2)),
@@ -273,9 +257,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
-        val values = whenReady(model.norms()) {
-          identity
-        }
+        val values = whenReady(model.norms()) { identity }
 
         values should equal(Array[Float](
           blas.snrm2(3, init(0), 1),
@@ -294,9 +276,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val vector = Array(0.1f, 0.2f, 0.3f)
 
-        val values = whenReady(model.multiply(vector)) {
-          identity
-        }
+        val values = whenReady(model.multiply(vector)) { identity }
 
         val matrix = init.flatten
         val rows = 4
@@ -318,9 +298,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
-        val values = whenReady(model.pullAverage(Array(Array(0, 2, 3), Array(), Array(0, 2), Array(0)))) {
-          identity
-        }
+        val values = whenReady(model.pullAverage(Array(Array(0, 2, 3), Array(), Array(0, 2), Array(0)))) { identity }
 
         values should equal(Array(
           Vector((init(0), init(2), init(3)).zipped.map((x, y, z) => (x + y + z) / 3)),
@@ -340,17 +318,12 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
         val seed = 1
 
-        var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
-          identity
-        }
+        var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) { identity }
         assert(result)
-        result = whenReady(model.adjust(Array(2), Array(Array(2)), Array(0.22f), Array(), seed)) {
-          identity
-        }
+        val (_, _, cacheKeys) = whenReady(model.dotprod(Array(2), Array(Array(2)), seed)) { identity }
+        result = whenReady(model.adjust(Array(0.22f), Array(), cacheKeys)) { identity }
         assert(result)
-        result = whenReady(model.save("testdata", hadoopConfig)) {
-          identity
-        }
+        result = whenReady(model.save("testdata", hadoopConfig)) { identity }
         assert(result)
 
         val fs = FileSystem.get(hadoopConfig)
@@ -379,9 +352,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         val loadedModel = client.loadWord2vecMatrix("testdata", hadoopConfig)
 
-        val values = whenReady(loadedModel.pull(Array(0, 0, 0, 3, 3), Array(0, 1, 2, 0, 1))) {
-          identity
-        }
+        val values = whenReady(loadedModel.pull(Array(0, 0, 0, 3, 3), Array(0, 1, 2, 0, 1))) { identity }
 
         values should equal(Array(init(0)(0) + 0.1f, init(0)(1) + 0.3f, init(0)(2) + 0.5f, init(3)(0), init(3)(1)))
       }
@@ -398,13 +369,10 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val loadedModel = client.loadWord2vecMatrix("testdata", hadoopConfig, trainable = true)
         val seed = 1
 
-        val result = whenReady(loadedModel.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), seed)) {
-          identity
-        }
+        val (_, _, cacheKeys) = whenReady(loadedModel.dotprod(Array(1), Array(Array(1)), seed)) { identity }
+        val result = whenReady(loadedModel.adjust(Array(0.11f), Array(), cacheKeys)) { identity }
         assert(result)
-        val value = whenReady(loadedModel.dotprod(Array(1), Array(Array(1, 2)), seed)) {
-          identity
-        }
+        val value = whenReady(loadedModel.dotprod(Array(1), Array(Array(1, 2)), seed)) { identity }
 
         value._1 should equal(Array(
           init(1)(0) * (0.11f * init(1)(0)) + init(1)(1) * (0.11f * init(1)(1)) + init(1)(2) * (0.11f * init(1)(2)),
@@ -422,13 +390,9 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
         val vocabCns = Array(3, 1, 4, 2)
         val model = client.word2vecMatrix(args, vocabCns, hadoopConfig)
 
-        var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) {
-          identity
-        }
+        var result = whenReady(model.push(Array(0L, 0L, 0L), Array(0, 1, 2), Array(0.1f, 0.3f, 0.5f))) { identity }
         assert(result)
-        result = whenReady(model.save("testdata-untrainable", hadoopConfig, trainable = false)) {
-          identity
-        }
+        result = whenReady(model.save("testdata-untrainable", hadoopConfig, trainable = false)) { identity }
         assert(result)
 
         val fs = FileSystem.get(hadoopConfig)
@@ -460,9 +424,7 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         val loadedModel = client.loadWord2vecMatrix("testdata-untrainable", hadoopConfig)
 
-        val values = whenReady(loadedModel.pull(Array(0, 0, 0, 3, 3), Array(0, 1, 2, 0, 1))) {
-          identity
-        }
+        val values = whenReady(loadedModel.pull(Array(0, 0, 0, 3, 3), Array(0, 1, 2, 0, 1))) { identity }
 
         values should equal(Array(init(0)(0) + 0.1f, init(0)(1) + 0.3f, init(0)(2) + 0.5f, init(3)(0), init(3)(1)))
       }
@@ -478,8 +440,6 @@ class BigWord2VecMatrixSpec extends FlatSpec with SystemTest with HdfsTest with 
 
         val loadedModel = client.loadWord2vecMatrix("testdata-untrainable", hadoopConfig)
 
-        an[IllegalArgumentException] shouldBe thrownBy(
-          loadedModel.adjust(Array(1), Array(Array(1)), Array(0.11f), Array(), 1))
         an[IllegalArgumentException] shouldBe thrownBy(
           loadedModel.dotprod(Array(1), Array(Array(1, 0)), 1))
       }

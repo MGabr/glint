@@ -90,8 +90,8 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
 
     // Send adjust requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
-      val fsm = PushFSM[PushAdjustFM](id =>
-        PushAdjustFM(id, g, cacheKeys(partition.index)), matrices(partition.index), parallelActor = true)
+      val pushMessage = PushAdjustFM(g, cacheKeys(partition.index))
+      val fsm = PullFSM[PushAdjustFM, Boolean](pushMessage, matrices(partition.index))
       fsm.run()
     }
 
@@ -146,8 +146,8 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
         }
       })
 
-      val fsm = PushFSM[PushSumFM](id => PushSumFM(id, localG, cacheKeys(partition.index)), matrices(partition.index),
-        parallelActor = true)
+      val pushMessage = PushSumFM(localG, cacheKeys(partition.index))
+      val fsm = PullFSM[PushSumFM, Boolean](pushMessage , matrices(partition.index))
       fsm.run()
     }
 

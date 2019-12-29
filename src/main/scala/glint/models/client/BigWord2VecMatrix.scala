@@ -51,25 +51,19 @@ trait BigWord2VecMatrix extends BigMatrix[Float] {
     * @return A future containing the gradient updates
     */
   def dotprod(wInput: Array[Int], wOutput: Array[Array[Int]], seed: Long)
-             (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float])]
+             (implicit ec: ExecutionContext): Future[(Array[Float], Array[Float], Array[Int])]
 
   /**
     * Adjusts the weights according to the received gradient updates
-    * for the input and output word as well as the input and random negative words combinations
     *
-    * @param wInput The indices of the input words
-    * @param wOutput The indices of the output words per input word
     * @param gPlus The gradient updates for the input and output word combinations
     * @param gMinus The gradient updates for the input and random neighbour word combinations
-    * @param seed The same seed that was used for generating random negative words for the dot products
+    * @param cacheKeys The keys to retrieve the cached indices and weights
     * @param ec The implicit execution context in which to execute the request
     * @return A future containing either the success or failure of the operation
     */
-  def adjust(wInput: Array[Int],
-             wOutput: Array[Array[Int]],
-             gPlus: Array[Float],
-             gMinus: Array[Float],
-             seed: Long)(implicit ec: ExecutionContext): Future[Boolean]
+  def adjust(gPlus: Array[Float], gMinus: Array[Float], cacheKeys: Array[Int])
+            (implicit ec: ExecutionContext): Future[Boolean]
 
   /**
     * Pulls the euclidean norm of each input weight row

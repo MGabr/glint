@@ -1,11 +1,8 @@
 package glint.models.server
 
-import java.util.concurrent.ConcurrentHashMap
-
 import akka.pattern.pipe
 import com.github.fommil.netlib.F2jBLAS
 import glint.FMPairArguments
-import glint.messages.server.logic.AcknowledgeReceipt
 import glint.messages.server.request._
 import glint.messages.server.response.{ResponseDotProdFM, ResponseFloat, ResponsePullSumFM, ResponseRowsFloat}
 import glint.models.server.aggregate.Aggregate
@@ -14,6 +11,7 @@ import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs.FMPairMetadata
 import glint.util.{FloatArrayPool, hdfs}
 import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
 import spire.implicits.cforRange
 
@@ -158,8 +156,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     case push: PushAdjustFM =>
       Future {
         adjust(push.g, push.cacheKey)
-        updateFinished(push.id)
-        AcknowledgeReceipt(push.id)
+        true
       } pipeTo sender()
     case pull: PullSumFM =>
       val cacheKey = lastCacheKey
@@ -171,8 +168,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     case push: PushSumFM =>
       Future {
         pushSum(push.g, push.cacheKey)
-        updateFinished(push.id)
-        AcknowledgeReceipt(push.id)
+        true
       } pipeTo sender()
     case x =>
       handleLogic(x, sender)
@@ -254,6 +250,11 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     * @param cacheKey The key to retrieve the cached indices and weights
     */
   def adjust(g: Array[Float], cacheKey: Int): Unit = {
+
+    // for asynchronous exactly-once delivery with PullFSM
+    if (!cacheDotProd.containsKey(cacheKey)) {
+      return
+    }
     val (iUser, wUser, sUser, iItem, wItem, sItem) = cacheDotProd.get(cacheKey)
     cacheDotProd.remove(cacheKey)
 
@@ -317,6 +318,11 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
    * @param cacheKey The key to retrieve the cached indices and weights
    */
   def pushSum(g: Array[Float], cacheKey: Int): Unit = {
+
+    // for asynchronous exactly-once delivery with PullFSM
+    if (!cachePullSum.containsKey(cacheKey)) {
+      return
+    }
     val (indices, weights) = cachePullSum.get(cacheKey)
     cachePullSum.remove(cacheKey)
 
