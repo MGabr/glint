@@ -4,19 +4,16 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.pattern.pipe
 import glint.FMPairArguments
-import glint.messages.server.logic.AcknowledgeReceipt
 import glint.messages.server.request._
-import glint.messages.server.response.{ResponseFloat, ResponsePullSumFM, ResponseRowsFloat}
-import glint.models.server.aggregate.Aggregate
+import glint.messages.server.response.{ResponseFloat, ResponsePullSumFM}
 import glint.partitioning.Partition
 import glint.serialization.SerializableHadoopConfiguration
+import glint.util.hdfs
 import glint.util.hdfs.FMPairMetadata
-import glint.util.{FloatArrayPool, hdfs}
 import org.eclipse.collections.api.block.procedure.primitive.IntFloatProcedure
 import org.eclipse.collections.impl.map.mutable.primitive.IntFloatHashMap
 import spire.implicits.cforRange
 
-import scala.collection.mutable
 import scala.concurrent.Future
 import scala.math.sqrt
 import scala.util.Random
@@ -125,14 +122,9 @@ private[glint] class PartialVectorFMPair(partition: Partition,
         pushSum(push.g, push.cacheKey)
         true
       } pipeTo sender()
-    case x => handleLogic(x, sender)
+    case x =>
+      handleLogic(x, sender)
   }
-
-  /**
-   * A synchronized set of received message ids.
-   * Required since pushSum messages are handled asynchronously without synchronization
-   */
-  override val receipt: mutable.HashSet[Int] = new mutable.HashSet[Int] with mutable.SynchronizedSet[Int]
 
   def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration, saveTrainable: Boolean): Unit = {
 

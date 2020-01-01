@@ -15,7 +15,6 @@ import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
 import spire.implicits.cforRange
 
-import scala.collection.mutable
 import scala.concurrent.Future
 import scala.math.sqrt
 import scala.util.Random
@@ -173,13 +172,6 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     case x =>
       handleLogic(x, sender)
   }
-
-  /**
-    * A synchronized set of received message ids.
-    * Required since pushAdjust and pushSum messages are handled asynchronously without synchronization
-    */
-  override val receipt: mutable.HashSet[Int] = new mutable.HashSet[Int] with mutable.SynchronizedSet[Int]
-
 
   def save(hdfsPath: String, hadoopConfig: SerializableHadoopConfiguration, saveTrainable: Boolean): Unit = {
 
