@@ -92,7 +92,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
 
       val values = whenReady(matrix.pull(Array(0, 5, 9000, 50000, 90000, 90100))) { identity }
 
-      val ada = sqrt(0.1 + 1e-07).toFloat  // initial Adagrad learning rate
+      val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
 
       values should equal(Array(
         init(0) + args.lr / ada * (g(0) * (init(50000) + 0.3f * init(90100)) + g(1) * init(90000) - args.factorsReg * init(0)),
