@@ -75,7 +75,7 @@ private[glint] class PartialVectorFMPair(partition: Partition,
   private val threadLocalUpdateProcedure = new ThreadLocal[IntFloatProcedure] {
     override def initialValue(): IntFloatProcedure = new IntFloatProcedure {
       override def value(i: Int, wUpdateI: Float): Unit = {
-        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / sqrt(b(i) + 1e-07).toFloat
+        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / sqrt(b(i)).toFloat
         b(i) += wUpdateI * wUpdateI
       }
     }

@@ -102,7 +102,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
         val colsi = cols * i
         cforRange(0 until cols)(j => {
           val offsetJ = colsi + j
-          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ) + 1e-07).toFloat
+          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ)).toFloat
           b(offsetJ) += vUpdatesI(j) * vUpdatesI(j)
         })
         updatesArrayPool.putClear(vUpdatesI)
