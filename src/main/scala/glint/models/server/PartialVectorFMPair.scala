@@ -189,5 +189,6 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     })
 
     wUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
+    wUpdates.clear()
   }
 }
