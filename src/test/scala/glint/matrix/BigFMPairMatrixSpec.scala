@@ -3,9 +3,7 @@ package glint.matrix
 import breeze.linalg._
 import breeze.numerics.sigmoid
 import com.github.fommil.netlib.F2jBLAS
-import glint.{HdfsTest, SystemTest, TolerantFloat, Word2VecArguments}
-import glint.FMPairArguments
-import org.apache.hadoop.fs.{FileSystem, Path}
+import glint.{FMPairArguments, HdfsTest, SystemTest, TolerantFloat}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 import scala.math.{exp, sqrt}
@@ -94,7 +92,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
-        val ada = sqrt(0.1 + 1e-07).toFloat  // initial Adagrad learning rate
+        val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
 
         values should equal(Array(
           init(0) + args.lr / ada * (g(0) * (init(4) + 0.3f * init(6)) + g(1) * init(5) - args.factorsReg * init(0)),
@@ -169,7 +167,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
-        val ada = sqrt(0.1 + 1e-07).toFloat  // initial Adagrad learning rate
+        val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
         val gVectors = g.map(DenseVector(_))
 
         values should equal(Array(
