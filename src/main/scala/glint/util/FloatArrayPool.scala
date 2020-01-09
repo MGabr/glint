@@ -1,6 +1,7 @@
 package glint.util
 
 import java.util
+import org.eclipse.collections.api.block.function.Function0
 
 import spire.implicits.cforRange
 
@@ -12,6 +13,13 @@ import spire.implicits.cforRange
 private[glint] class FloatArrayPool(length: Int) {
 
   private val arrays = new util.ArrayDeque[Array[Float]]()
+
+  /**
+   * Eclipse collections function for [[get() get]].
+   */
+  val getFunction: Function0[Array[Float]] = new Function0[Array[Float]] {
+    override def value(): Array[Float] = FloatArrayPool.this.get()
+  }
 
   /**
     * Gets an array from the pool or creates a new one if there are no arrays left in the pool

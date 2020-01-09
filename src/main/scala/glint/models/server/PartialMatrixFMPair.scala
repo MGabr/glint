@@ -262,11 +262,11 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       val gb = g(i)
 
       cforRange(0 until iu.length)(j => {
-        blas.saxpy(cols, gb * wu(j), sItem, sOffset, 1, vUpdates.getIfAbsentPut(iu(j), updatesArrayPool.get()), 0, 1)
+        blas.saxpy(cols, gb * wu(j), sItem, sOffset, 1, vUpdates.getIfAbsentPut(iu(j), updatesArrayPool.getFunction), 0, 1)
       })
 
       cforRange(0 until ii.length)(j => {
-        blas.saxpy(cols, gb * wi(j), sUser, sOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.get()), 0, 1)
+        blas.saxpy(cols, gb * wi(j), sUser, sOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
       })
     })
 
@@ -325,7 +325,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       val ii = indices(i); val wi = weights(i)
       val gOffset = i * cols
       cforRange(0 until ii.length)(j => {
-        blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.get()), 0, 1)
+        blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
       })
     })
 
