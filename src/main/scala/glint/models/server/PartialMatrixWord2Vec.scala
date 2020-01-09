@@ -340,14 +340,14 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
 
         // add partial gradient updates for positive word
         blas.saxpy(cols, gPlus(pos), v, wOut * cols, 1, uUpdatesWIn, 0, 1)
-        blas.saxpy(cols, gPlus(pos), u, wIn * cols, 1, vUpdates.getIfAbsentPut(wOut, updatesArrayPool.get()), 0, 1)
+        blas.saxpy(cols, gPlus(pos), u, wIn * cols, 1, vUpdates.getIfAbsentPut(wOut, updatesArrayPool.getFunction), 0, 1)
         pos += 1
 
         // add partial gradient updates for the same n random negative words
         cforRange(0 until args.n)(k => {
           val nOut = negativeExample(random, wOut)
           blas.saxpy(cols, gMinus(neg), v, nOut * cols, 1, uUpdatesWIn, 0, 1)
-          blas.saxpy(cols, gMinus(neg), u, wIn * cols, 1, vUpdates.getIfAbsentPut(nOut, updatesArrayPool.get()), 0, 1)
+          blas.saxpy(cols, gMinus(neg), u, wIn * cols, 1, vUpdates.getIfAbsentPut(nOut, updatesArrayPool.getFunction), 0, 1)
           neg += 1
         })
       })
