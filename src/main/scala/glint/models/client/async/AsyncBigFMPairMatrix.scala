@@ -136,12 +136,12 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
 
     // Send partial push sum requests to all partitions
     val pushes = partitioner.all().toIterable.map { partition =>
-      val partitionSize = partition.size
-      val localG = new Array[Float](g.length * partitionSize)
+      val partitionCols = partition.size
+      val localG = new Array[Float](g.length * partitionCols)
       cforRange(0 until cols.toInt)(j => {
         if (partition.contains(j)) {
           cforRange(0 until g.length)(i => {
-            localG(i * partitionSize + partition.globalColToLocal(j)) = g(i)(j)
+            localG(i * partitionCols + partition.globalColToLocal(j)) = g(i)(j)
           })
         }
       })
