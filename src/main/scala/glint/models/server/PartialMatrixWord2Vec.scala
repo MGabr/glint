@@ -315,11 +315,11 @@ private[glint] class PartialMatrixWord2Vec(partition: Partition,
   def adjust(gPlus: Array[Float], gMinus: Array[Float], cacheKey: Int): Unit = {
 
     // for asynchronous exactly-once delivery with PullFSM
-    if (!cacheDotProd.containsKey(cacheKey)) {
+    val cached = cacheDotProd.remove(cacheKey)
+    if (cached == null) {
       return
     }
-    val (wInput, wOutput, seed) = cacheDotProd.get(cacheKey)
-    cacheDotProd.remove(cacheKey)
+    val (wInput, wOutput, seed) = cached
 
     val random = new Random(seed)
 

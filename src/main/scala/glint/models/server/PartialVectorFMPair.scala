@@ -173,11 +173,11 @@ private[glint] class PartialVectorFMPair(partition: Partition,
   def pushSum(g: Array[Float], cacheKey: Int): Unit = {
 
     // for asynchronous exactly-once delivery with PullFSM
-    if (!cachePullSum.containsKey(cacheKey)) {
+    val cached = cachePullSum.remove(cacheKey)
+    if (cached == null) {
       return
     }
-    val (indices, weights) = cachePullSum.get(cacheKey)
-    cachePullSum.remove(cacheKey)
+    val (indices, weights) = cached
 
     val wUpdates = threadLocalUpdatesMap.get()
 

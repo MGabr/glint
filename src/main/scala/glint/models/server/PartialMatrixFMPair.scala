@@ -244,11 +244,11 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
   def adjust(g: Array[Float], cacheKey: Int): Unit = {
 
     // for asynchronous exactly-once delivery with PullFSM
-    if (!cacheDotProd.containsKey(cacheKey)) {
+    val cached = cacheDotProd.remove(cacheKey)
+    if (cached == null) {
       return
     }
-    val (iUser, wUser, sUser, iItem, wItem, sItem) = cacheDotProd.get(cacheKey)
-    cacheDotProd.remove(cacheKey)
+    val (iUser, wUser, sUser, iItem, wItem, sItem) = cached
 
     // use pools to prevent garbage collection
     val sumsArrayPool = threadLocalSumsArrayPool.get()
@@ -312,11 +312,11 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
   def pushSum(g: Array[Float], cacheKey: Int): Unit = {
 
     // for asynchronous exactly-once delivery with PullFSM
-    if (!cachePullSum.containsKey(cacheKey)) {
+    val cached = cachePullSum.remove(cacheKey)
+    if (cached == null) {
       return
     }
-    val (indices, weights) = cachePullSum.get(cacheKey)
-    cachePullSum.remove(cacheKey)
+    val (indices, weights) = cached
 
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
     val vUpdates = threadLocalUpdatesMap.get()
