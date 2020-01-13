@@ -11,7 +11,7 @@ import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs
 import glint.util.hdfs.FMPairMetadata
 import org.eclipse.collections.api.block.procedure.primitive.IntFloatProcedure
-import org.eclipse.collections.impl.map.mutable.primitive.IntFloatHashMap
+import org.eclipse.collections.impl.map.mutable.primitive.{IntFloatHashMap, IntShortHashMap}
 import spire.implicits.cforRange
 
 import scala.concurrent.Future
@@ -58,25 +58,35 @@ private[glint] class PartialVectorFMPair(partition: Partition,
 
 
   /**
-   * Thread local map to avoid garbage collection
+   * Thread local maps to avoid garbage collection
    */
   private val threadLocalUpdatesMap = new ThreadLocal[IntFloatHashMap] {
-    override def initialValue() = new IntFloatHashMap(args.batchSize * avgActiveFeatures)
+    override def initialValue() = new IntFloatHashMap(args.batchSize * avgActiveFeatures * 10)
+  }
+
+  private val threadLocalUpdateCountsMap = new ThreadLocal[IntShortHashMap] {
+    override def initialValue(): IntShortHashMap = new IntShortHashMap(args.batchSize * avgActiveFeatures * 10)
   }
 
 
   /**
    * Update procedure which updates the weights according to the supplied partial gradient updates.
-   * Uses an Adagrad learning rate and frequency adaptive L2 regularization.
+   * Uses an Adagrad learning rate, an adaptive learning rate for mini-batches with sparse gradients
+   * and frequency adaptive L2 regularization.
    *
    * This is defined as thread local implementation to avoid the creation of an anonymous implementation
    * on each method call.
    */
   private val threadLocalUpdateProcedure = new ThreadLocal[IntFloatProcedure] {
+
     override def initialValue(): IntFloatProcedure = new IntFloatProcedure {
+
+      private val updateCountsMap = threadLocalUpdateCountsMap.get()
+
       override def value(i: Int, wUpdateI: Float): Unit = {
-        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / sqrt(b(i)).toFloat
-        b(i) += wUpdateI * wUpdateI
+        val wUpdateICount = updateCountsMap.get(i).toFloat
+        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / (sqrt(b(i)).toFloat * wUpdateICount)
+        b(i) += (wUpdateI / wUpdateICount) * (wUpdateI / wUpdateICount)
       }
     }
   }
@@ -179,16 +189,20 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     }
     val (indices, weights) = cached
 
+    // used to prevent garbage collection
     val wUpdates = threadLocalUpdatesMap.get()
+    val wUpdateCounts = threadLocalUpdateCountsMap.get()
 
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i); val gi = g(i)
       cforRange(0 until ii.length)(j => {
         wUpdates.addToValue(ii(j), gi * wi(j))
+        wUpdateCounts.addToValue(ii(j), 1)
       })
     })
 
     wUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
     wUpdates.clear()
+    wUpdateCounts.clear()
   }
 }

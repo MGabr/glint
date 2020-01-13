@@ -90,12 +90,12 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
       val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
 
       values should equal(Array(
-        init(0) + args.lr / ada * (g(0) + g(1) - args.linearReg * init(0)),
+        init(0) + args.lr / (2 * ada) * (g(0) + g(1) - args.linearReg * init(0)),
         init(5) + args.lr / ada * (g(2) - args.linearReg * init(5)),
         init(9000) + args.lr / ada * (g(2) * 0.25f - args.linearReg * init(9000)),
-        init(50000) + args.lr / ada * (g(0) + g(2) - args.linearReg * init(50000)),
+        init(50000) + args.lr / (2 * ada) * (g(0) + g(2) - args.linearReg * init(50000)),
         init(90000) + args.lr / ada * (g(1) - args.linearReg * init(90000)),
-        init(90100) + args.lr / ada * (g(0) * 0.3f + g(2) * 0.3f - args.linearReg * init(90100))
+        init(90100) + args.lr / (2 * ada) * (g(0) * 0.3f + g(2) * 0.3f - args.linearReg * init(90100))
       ))
     } finally {
       client.terminateOnSpark(sc)

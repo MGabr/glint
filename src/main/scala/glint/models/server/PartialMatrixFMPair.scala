@@ -12,7 +12,7 @@ import glint.util.hdfs.FMPairMetadata
 import glint.util.{FloatArrayPool, hdfs}
 import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
-import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
+import org.eclipse.collections.impl.map.mutable.primitive.{IntObjectHashMap, IntShortHashMap}
 import spire.implicits.cforRange
 
 import scala.concurrent.Future
@@ -85,10 +85,15 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     override def initialValue() = new IntObjectHashMap[Array[Float]](args.batchSize * avgActiveFeatures * 10)
   }
 
+  private val threadLocalUpdateCountsMap = new ThreadLocal[IntShortHashMap] {
+    override def initialValue(): IntShortHashMap = new IntShortHashMap(args.batchSize * avgActiveFeatures * 10)
+  }
+
 
   /**
    * Update procedure which updates the weights according to the supplied partial gradient updates.
-   * Uses an Adagrad learning rate and frequency adaptive L2 regularization.
+   * Uses an Adagrad learning rate, an adaptive learning rate for mini-batches with sparse gradients
+   * and frequency adaptive L2 regularization.
    *
    * This is defined as thread local implementation to avoid the creation of an anonymous implementation
    * on each method call.
@@ -97,13 +102,15 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     override def initialValue(): IntObjectProcedure[Array[Float]] = new IntObjectProcedure[Array[Float]] {
 
       private val updatesArrayPool = threadLocalUpdatesArrayPool.get()
+      private val updateCountsMap = threadLocalUpdateCountsMap.get()
 
       override def value(i: Int, vUpdatesI: Array[Float]): Unit = {
+        val vUpdateICount = updateCountsMap.get(i).toFloat
         val colsi = cols * i
         cforRange(0 until cols)(j => {
           val offsetJ = colsi + j
-          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / sqrt(b(offsetJ)).toFloat
-          b(offsetJ) += vUpdatesI(j) * vUpdatesI(j)
+          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / (sqrt(b(offsetJ)).toFloat * vUpdateICount)
+          b(offsetJ) += (vUpdatesI(j) / vUpdateICount) * (vUpdatesI(j) / vUpdateICount)
         })
         updatesArrayPool.putClear(vUpdatesI)
       }
@@ -254,6 +261,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     val sumsArrayPool = threadLocalSumsArrayPool.get()
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
     val vUpdates = threadLocalUpdatesMap.get()
+    val vUpdateCounts = threadLocalUpdateCountsMap.get()
 
     cforRange(0 until iUser.length)(i => {
       val iu = iUser(i); val wu = wUser(i)
@@ -263,10 +271,12 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
       cforRange(0 until iu.length)(j => {
         blas.saxpy(cols, gb * wu(j), sItem, sOffset, 1, vUpdates.getIfAbsentPut(iu(j), updatesArrayPool.getFunction), 0, 1)
+        vUpdateCounts.addToValue(iu(j), 1)
       })
 
       cforRange(0 until ii.length)(j => {
         blas.saxpy(cols, gb * wi(j), sUser, sOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
+        vUpdateCounts.addToValue(ii(j), 1)
       })
     })
 
@@ -275,6 +285,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     sumsArrayPool.putClear(sUser)
     sumsArrayPool.putClear(sItem)
     vUpdates.clear()
+    vUpdateCounts.clear()
   }
 
   /**
@@ -318,18 +329,22 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     }
     val (indices, weights) = cached
 
+    // use pools to prevent garbage collection
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
     val vUpdates = threadLocalUpdatesMap.get()
+    val vUpdateCounts = threadLocalUpdateCountsMap.get()
 
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i)
       val gOffset = i * cols
       cforRange(0 until ii.length)(j => {
         blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
+        vUpdateCounts.addToValue(ii(j), 1)
       })
     })
 
     vUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
     vUpdates.clear()
+    vUpdateCounts.clear()
   }
 }
