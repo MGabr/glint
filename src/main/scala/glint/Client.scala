@@ -21,7 +21,7 @@ import glint.partitioning.range.RangePartitioner
 import glint.partitioning.{Partition, Partitioner}
 import glint.serialization.SerializableHadoopConfiguration
 import glint.util._
-import glint.util.hdfs.Word2VecMatrixMetadata
+import glint.util.hdfs.{FMPairMetadata, Word2VecMatrixMetadata}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -316,20 +316,28 @@ class Client(val config: Config,
   }
 
   private def fmpairMatrix(args: FMPairArguments,
-                           numFeatures: Int,
+                           featureProbs: Array[Float],
+                           numConcurrentBatches: Int,
                            avgActiveFeatures: Int,
                            createPartitioner: (Int, Long) => Partitioner,
                            hdfsPath: Option[String],
-                           hadoopConfig: Option[Configuration],
+                           hadoopConfig: Configuration,
                            trainable: Boolean): BigFMPairMatrix = {
 
-    val serHadoopConfig = hadoopConfig.map(c => new SerializableHadoopConfiguration(c))
+    val loadFeatureProbsOnly = hdfsPath.isEmpty
+    val tmpPath = hdfsPath.orElse {
+      val meta = FMPairMetadata(args, featureProbs, avgActiveFeatures, trainable)
+      Some(hdfs.saveTmpFMPairMatrixMetadata(hadoopConfig, meta))
+    }
+
+    val serHadoopConfig = Some(new SerializableHadoopConfiguration(hadoopConfig))
 
     val propFunction = (partition: Partition) => Props(classOf[PartialMatrixFMPair], partition, AggregateAdd(),
-      hdfsPath, serHadoopConfig, args, numFeatures, avgActiveFeatures, trainable)
+      tmpPath, serHadoopConfig, args, featureProbs.length, avgActiveFeatures, numConcurrentBatches,
+      loadFeatureProbsOnly, trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigFMPairMatrix(partitioner, models, config, AggregateAdd(), numFeatures, args.k, trainable)
+      new AsyncBigFMPairMatrix(partitioner, models, config, AggregateAdd(), featureProbs.length, args.k, trainable)
 
     create[BigFMPairMatrix](args.k, 1, createPartitioner, propFunction, objFunction)
   }
@@ -338,34 +346,44 @@ class Client(val config: Config,
    * Construct a distributed FM-Pair matrix
    *
    * @param args The [[glint.FMPairArguments FMPairArguments]]
-   * @param numFeatures The number of features
+   * @param featureProbs The probabilities of the features
+   * @param hadoopConfig The Hadoop configuration to use for saving featureProbs to HDFS
+   * @param numConcurrentBatches The number of concurrent batch request / The number of workers and worker cores
    * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
    *                          determining good array pool sizes against garbage collection.
    * @return The constructed [[glint.models.client.BigFMPairMatrix BigFMPairMatrix]]
    */
-  def fmpairMatrix(args: FMPairArguments, numFeatures: Int, avgActiveFeatures: Int = 2): BigFMPairMatrix = {
+  def fmpairMatrix(args: FMPairArguments,
+                   featureProbs: Array[Float],
+                   hadoopConfig: Configuration,
+                   numConcurrentBatches: Int,
+                   avgActiveFeatures: Int = 2): BigFMPairMatrix = {
     val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys, PartitionBy.COL)
-    fmpairMatrix(args, numFeatures, avgActiveFeatures, createPartitioner, None, None, true)
+    fmpairMatrix(args, featureProbs, numConcurrentBatches, avgActiveFeatures, createPartitioner, None, hadoopConfig, true)
   }
 
   /**
     * Construct a distributed FM-Pair matrix
     *
     * @param args The [[glint.FMPairArguments FMPairArguments]]
-    * @param numFeatures The number of features
+    * @param featureProbs The probabilities of the features
+    * @param hadoopConfig The Hadoop configuration to use for saving featureProbs to HDFS
+    * @param numConcurrentBatches The number of concurrent batch request / The number of workers and worker cores
     * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
     *                          determining good array pool sizes against garbage collection.
     * @param numParameterServers The number of parameter servers to which the matrix should be distributed
     * @return The constructed [[glint.models.client.BigFMPairMatrix BigFMPairMatrix]]
     */
   def fmpairMatrix(args: FMPairArguments,
-                   numFeatures: Int,
+                   featureProbs: Array[Float],
+                   hadoopConfig: Configuration,
+                   numConcurrentBatches: Int,
                    avgActiveFeatures: Int,
                    numParameterServers: Int): BigFMPairMatrix = {
 
     val createPartitioner =
       (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
-    fmpairMatrix(args, numFeatures, avgActiveFeatures, createPartitioner, None, None, true)
+    fmpairMatrix(args, featureProbs, numConcurrentBatches, avgActiveFeatures, createPartitioner, None, hadoopConfig, true)
   }
 
   /**
@@ -373,10 +391,14 @@ class Client(val config: Config,
     *
     * @param hdfsPath The HDFS base path from which the matrix' initial data should be loaded from
     * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
+    * @param numConcurrentBatches The number of concurrent batch request / The number of workers and worker cores
     * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
     * @return The constructed [[glint.models.client.BigFMPairMatrix BigFMPairMatrix]]
     */
-  def loadFMPairMatrix(hdfsPath: String, hadoopConfig: Configuration, trainable: Boolean = false): BigFMPairMatrix = {
+  def loadFMPairMatrix(hdfsPath: String,
+                       hadoopConfig: Configuration,
+                       numConcurrentBatches: Int,
+                       trainable: Boolean = false): BigFMPairMatrix = {
 
     val m = hdfs.loadFMPairMetadata(hdfsPath, hadoopConfig)
     if (trainable && !m.trainable) {
@@ -385,8 +407,8 @@ class Client(val config: Config,
     val numParameterServers = hdfs.countPartitionData(hdfsPath, hadoopConfig, pathPostfix = "/glint/data/v/")
     val createPartitioner =
       (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys, PartitionBy.COL)
-    fmpairMatrix(m.args, m.numFeatures, m.avgActiveFeatures, createPartitioner, Some(hdfsPath), Some(hadoopConfig),
-      trainable)
+    fmpairMatrix(m.args, m.featureProbs, numConcurrentBatches, m.avgActiveFeatures, createPartitioner, Some(hdfsPath),
+      hadoopConfig, trainable)
   }
 
   private def vector[V: Numerical : TypeTag](keys: Long,
@@ -465,56 +487,49 @@ class Client(val config: Config,
   }
 
   private def fmpairVector(args: FMPairArguments,
-                           numFeatures: Int,
+                           featureProbs: Array[Float],
+                           numConcurrentBatches: Int,
                            avgActiveFeatures: Int,
                            createPartitioner: (Int, Long) => Partitioner,
                            hdfsPath: Option[String],
-                           hadoopConfig: Option[Configuration],
+                           hadoopConfig: Configuration,
                            trainable: Boolean): BigFMPairVector = {
 
-    val serHadoopConfig = hadoopConfig.map(c => new SerializableHadoopConfiguration(c))
+    val loadFeatureProbsOnly = hdfsPath.isEmpty
+    val tmpPath = hdfsPath.orElse {
+      val meta = FMPairMetadata(args, featureProbs, avgActiveFeatures, trainable)
+      Some(hdfs.saveTmpFMPairMatrixMetadata(hadoopConfig, meta))
+    }
 
-    val propFunction = (partition: Partition) => Props(classOf[PartialVectorFMPair], partition, hdfsPath,
-      serHadoopConfig, args, numFeatures, avgActiveFeatures, trainable)
+    val serHadoopConfig = Some(new SerializableHadoopConfiguration(hadoopConfig))
+
+    val propFunction = (partition: Partition) => Props(classOf[PartialVectorFMPair], partition, tmpPath,
+      serHadoopConfig, args, avgActiveFeatures, numConcurrentBatches, loadFeatureProbsOnly, trainable)
 
     val objFunction = (partitioner: Partitioner, models: Array[ActorRef], config: Config) =>
-      new AsyncBigFMPairVector(partitioner, models, config, numFeatures, trainable)
+      new AsyncBigFMPairVector(partitioner, models, config, featureProbs.length, trainable)
 
-    create[BigFMPairVector](numFeatures, 1, createPartitioner, propFunction, objFunction, true)
+    create[BigFMPairVector](featureProbs.length, 1, createPartitioner, propFunction, objFunction, true)
   }
 
   /**
    * Construct a distributed FM-Pair vector
    *
    * @param args The [[glint.FMPairArguments FMPairArguments]]
-   * @param numFeatures The number of features
+   * @param featureProbs The probabilities of the features
+   * @param hadoopConfig The Hadoop configuration to use for saving featureProbs to HDFS
+   * @param numConcurrentBatches The number of concurrent batch request / The number of workers and worker cores
    * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
    *                          determining good array pool sizes against garbage collection.
-   * @return The constructed [[glint.models.client.BigFMPairVector BigFMPairVector]]
-   */
-  def fmpairVector(args: FMPairArguments, numFeatures: Int, avgActiveFeatures: Int = 2): BigFMPairVector = {
-    val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(partitions, keys)
-    fmpairVector(args, numFeatures, avgActiveFeatures, createPartitioner, None, None, true)
-  }
-
-  /**
-   * Construct a distributed FM-Pair vector
-   *
-   * @param args The [[glint.FMPairArguments FMPairArguments]]
-   * @param numFeatures The number of features
-   * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
-   *                          determining good array pool sizes against garbage collection.
-   * @param numParameterServers The number of parameter servers to which the vector should be distributed
    * @return The constructed [[glint.models.client.BigFMPairVector BigFMPairVector]]
    */
   def fmpairVector(args: FMPairArguments,
-                   numFeatures: Int,
-                   avgActiveFeatures: Int,
-                   numParameterServers: Int): BigFMPairVector = {
-
-    val createPartitioner =
-      (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys)
-    fmpairVector(args, numFeatures, avgActiveFeatures, createPartitioner, None, None, true)
+                   featureProbs: Array[Float],
+                   hadoopConfig: Configuration,
+                   numConcurrentBatches: Int,
+                   avgActiveFeatures: Int = 2): BigFMPairVector = {
+    val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(1, keys)
+    fmpairVector(args, featureProbs, numConcurrentBatches, avgActiveFeatures, createPartitioner, None, hadoopConfig, true)
   }
 
   /**
@@ -522,20 +537,22 @@ class Client(val config: Config,
    *
    * @param hdfsPath The HDFS base path from which the vectors initial data should be loaded from
    * @param hadoopConfig The Hadoop configuration to use for loading the initial data from HDFS
+   * @param numConcurrentBatches The number of concurrent batch request / The number of workers and worker cores
    * @param trainable Whether the loaded matrix should be retrainable, requiring more data being loaded
    * @return The constructed [[glint.models.client.BigFMPairVector BigFMPairVector]]
    */
-  def loadFMPairVector(hdfsPath: String, hadoopConfig: Configuration, trainable: Boolean = false): BigFMPairVector = {
+  def loadFMPairVector(hdfsPath: String,
+                       hadoopConfig: Configuration,
+                       numConcurrentBatches: Int,
+                       trainable: Boolean = false): BigFMPairVector = {
 
     val m = hdfs.loadFMPairMetadata(hdfsPath, hadoopConfig)
     if (trainable && !m.trainable) {
       throw new ModelCreationException("Cannot create trainable model from untrainable saved data")
     }
-    val numParameterServers = hdfs.countPartitionData(hdfsPath, hadoopConfig, pathPostfix = "/glint/data/w/")
-    val createPartitioner =
-      (partitions: Int, keys: Long) => RangePartitioner(numParameterServers, keys)
-    fmpairVector(m.args, m.numFeatures, m.avgActiveFeatures, createPartitioner, Some(hdfsPath), Some(hadoopConfig),
-      trainable)
+    val createPartitioner = (partitions: Int, keys: Long) => RangePartitioner(1, keys)
+    fmpairVector(m.args, m.featureProbs, numConcurrentBatches, m.avgActiveFeatures, createPartitioner, Some(hdfsPath),
+      hadoopConfig, trainable)
   }
 
   /**

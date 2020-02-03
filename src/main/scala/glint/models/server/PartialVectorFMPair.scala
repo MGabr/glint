@@ -15,7 +15,7 @@ import org.eclipse.collections.impl.map.mutable.primitive.{IntFloatHashMap, IntS
 import spire.implicits.cforRange
 
 import scala.concurrent.Future
-import scala.math.sqrt
+import scala.math.{pow, sqrt}
 import scala.util.Random
 
 /**
@@ -27,15 +27,11 @@ private[glint] class PartialVectorFMPair(partition: Partition,
                                          hdfsPath: Option[String],
                                          hadoopConfig: Option[SerializableHadoopConfiguration],
                                          val args: FMPairArguments,
-                                         val numFeatures: Int,
                                          val avgActiveFeatures: Int,
+                                         val numConcurrentBatches: Int,
+                                         val loadFeatureProbsOnly: Boolean,
                                          val trainable: Boolean)
   extends PartialVectorFloat(partition, hdfsPath,  hadoopConfig) {
-
-  /**
-   * The random number generator used for initializing the latent factors matrix
-   */
-  val random = new Random(partition.index)
 
   /**
    * The linear weights vector
@@ -47,25 +43,52 @@ private[glint] class PartialVectorFMPair(partition: Partition,
    */
   var b: Array[Float] = _
 
+  /**
+   * Precomputed AdaBatch reconditioning weights.
+   * See "AdaBatch: Efficient Gradient Aggregation Rules for Sequential and Parallel Stochastic Gradient Methods"
+   */
+  var cb: Array[Float] = _
+
+
+  var featureProbs: Array[Float] = _
+
+  override def loadOrInitialize(initialize: => Array[Float], pathPostfix: String): Array[Float] = {
+    if (loadFeatureProbsOnly) initialize else super.loadOrInitialize(initialize, pathPostfix)
+  }
+
   override def preStart(): Unit = {
+    val random = new Random(partition.index)
     w = loadOrInitialize(Array.fill(size)(random.nextFloat() * 0.2f - 0.1f), pathPostfix = "/glint/data/w/")
     data = w
 
     if (trainable) {
       b = loadOrInitialize(Array.fill(size)(0.1f), pathPostfix = "/glint/data/wb/")
+
+      // store feature probabilites to allow saving it to HDFS as metadata later
+      val featureProbs = hdfs.loadFMPairMetadata(hdfsPath.get, hadoopConfig.get.get()).featureProbs
+      if (partition.index == 0) {
+        this.featureProbs = featureProbs
+      }
+
+      cb = adabatchCB(featureProbs)
     }
   }
 
+  /**
+   * Precomputes AdaBatch reconditioning weights from given probabilities
+   *
+   * @param featureProbs The feature probabilities
+   */
+  private def adabatchCB(featureProbs: Array[Float]): Array[Float] = {
+    val b = (args.batchSize * numConcurrentBatches).toDouble
+    featureProbs.map(p => (((1 - pow(1 - p, b)) / p) / b).toFloat)
+  }
 
   /**
-   * Thread local maps to avoid garbage collection
+   * Thread local map to avoid garbage collection
    */
   private val threadLocalUpdatesMap = new ThreadLocal[IntFloatHashMap] {
     override def initialValue() = new IntFloatHashMap(args.batchSize * avgActiveFeatures * 10)
-  }
-
-  private val threadLocalUpdateCountsMap = new ThreadLocal[IntShortHashMap] {
-    override def initialValue(): IntShortHashMap = new IntShortHashMap(args.batchSize * avgActiveFeatures * 10)
   }
 
 
@@ -81,12 +104,9 @@ private[glint] class PartialVectorFMPair(partition: Partition,
 
     override def initialValue(): IntFloatProcedure = new IntFloatProcedure {
 
-      private val updateCountsMap = threadLocalUpdateCountsMap.get()
-
       override def value(i: Int, wUpdateI: Float): Unit = {
-        val wUpdateICount = updateCountsMap.get(i).toFloat
-        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr / (sqrt(b(i)).toFloat * wUpdateICount)
-        b(i) += (wUpdateI / wUpdateICount) * (wUpdateI / wUpdateICount)
+        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr * cb(i) / sqrt(b(i)).toFloat
+        b(i) += (wUpdateI * cb(i)) * (wUpdateI * cb(i))
       }
     }
   }
@@ -140,7 +160,7 @@ private[glint] class PartialVectorFMPair(partition: Partition,
 
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
-      val meta = FMPairMetadata(args, numFeatures, avgActiveFeatures, trainable && saveTrainable)
+      val meta = FMPairMetadata(args, featureProbs, avgActiveFeatures, trainable && saveTrainable)
       hdfs.saveFMPairMetadata(hdfsPath, hadoopConfig.conf, meta)
     }
 
@@ -191,18 +211,15 @@ private[glint] class PartialVectorFMPair(partition: Partition,
 
     // used to prevent garbage collection
     val wUpdates = threadLocalUpdatesMap.get()
-    val wUpdateCounts = threadLocalUpdateCountsMap.get()
 
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i); val gi = g(i)
       cforRange(0 until ii.length)(j => {
         wUpdates.addToValue(ii(j), gi * wi(j))
-        wUpdateCounts.addToValue(ii(j), 1)
       })
     })
 
     wUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
     wUpdates.clear()
-    wUpdateCounts.clear()
   }
 }

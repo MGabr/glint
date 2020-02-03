@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 /**
   * Client test specification
   */
-class ClientSpec extends FlatSpec with SystemTest {
+class ClientSpec extends FlatSpec with SystemTest with HdfsTest {
 
   "A client" should "register with master" in withMaster { master =>
     withClient { client =>
@@ -98,7 +98,7 @@ class ClientSpec extends FlatSpec with SystemTest {
   it should "be able to create a FMPairMatrix with one partial model per server" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
-        val model = client.fmpairMatrix(FMPairArguments(), 10000)
+        val model = client.fmpairMatrix(FMPairArguments(), Array.fill[Float](10000)(0.1f), hadoopConfig, 1)
         assert(model.isInstanceOf[BigFMPairMatrix])
         assert(model.asInstanceOf[AsyncBigFMPairMatrix].nrOfPartitions == 3)
       }
@@ -180,7 +180,7 @@ class ClientSpec extends FlatSpec with SystemTest {
   it should "be able to create a BigFMPairMatrix" in withMaster { _ =>
     withServer { server =>
       withClient { client =>
-        val model = client.fmpairMatrix(FMPairArguments(), 10000)
+        val model = client.fmpairMatrix(FMPairArguments(), Array.fill(10000)(0.1f), hadoopConfig, 1)
         assert(model.isInstanceOf[BigFMPairMatrix])
       }
     }

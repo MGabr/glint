@@ -17,17 +17,23 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
     0 -> 0.046193548f,
     5 -> -0.038189888f,
     9000 -> -0.031283297f,
-    50000 -> 0.046175636f,
-    90000 -> -0.05671072f,
-    90100 -> -0.09171947f
+    50000 ->  0.04927086f,
+    90000 -> -0.011406317f,
+    90100 -> -0.059129205f
   )
+
+  val args = FMPairArguments(k=7, batchSize=3)
+  val featureProbs = Array.fill[Float](100000)(0.1f)
+  val c = Array.fill[Float](100000)(0.90333333333f)
+  for (i <- Array(0, 4, 6)) {
+    featureProbs(i) = 0.66f
+    c(i) = 0.4852f
+  }
 
   "A BigFMPairVector" should "initialize values randomly" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(batchSize=3)
-      val numFeatures = 100000
-      val model= client.fmpairVector(args, numFeatures)
+      val model= client.fmpairVector(args, featureProbs, sc.hadoopConfiguration, 1)
 
       val values = whenReady(model.pull(Array(0, 5, 9000, 50000, 90000, 90100))) {
         identity
@@ -42,9 +48,7 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
   it should "compute sums" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(batchSize=3)
-      val numFeatures = 100000
-      val model = client.fmpairVector(args, numFeatures)
+      val model = client.fmpairVector(args, featureProbs, sc.hadoopConfiguration, 1)
 
       val indices = Array(Array(0, 50000, 90100), Array(0, 90000), Array(5, 9000, 50000, 90100))
       val weights = Array(Array(1.0f, 1.0f, 0.3f), Array(1.0f, 1.0f), Array(1.0f, 0.25f, 1.0f, 0.3f))
@@ -58,7 +62,7 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
         init(0) + init(90000),
         init(5) + 0.25f * init(9000) + init(50000) + 0.3f * init(90100)
       ))
-      cacheKeys should equal(Array(0, 0))
+      cacheKeys should equal(0)
     } finally {
       client.terminateOnSpark(sc)
     }
@@ -67,9 +71,7 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
   it should "adjust weights" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(batchSize=3)
-      val numFeatures = 100000
-      val model = client.fmpairVector(args, numFeatures)
+      val model = client.fmpairVector(args, featureProbs, sc.hadoopConfiguration, 1)
 
       val indices = Array(Array(0, 50000, 90100), Array(0, 90000), Array(5, 9000, 50000, 90100))
       val weights = Array(Array(1.0f, 1.0f, 0.3f), Array(1.0f, 1.0f), Array(1.0f, 0.25f, 1.0f, 0.3f))
@@ -87,15 +89,15 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
 
       val values = whenReady(model.pull(Array(0, 5, 9000, 50000, 90000, 90100))) { identity }
 
-      val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
+      val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
 
       values should equal(Array(
-        init(0) + args.lr / (2 * ada) * (g(0) + g(1) - args.linearReg * init(0)),
-        init(5) + args.lr / ada * (g(2) - args.linearReg * init(5)),
-        init(9000) + args.lr / ada * (g(2) * 0.25f - args.linearReg * init(9000)),
-        init(50000) + args.lr / (2 * ada) * (g(0) + g(2) - args.linearReg * init(50000)),
-        init(90000) + args.lr / ada * (g(1) - args.linearReg * init(90000)),
-        init(90100) + args.lr / (2 * ada) * (g(0) * 0.3f + g(2) * 0.3f - args.linearReg * init(90100))
+        init(0) + args.lr * c(0) * ada * (g(0) + g(1) - args.linearReg * init(0)),
+        init(5) + args.lr * c(5) * ada * (g(2) - args.linearReg * init(5)),
+        init(9000) + args.lr * c(9000) * ada * (g(2) * 0.25f - args.linearReg * init(9000)),
+        init(50000) + args.lr * c(50000) * ada * (g(0) + g(2) - args.linearReg * init(50000)),
+        init(90000) + args.lr * c(90000) * ada * (g(1) - args.linearReg * init(90000)),
+        init(90100) + args.lr * c(90100) * ada * (g(0) * 0.3f + g(2) * 0.3f - args.linearReg * init(90100))
       ))
     } finally {
       client.terminateOnSpark(sc)
@@ -105,10 +107,7 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
   it should "save data to file" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(batchSize=3)
-      val numFeatures = 100000
-      val avgActiveFeatures = 3
-      val model = client.fmpairVector(args, numFeatures, avgActiveFeatures)
+      val model = client.fmpairVector(args, featureProbs, sc.hadoopConfiguration, 1)
 
       var result = whenReady(model.push(Array(5, 90100), Array(0.1f, 0.2f))) { identity }
       assert(result)
@@ -138,7 +137,7 @@ class BigFMPairVectorSpec extends FlatSpec with SparkTest with Matchers with Ins
 
     val client = Client.runOnSpark(sc)()
     try {
-      val loadedModel = client.loadFMPairVector("testdata", sc.hadoopConfiguration)
+      val loadedModel = client.loadFMPairVector("testdata", sc.hadoopConfiguration, 1)
 
       val values = whenReady(loadedModel.pull(Array(5, 90100))) { identity }
       values should equal(Array(init(5) + 0.1f, init(90100) + 0.2f))

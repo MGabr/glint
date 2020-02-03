@@ -48,18 +48,18 @@ trait BigFMPairVector extends BigVector[Float] {
    * @param weights The feature weights
    * @param cache Whether the indices and weights should be cached. Not required for recommendation
    * @param ec The implicit execution context in which to execute the request
-   * @return A future containing the weighted sums of the feature indices and the cache keys for the adjust operation
+   * @return A future containing the weighted sums of the feature indices and the cache key for the adjust operation
    */
   def pullSum(keys: Array[Array[Int]], weights: Array[Array[Float]], cache: Boolean = true)
-             (implicit ec: ExecutionContext): Future[(Array[Float], Array[Int])]
+             (implicit ec: ExecutionContext): Future[(Array[Float], Int)]
 
   /**
    * Adjust the weights according to the received gradient updates
    *
    * @param g The general BPR gradient per training instance in the batch
-   * @param cacheKeys The keys to retrieve the cached indices and weights
+   * @param cacheKey The key to retrieve the cached indices and weights
    * @param ec The implicit execution context in which to execute the request
    * @return A future containing either the success or failure of the operation
    */
-  def pushSum(g: Array[Float], cacheKeys: Array[Int])(implicit ec: ExecutionContext): Future[Boolean]
+  def pushSum(g: Array[Float], cacheKey: Int)(implicit ec: ExecutionContext): Future[Boolean]
 }

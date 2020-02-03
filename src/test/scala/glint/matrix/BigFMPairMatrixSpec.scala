@@ -26,12 +26,14 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
     DenseVector(-0.022962168f, 0.022607148f, 0.09274096f, -0.0680844f, 0.089916654f, 0.010751128f, -0.09389736f)
   )
 
+  val args = FMPairArguments(k=7, batchSize=3)
+  val featureProbs = Array(0.66f, 0.1f, 0.1f, 0.1f, 0.66f, 0.1f, 0.66f)
+  val c = Array(0.4852f, 0.90333333333f, 0.90333333333f, 0.90333333333f, 0.4852f, 0.90333333333f, 0.4852f)
+
   "A BigFMPairMatrix" should "initialize values randomly" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
-        val args = FMPairArguments(k=7, batchSize=3)
-        val numFeatures = 7
-        val model = client.fmpairMatrix(args, numFeatures)
+        val model = client.fmpairMatrix(args, featureProbs, hadoopConfig, 1)
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
@@ -43,9 +45,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
   it should "compute dot products" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
-        val args = FMPairArguments(k=7, batchSize=3)
-        val numFeatures = 7
-        val model = client.fmpairMatrix(args, numFeatures)
+        val model = client.fmpairMatrix(args, featureProbs, hadoopConfig, 1)
 
         val iUser = Array(Array(0), Array(0), Array(1, 3))
         val wUser = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f))
@@ -70,9 +70,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
   it should "adjust weights" in withMaster { _ =>
     withServers(3) { _ =>
       withClient { client =>
-        val args = FMPairArguments(k=7, batchSize=3)
-        val numFeatures = 7
-        val model = client.fmpairMatrix(args, numFeatures)
+        val model = client.fmpairMatrix(args, featureProbs, hadoopConfig, 1)
 
         val iUser = Array(Array(0), Array(0), Array(1, 3))
         val wUser = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f))
@@ -92,16 +90,16 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
-        val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
+        val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
 
         values should equal(Array(
-          init(0) + args.lr / (2 * ada) * (g(0) * (init(4) + 0.3f * init(6)) + g(1) * init(5) - args.factorsReg * init(0)),
-          init(1) + args.lr / ada * (g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(1)),
+          init(0) + args.lr * c(0) * ada * (g(0) * (init(4) + 0.3f * init(6)) + g(1) * init(5) - args.factorsReg * init(0)),
+          init(1) + args.lr * c(1) * ada * (g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(1)),
           init(2),
-          init(3) + args.lr / ada * (0.25f * g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(3)),
-          init(4) + args.lr / (2 * ada) * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3)) - args.factorsReg * init(4)),
-          init(5) + args.lr / ada * (g(1) * init(0) - args.factorsReg * init(5)),
-          init(6) + args.lr / (2 * ada) * (0.3f * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3))) - args.factorsReg * init(6))
+          init(3) + args.lr * c(3) * ada * (0.25f * g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(3)),
+          init(4) + args.lr * c(4) * ada * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3)) - args.factorsReg * init(4)),
+          init(5) + args.lr * c(5) * ada * (g(1) * init(0) - args.factorsReg * init(5)),
+          init(6) + args.lr * c(6) * ada * (0.3f * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3))) - args.factorsReg * init(6))
         ))
       }
     }
@@ -111,9 +109,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
     withServers(3) { _ =>
       withClient { client =>
 
-        val args = FMPairArguments(k=7, batchSize=3)
-        val numFeatures = 7
-        val model = client.fmpairMatrix(args, numFeatures)
+        val model = client.fmpairMatrix(args, featureProbs, hadoopConfig, 1)
 
         val indices = Array(Array(0), Array(0), Array(1, 3), Array(4, 6), Array(5), Array(4, 6))
         val weights = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f), Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f))
@@ -139,9 +135,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
     withServers(3) { _ =>
       withClient { client =>
 
-        val args = FMPairArguments(k=7, batchSize=3)
-        val numFeatures = 7
-        val model = client.fmpairMatrix(args, numFeatures)
+        val model = client.fmpairMatrix(args, featureProbs, hadoopConfig, 1)
 
         val indices = Array(Array(0), Array(0), Array(1, 3), Array(4, 6), Array(5), Array(4, 6))
         val weights = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f), Array(1.0f, 0.3f), Array(1.0f), Array(1.0f, 0.3f))
@@ -167,17 +161,17 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
-        val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
+        val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
         val gVectors = g.map(DenseVector(_))
 
         values should equal(Array(
-          init(0) + args.lr / (2 * ada) * (gVectors(0) + gVectors(1) - args.factorsReg * init(0)),
-          init(1) + args.lr / ada * (gVectors(2) - args.factorsReg * init(1)),
+          init(0) + args.lr * c(0) * ada * (gVectors(0) + gVectors(1) - args.factorsReg * init(0)),
+          init(1) + args.lr * c(1) * ada * (gVectors(2) - args.factorsReg * init(1)),
           init(2),
-          init(3) + args.lr / ada * (0.25f * gVectors(2) - args.factorsReg * init(3)),
-          init(4) + args.lr / (2 * ada) * (gVectors(3) + gVectors(5) - args.factorsReg * init(4)),
-          init(5) + args.lr / ada * (gVectors(4) - args.factorsReg * init(5)),
-          init(6) + args.lr / (2 * ada) * (0.3f * gVectors(3) + 0.3f * gVectors(5) - args.factorsReg * init(6))
+          init(3) + args.lr * c(3) * ada * (0.25f * gVectors(2) - args.factorsReg * init(3)),
+          init(4) + args.lr * c(4) * ada * (gVectors(3) + gVectors(5) - args.factorsReg * init(4)),
+          init(5) + args.lr * c(5) * ada * (gVectors(4) - args.factorsReg * init(5)),
+          init(6) + args.lr * c(6) * ada * (0.3f * gVectors(3) + 0.3f * gVectors(5) - args.factorsReg * init(6))
         ))
       }
     }

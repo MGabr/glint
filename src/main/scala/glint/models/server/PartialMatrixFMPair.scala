@@ -12,11 +12,11 @@ import glint.util.hdfs.FMPairMetadata
 import glint.util.{FloatArrayPool, hdfs}
 import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
-import org.eclipse.collections.impl.map.mutable.primitive.{IntObjectHashMap, IntShortHashMap}
+import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
 import spire.implicits.cforRange
 
 import scala.concurrent.Future
-import scala.math.sqrt
+import scala.math.{pow, sqrt}
 import scala.util.Random
 
 /**
@@ -30,6 +30,8 @@ import scala.util.Random
   * @param numFeatures The number of features
   * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
   *                          determining good array pool sizes against garbage collection.
+  * @param numConcurrentBatches The number of concurrent batches to use for AdaBatch reconditioning,
+  *                             this will usually be the number of executors communicating with the vector concurrently
   * @param trainable Whether the matrix is trainable, requiring more data (Adagrad buffers)
   */
 private[glint] class PartialMatrixFMPair(partition: Partition,
@@ -39,16 +41,13 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
                                          val args: FMPairArguments,
                                          val numFeatures: Int,
                                          val avgActiveFeatures: Int,
+                                         val numConcurrentBatches: Int,
+                                         val loadFeatureProbsOnly: Boolean,
                                          val trainable: Boolean)
   extends PartialMatrixFloat(partition, numFeatures, partition.size, aggregate, hdfsPath, hadoopConfig) {
 
   @transient
   private lazy val blas = new F2jBLAS
-
-  /**
-    * The random number generator used for initializing the latent factors matrix
-    */
-  val random = new Random(partition.index)
 
   /**
     * The latent factors matrix
@@ -60,18 +59,50 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     */
   var b: Array[Float] = _
 
+  /**
+   * Precomputed AdaBatch reconditioning weight for each feature / matrix column.
+   * See "AdaBatch: Efficient Gradient Aggregation Rules for Sequential and Parallel Stochastic Gradient Methods"
+   */
+  var cb: Array[Float] = _
+
+
+  var featureProbs: Array[Float] = _
+
+  override def loadOrInitialize(initialize: => Array[Float], pathPostfix: String): Array[Float] = {
+    if (loadFeatureProbsOnly) initialize else super.loadOrInitialize(initialize, pathPostfix)
+  }
+
   override def preStart(): Unit = {
+    val random = new Random(partition.index)
     v = loadOrInitialize(Array.fill(rows * cols)(random.nextFloat() * 0.2f - 0.1f), pathPostfix = "/glint/data/v/")
     data = v
 
     if (trainable) {
       b = loadOrInitialize(Array.fill(rows * cols)(0.1f), pathPostfix = "/glint/data/b/")
+
+      // store feature probabilites to allow saving it to HDFS as metadata later
+      val featureProbs = hdfs.loadFMPairMetadata(hdfsPath.get, hadoopConfig.get.get()).featureProbs
+      if (partition.index == 0) {
+        this.featureProbs = featureProbs
+      }
+
+      cb = adabatchCB(featureProbs)
     }
+  }
+
+  /**
+   * Precomputes AdaBatch reconditioning weights from given probabilities
+   *
+   * @param featureProbs The feature probabilities
+   */
+  private def adabatchCB(featureProbs: Array[Float]): Array[Float] = {
+    val b = (args.batchSize * numConcurrentBatches).toDouble
+    featureProbs.map(p => (((1 - pow(1 - p, b)) / p) / b).toFloat)
   }
 
 
   /**
-   * Thread local array pools and maps to avoid garbage collection
+   * Thread local array pools and map to avoid garbage collection
    */
   private val threadLocalSumsArrayPool = new ThreadLocal[FloatArrayPool] {
     override def initialValue(): FloatArrayPool = new FloatArrayPool(args.batchSize * cols)
@@ -83,10 +114,6 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
   private val threadLocalUpdatesMap = new ThreadLocal[IntObjectHashMap[Array[Float]]] {
     override def initialValue() = new IntObjectHashMap[Array[Float]](args.batchSize * avgActiveFeatures * 10)
-  }
-
-  private val threadLocalUpdateCountsMap = new ThreadLocal[IntShortHashMap] {
-    override def initialValue(): IntShortHashMap = new IntShortHashMap(args.batchSize * avgActiveFeatures * 10)
   }
 
 
@@ -102,15 +129,14 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     override def initialValue(): IntObjectProcedure[Array[Float]] = new IntObjectProcedure[Array[Float]] {
 
       private val updatesArrayPool = threadLocalUpdatesArrayPool.get()
-      private val updateCountsMap = threadLocalUpdateCountsMap.get()
 
       override def value(i: Int, vUpdatesI: Array[Float]): Unit = {
-        val vUpdateICount = updateCountsMap.get(i).toFloat
         val colsi = cols * i
+        val cbi = cb(i)
         cforRange(0 until cols)(j => {
           val offsetJ = colsi + j
-          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * args.lr / (sqrt(b(offsetJ)).toFloat * vUpdateICount)
-          b(offsetJ) += (vUpdatesI(j) / vUpdateICount) * (vUpdatesI(j) / vUpdateICount)
+          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * cbi * args.lr / sqrt(b(offsetJ)).toFloat
+          b(offsetJ) += (vUpdatesI(j) * cbi) * (vUpdatesI(j) * cbi)
         })
         updatesArrayPool.putClear(vUpdatesI)
       }
@@ -184,7 +210,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
     // the partial matrix holding the first partition also saves metadata
     if (partition.index == 0) {
-      val meta = FMPairMetadata(args, numFeatures, avgActiveFeatures, trainable && saveTrainable)
+      val meta = FMPairMetadata(args, featureProbs, avgActiveFeatures, trainable && saveTrainable)
       hdfs.saveFMPairMetadata(hdfsPath, hadoopConfig.conf, meta)
     }
 
@@ -261,7 +287,6 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     val sumsArrayPool = threadLocalSumsArrayPool.get()
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
     val vUpdates = threadLocalUpdatesMap.get()
-    val vUpdateCounts = threadLocalUpdateCountsMap.get()
 
     cforRange(0 until iUser.length)(i => {
       val iu = iUser(i); val wu = wUser(i)
@@ -271,12 +296,10 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
       cforRange(0 until iu.length)(j => {
         blas.saxpy(cols, gb * wu(j), sItem, sOffset, 1, vUpdates.getIfAbsentPut(iu(j), updatesArrayPool.getFunction), 0, 1)
-        vUpdateCounts.addToValue(iu(j), 1)
       })
 
       cforRange(0 until ii.length)(j => {
         blas.saxpy(cols, gb * wi(j), sUser, sOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
-        vUpdateCounts.addToValue(ii(j), 1)
       })
     })
 
@@ -285,7 +308,6 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     sumsArrayPool.putClear(sUser)
     sumsArrayPool.putClear(sItem)
     vUpdates.clear()
-    vUpdateCounts.clear()
   }
 
   /**
@@ -332,19 +354,16 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     // use pools to prevent garbage collection
     val updatesArrayPool = threadLocalUpdatesArrayPool.get()
     val vUpdates = threadLocalUpdatesMap.get()
-    val vUpdateCounts = threadLocalUpdateCountsMap.get()
 
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i)
       val gOffset = i * cols
       cforRange(0 until ii.length)(j => {
         blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
-        vUpdateCounts.addToValue(ii(j), 1)
       })
     })
 
     vUpdates.forEachKeyValue(threadLocalUpdateProcedure.get())
     vUpdates.clear()
-    vUpdateCounts.clear()
   }
 }

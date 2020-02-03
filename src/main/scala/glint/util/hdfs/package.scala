@@ -87,6 +87,15 @@ package object hdfs {
     load(path + pathPostfix, config).asInstanceOf[FMPairMetadata]
   }
 
+  def saveTmpFMPairMatrixMetadata(config: Configuration, metadata: FMPairMetadata): String = {
+    val randomUUID = UUID.randomUUID().toString
+    val path = s"/tmp/glint/$randomUUID"
+    hdfs.saveFMPairMetadata(path, config, metadata)
+    FileSystem.get(config).deleteOnExit(new Path(path))
+
+    path
+  }
+
   def savePartitionData[V](path: String,
                            config: Configuration,
                            partitionIndex: Int,

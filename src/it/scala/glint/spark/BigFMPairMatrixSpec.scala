@@ -22,12 +22,18 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
     90100 -> DenseVector(0.08719083f, -0.026967607f, 0.0764989f, 0.03886003f, -0.006404504f, 0.07445846f, 0.0011448637f)
   )
 
+  val args = FMPairArguments(k=7, batchSize=3)
+  val featureProbs = Array.fill[Float](100000)(0.1f)
+  val c = Array.fill[Float](100000)(0.90333333333f)
+  for (i <- Array(0, 4, 6)) {
+    featureProbs(i) = 0.66f
+    c(i) = 0.4852f
+  }
+
   "A BigFMPairMatrix" should "initialize values randomly" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(k=7, batchSize=3)
-      val numFeatures = 100000
-      val matrix = client.fmpairMatrix(args, numFeatures)
+      val matrix = client.fmpairMatrix(args, featureProbs, sc.hadoopConfiguration, 1)
 
       val values = whenReady(matrix.pull(Array(0, 5, 9000, 50000, 90000, 90100))) {
         identity
@@ -42,9 +48,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
   it should "compute dot products" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(k=7, batchSize=3)
-      val numFeatures = 100000
-      val matrix = client.fmpairMatrix(args, numFeatures)
+      val matrix = client.fmpairMatrix(args, featureProbs, sc.hadoopConfiguration, 1)
 
       val iUser = Array(Array(0), Array(0), Array(5, 9000))
       val wUser = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f))
@@ -70,9 +74,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
   it should "adjust weights" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(k=7, batchSize=3)
-      val numFeatures = 100000
-      val matrix = client.fmpairMatrix(args, numFeatures)
+      val matrix = client.fmpairMatrix(args, featureProbs, sc.hadoopConfiguration, 1)
 
       val iUser = Array(Array(0), Array(0), Array(5, 9000))
       val wUser = Array(Array(1.0f), Array(1.0f), Array(1.0f, 0.25f))
@@ -92,15 +94,15 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
 
       val values = whenReady(matrix.pull(Array(0, 5, 9000, 50000, 90000, 90100))) { identity }
 
-      val ada = sqrt(0.1).toFloat  // initial Adagrad learning rate
+      val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
 
       values should equal(Array(
-        init(0) + args.lr / (2 * ada) * (g(0) * (init(50000) + 0.3f * init(90100)) + g(1) * init(90000) - args.factorsReg * init(0)),
-        init(5) + args.lr / ada * (g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(5)),
-        init(9000) + args.lr / ada * (0.25f * g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(9000)),
-        init(50000) + args.lr / (2 * ada) * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000)) - args.factorsReg * init(50000)),
-        init(90000) + args.lr / ada * (g(1) * init(0) - args.factorsReg * init(90000)),
-        init(90100) + args.lr / (2 * ada) * (0.3f * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000))) - args.factorsReg * init(90100))
+        init(0) + args.lr * c(0) * ada * (g(0) * (init(50000) + 0.3f * init(90100)) + g(1) * init(90000) - args.factorsReg * init(0)),
+        init(5) + args.lr * c(5) * ada * (g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(5)),
+        init(9000) + args.lr * c(9000) * ada * (0.25f * g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(9000)),
+        init(50000) + args.lr * c(50000) * ada * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000)) - args.factorsReg * init(50000)),
+        init(90000) + args.lr * c(90000) * ada * (g(1) * init(0) - args.factorsReg * init(90000)),
+        init(90100) + args.lr * c(90100) * ada * (0.3f * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000))) - args.factorsReg * init(90100))
       ))
     } finally {
       client.terminateOnSpark(sc)
@@ -110,10 +112,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
   it should "save data to file" in {
     val client = Client.runOnSpark(sc)()
     try {
-      val args = FMPairArguments(k=7, batchSize=3)
-      val numFeatures = 100000
-      val avgActiveFeatures = 3
-      val matrix = client.fmpairMatrix(args, numFeatures, avgActiveFeatures)
+      val matrix = client.fmpairMatrix(args, featureProbs, sc.hadoopConfiguration, 1)
 
       var result = whenReady(matrix.push(
         Array(5, 5, 5, 5, 5),
@@ -151,7 +150,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
 
     val client = Client.runOnSpark(sc)()
     try {
-      val loadedMatrix = client.loadFMPairMatrix("testdata", sc.hadoopConfiguration)
+      val loadedMatrix = client.loadFMPairMatrix("testdata", sc.hadoopConfiguration, 1)
 
       val values = whenReady(loadedMatrix.pull(Array(5))) { identity }
       values(0) should equal(init(5) + DenseVector(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.0f, 0.0f))
