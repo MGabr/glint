@@ -11,17 +11,26 @@ import glint.serialization.SerializableHadoopConfiguration
 import glint.util.hdfs
 import glint.util.hdfs.FMPairMetadata
 import org.eclipse.collections.api.block.procedure.primitive.IntFloatProcedure
-import org.eclipse.collections.impl.map.mutable.primitive.{IntFloatHashMap, IntShortHashMap}
+import org.eclipse.collections.impl.map.mutable.primitive.IntFloatHashMap
 import spire.implicits.cforRange
 
 import scala.concurrent.Future
-import scala.math.{pow, sqrt}
+import scala.math.pow
 import scala.util.Random
 
 /**
- * A partial vector holding floats
+ * A vector holding floats and supporting specific messages for efficient distributed FM-Pair training
  *
- * @param partition The partition
+ * @param partition The only partition
+ * @param hdfsPath The HDFS base path from which the partial matrix' initial data should be loaded from
+ * @param hadoopConfig The serializable Hadoop configuration to use for loading the initial data from HDFS
+ * @param args The [[glint.FMPairArguments FMPairArguments]]
+ * @param avgActiveFeatures The average number of active features. Not an important parameter but used for
+ *                          determining good array pool sizes against garbage collection.
+ * @param numConcurrentBatches The number of concurrent batches to use for AdaBatch reconditioning,
+ *                             this will usually be the number of executors communicating with the vector concurrently
+ * @param loadFeatureProbsOnly Whether only the feature probabilities or the full data should be loaded from HDFS
+ * @param trainable Whether the matrix is trainable, requiring more data (AdaBatch buffers)
  */
 private[glint] class PartialVectorFMPair(partition: Partition,
                                          hdfsPath: Option[String],
@@ -39,16 +48,10 @@ private[glint] class PartialVectorFMPair(partition: Partition,
   var w: Array[Float] = _
 
   /**
-   * The Adagrad buffers of the linear weights vector
-   */
-  var b: Array[Float] = _
-
-  /**
    * Precomputed AdaBatch reconditioning weights.
    * See "AdaBatch: Efficient Gradient Aggregation Rules for Sequential and Parallel Stochastic Gradient Methods"
    */
   var cb: Array[Float] = _
-
 
   var featureProbs: Array[Float] = _
 
@@ -62,26 +65,24 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     data = w
 
     if (trainable) {
-      b = loadOrInitialize(Array.fill(size)(0.1f), pathPostfix = "/glint/data/wb/")
-
       // store feature probabilites to allow saving it to HDFS as metadata later
       val featureProbs = hdfs.loadFMPairMetadata(hdfsPath.get, hadoopConfig.get.get()).featureProbs
       if (partition.index == 0) {
         this.featureProbs = featureProbs
       }
-
       cb = adabatchCB(featureProbs)
     }
   }
 
   /**
-   * Precomputes AdaBatch reconditioning weights from given probabilities
+   * Precomputes AdaBatch reconditioning weights from given probabilities.
+   * The learning rate and the division by the batch size is included in the reconditioning weights
    *
    * @param featureProbs The feature probabilities
    */
   private def adabatchCB(featureProbs: Array[Float]): Array[Float] = {
     val b = (args.batchSize * numConcurrentBatches).toDouble
-    featureProbs.map(p => (((1 - pow(1 - p, b)) / p) / b).toFloat)
+    featureProbs.map(p => args.lr * (((1 - pow(1 - p, b)) / p) / b).toFloat)
   }
 
   /**
@@ -94,8 +95,7 @@ private[glint] class PartialVectorFMPair(partition: Partition,
 
   /**
    * Update procedure which updates the weights according to the supplied partial gradient updates.
-   * Uses an Adagrad learning rate, an adaptive learning rate for mini-batches with sparse gradients
-   * and frequency adaptive L2 regularization.
+   * Uses an an adaptive AdaBatch learning rate for mini-batches with sparse gradients.
    *
    * This is defined as thread local implementation to avoid the creation of an anonymous implementation
    * on each method call.
@@ -105,8 +105,7 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     override def initialValue(): IntFloatProcedure = new IntFloatProcedure {
 
       override def value(i: Int, wUpdateI: Float): Unit = {
-        w(i) += (wUpdateI - args.linearReg * w(i)) * args.lr * cb(i) / sqrt(b(i)).toFloat
-        b(i) += (wUpdateI * cb(i)) * (wUpdateI * cb(i))
+        w(i) += wUpdateI * cb(i)
       }
     }
   }
@@ -165,9 +164,6 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     }
 
     hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, w, pathPostfix = "/glint/data/w/")
-    if (trainable && saveTrainable) {
-      hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, b, pathPostfix = "/glint/data/wb/")
-    }
   }
 
   /**
@@ -215,7 +211,7 @@ private[glint] class PartialVectorFMPair(partition: Partition,
     cforRange(0 until indices.length)(i => {
       val ii = indices(i); val wi = weights(i); val gi = g(i)
       cforRange(0 until ii.length)(j => {
-        wUpdates.addToValue(ii(j), gi * wi(j))
+        wUpdates.addToValue(ii(j), gi * wi(j) - args.linearReg * w(ii(j)))
       })
     })
 

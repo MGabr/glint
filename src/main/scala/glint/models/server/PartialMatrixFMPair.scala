@@ -16,7 +16,7 @@ import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap
 import spire.implicits.cforRange
 
 import scala.concurrent.Future
-import scala.math.{pow, sqrt}
+import scala.math.pow
 import scala.util.Random
 
 /**
@@ -32,7 +32,8 @@ import scala.util.Random
   *                          determining good array pool sizes against garbage collection.
   * @param numConcurrentBatches The number of concurrent batches to use for AdaBatch reconditioning,
   *                             this will usually be the number of executors communicating with the vector concurrently
-  * @param trainable Whether the matrix is trainable, requiring more data (Adagrad buffers)
+  * @param loadFeatureProbsOnly Whether only the feature probabilities or the full data should be loaded from HDFS
+  * @param trainable Whether the matrix is trainable, requiring more data (AdaBatch buffers)
   */
 private[glint] class PartialMatrixFMPair(partition: Partition,
                                          aggregate: Aggregate,
@@ -55,16 +56,10 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
   var v: Array[Float] = _
 
   /**
-    * The Adagrad buffers of the latent factors matrix
-    */
-  var b: Array[Float] = _
-
-  /**
    * Precomputed AdaBatch reconditioning weight for each feature / matrix column.
    * See "AdaBatch: Efficient Gradient Aggregation Rules for Sequential and Parallel Stochastic Gradient Methods"
    */
   var cb: Array[Float] = _
-
 
   var featureProbs: Array[Float] = _
 
@@ -78,26 +73,24 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     data = v
 
     if (trainable) {
-      b = loadOrInitialize(Array.fill(rows * cols)(0.1f), pathPostfix = "/glint/data/b/")
-
       // store feature probabilites to allow saving it to HDFS as metadata later
       val featureProbs = hdfs.loadFMPairMetadata(hdfsPath.get, hadoopConfig.get.get()).featureProbs
       if (partition.index == 0) {
         this.featureProbs = featureProbs
       }
-
       cb = adabatchCB(featureProbs)
     }
   }
 
   /**
-   * Precomputes AdaBatch reconditioning weights from given probabilities
+   * Precomputes AdaBatch reconditioning weights from given probabilities.
+   * The learning rate and the division by the batch size is included in the reconditioning weights
    *
    * @param featureProbs The feature probabilities
    */
   private def adabatchCB(featureProbs: Array[Float]): Array[Float] = {
     val b = (args.batchSize * numConcurrentBatches).toDouble
-    featureProbs.map(p => (((1 - pow(1 - p, b)) / p) / b).toFloat)
+    featureProbs.map(p => args.lr * (((1 - pow(1 - p, b)) / p) / b).toFloat)
   }
 
 
@@ -119,8 +112,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
   /**
    * Update procedure which updates the weights according to the supplied partial gradient updates.
-   * Uses an Adagrad learning rate, an adaptive learning rate for mini-batches with sparse gradients
-   * and frequency adaptive L2 regularization.
+   * Uses an an adaptive AdaBatch learning rate for mini-batches with sparse gradients.
    *
    * This is defined as thread local implementation to avoid the creation of an anonymous implementation
    * on each method call.
@@ -131,13 +123,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       private val updatesArrayPool = threadLocalUpdatesArrayPool.get()
 
       override def value(i: Int, vUpdatesI: Array[Float]): Unit = {
-        val colsi = cols * i
-        val cbi = cb(i)
-        cforRange(0 until cols)(j => {
-          val offsetJ = colsi + j
-          v(offsetJ) += (vUpdatesI(j) - args.factorsReg * v(offsetJ)) * cbi * args.lr / sqrt(b(offsetJ)).toFloat
-          b(offsetJ) += (vUpdatesI(j) * cbi) * (vUpdatesI(j) * cbi)
-        })
+        blas.saxpy(cols, cb(i), vUpdatesI, 0, 1, v, cols * i, 1)
         updatesArrayPool.putClear(vUpdatesI)
       }
     }
@@ -159,10 +145,10 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
   /**
     * Receives and handles incoming messages
     *
-    * The specific messages for efficient distributed FM-Pair training (dotprod and adjust) are executed
-    * asynchronously and then send their result back to the sender. This means that we lose the Akka concurrency
-    * guarantees and the dotprod and adjust methods access the actors state as shared mutable state
-    * without any synchronization and locking. These methods can therefore overwrite each others gradient updates.
+    * The specific messages for efficient distributed FM-Pair training (dotprod / pullSum and adjust / pushSum) are
+    * executed asynchronously and then send their result back to the sender. This means that we lose the Akka
+    * concurrency guarantees and the methods access the actors state as shared mutable state without any
+    * synchronization and locking. These methods can therefore overwrite each others gradient updates.
     *
     * This is, however, required to achieve good performance. As explained in papers like HOGWILD! this still achieves
     * a nearly optimal rate of convergence when the optimization problem is sparse.
@@ -215,9 +201,6 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
     }
 
     hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, v, pathPostfix = "/glint/data/v/")
-    if (trainable && saveTrainable) {
-      hdfs.savePartitionData(hdfsPath, hadoopConfig.conf, partition.index, b, pathPostfix = "/glint/data/b/")
-    }
   }
 
   /**
@@ -296,10 +279,12 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
 
       cforRange(0 until iu.length)(j => {
         blas.saxpy(cols, gb * wu(j), sItem, sOffset, 1, vUpdates.getIfAbsentPut(iu(j), updatesArrayPool.getFunction), 0, 1)
+        blas.saxpy(cols, -args.factorsReg, v, iu(j) * cols, 1, vUpdates.getIfAbsentPut(iu(j), updatesArrayPool.getFunction), 0, 1)
       })
 
       cforRange(0 until ii.length)(j => {
         blas.saxpy(cols, gb * wi(j), sUser, sOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
+        blas.saxpy(cols, -args.factorsReg, v, ii(j) * cols, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
       })
     })
 
@@ -360,6 +345,7 @@ private[glint] class PartialMatrixFMPair(partition: Partition,
       val gOffset = i * cols
       cforRange(0 until ii.length)(j => {
         blas.saxpy(cols, wi(j), g, gOffset, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
+        blas.saxpy(cols, -args.factorsReg, v, ii(j) * cols, 1, vUpdates.getIfAbsentPut(ii(j), updatesArrayPool.getFunction), 0, 1)
       })
     })
 

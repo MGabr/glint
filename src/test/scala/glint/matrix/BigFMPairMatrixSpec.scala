@@ -90,16 +90,14 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
-        val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
-
         values should equal(Array(
-          init(0) + args.lr * c(0) * ada * (g(0) * (init(4) + 0.3f * init(6)) + g(1) * init(5) - args.factorsReg * init(0)),
-          init(1) + args.lr * c(1) * ada * (g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(1)),
+          init(0) + args.lr * c(0) * (g(0) * (init(4) + 0.3f * init(6)) + g(1) * init(5) - 2 * args.factorsReg * init(0)),
+          init(1) + args.lr * c(1) * (g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(1)),
           init(2),
-          init(3) + args.lr * c(3) * ada * (0.25f * g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(3)),
-          init(4) + args.lr * c(4) * ada * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3)) - args.factorsReg * init(4)),
-          init(5) + args.lr * c(5) * ada * (g(1) * init(0) - args.factorsReg * init(5)),
-          init(6) + args.lr * c(6) * ada * (0.3f * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3))) - args.factorsReg * init(6))
+          init(3) + args.lr * c(3) * (0.25f * g(2) * (init(4) + 0.3f * init(6)) - args.factorsReg * init(3)),
+          init(4) + args.lr * c(4) * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3)) - 2 * args.factorsReg * init(4)),
+          init(5) + args.lr * c(5) * (g(1) * init(0) - args.factorsReg * init(5)),
+          init(6) + args.lr * c(6) * (0.3f * (g(0) * init(0) + g(2) * (init(1) + 0.25f * init(3))) - 2 * args.factorsReg * init(6))
         ))
       }
     }
@@ -161,17 +159,16 @@ class BigFMPairMatrixSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
-        val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
         val gVectors = g.map(DenseVector(_))
 
         values should equal(Array(
-          init(0) + args.lr * c(0) * ada * (gVectors(0) + gVectors(1) - args.factorsReg * init(0)),
-          init(1) + args.lr * c(1) * ada * (gVectors(2) - args.factorsReg * init(1)),
+          init(0) + args.lr * c(0) * (gVectors(0) + gVectors(1) - 2 * args.factorsReg * init(0)),
+          init(1) + args.lr * c(1) * (gVectors(2) - args.factorsReg * init(1)),
           init(2),
-          init(3) + args.lr * c(3) * ada * (0.25f * gVectors(2) - args.factorsReg * init(3)),
-          init(4) + args.lr * c(4) * ada * (gVectors(3) + gVectors(5) - args.factorsReg * init(4)),
-          init(5) + args.lr * c(5) * ada * (gVectors(4) - args.factorsReg * init(5)),
-          init(6) + args.lr * c(6) * ada * (0.3f * gVectors(3) + 0.3f * gVectors(5) - args.factorsReg * init(6))
+          init(3) + args.lr * c(3) * (0.25f * gVectors(2) - args.factorsReg * init(3)),
+          init(4) + args.lr * c(4) * (gVectors(3) + gVectors(5) - 2 * args.factorsReg * init(4)),
+          init(5) + args.lr * c(5) * (gVectors(4) - args.factorsReg * init(5)),
+          init(6) + args.lr * c(6) * (0.3f * gVectors(3) + 0.3f * gVectors(5) - 2 * args.factorsReg * init(6))
         ))
       }
     }

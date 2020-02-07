@@ -25,7 +25,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
   val args = FMPairArguments(k=7, batchSize=3)
   val featureProbs = Array.fill[Float](100000)(0.1f)
   val c = Array.fill[Float](100000)(0.90333333333f)
-  for (i <- Array(0, 4, 6)) {
+  for (i <- Array(0, 50000, 90100)) {
     featureProbs(i) = 0.66f
     c(i) = 0.4852f
   }
@@ -94,15 +94,13 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
 
       val values = whenReady(matrix.pull(Array(0, 5, 9000, 50000, 90000, 90100))) { identity }
 
-      val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
-
       values should equal(Array(
-        init(0) + args.lr * c(0) * ada * (g(0) * (init(50000) + 0.3f * init(90100)) + g(1) * init(90000) - args.factorsReg * init(0)),
-        init(5) + args.lr * c(5) * ada * (g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(5)),
-        init(9000) + args.lr * c(9000) * ada * (0.25f * g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(9000)),
-        init(50000) + args.lr * c(50000) * ada * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000)) - args.factorsReg * init(50000)),
-        init(90000) + args.lr * c(90000) * ada * (g(1) * init(0) - args.factorsReg * init(90000)),
-        init(90100) + args.lr * c(90100) * ada * (0.3f * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000))) - args.factorsReg * init(90100))
+        init(0) + args.lr * c(0) * (g(0) * (init(50000) + 0.3f * init(90100)) + g(1) * init(90000) - 2 * args.factorsReg * init(0)),
+        init(5) + args.lr * c(5) * (g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(5)),
+        init(9000) + args.lr * c(9000) * (0.25f * g(2) * (init(50000) + 0.3f * init(90100)) - args.factorsReg * init(9000)),
+        init(50000) + args.lr * c(50000) * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000)) - 2 * args.factorsReg * init(50000)),
+        init(90000) + args.lr * c(90000) * (g(1) * init(0) - args.factorsReg * init(90000)),
+        init(90100) + args.lr * c(90100) * (0.3f * (g(0) * init(0) + g(2) * (init(5) + 0.25f * init(9000))) - 2 * args.factorsReg * init(90100))
       ))
     } finally {
       client.terminateOnSpark(sc)
@@ -133,9 +131,7 @@ class BigFMPairMatrixSpec extends FlatSpec with SparkTest with Matchers with Ins
         "testdata/glint",
         "testdata/glint/metadata",
         "testdata/glint/data/v/0",
-        "testdata/glint/data/v/1",
-        "testdata/glint/data/b/0",
-        "testdata/glint/data/b/1"
+        "testdata/glint/data/v/1"
       )
       forAll (paths) {path => fs.exists(new Path(path)) shouldBe true }
     } finally {

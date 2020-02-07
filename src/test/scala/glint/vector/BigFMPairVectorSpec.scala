@@ -71,16 +71,14 @@ class BigFMPairVectorSpec extends FlatSpec with SystemTest with HdfsTest with Ma
 
         val values = whenReady(model.pull(Array(0, 1, 2, 3, 4, 5, 6))) { identity }
 
-        val ada = 1.0f / sqrt(0.1).toFloat  // initial Adagrad learning rate
-
         values should equal(Array(
-          init(0) + args.lr * c(0) * ada * (g(0) + g(1) - args.linearReg * init(0)),
-          init(1) + args.lr * c(1) * ada * (g(2) - args.linearReg * init(1)),
+          init(0) + args.lr * c(0) * (g(0) + g(1) - 2 * args.linearReg * init(0)),
+          init(1) + args.lr * c(1) * (g(2) - args.linearReg * init(1)),
           init(2),
-          init(3) + args.lr * c(3) * ada * (g(2) * 0.25f - args.linearReg * init(3)),
-          init(4) + args.lr * c(4) * ada * (g(0) + g(2) - args.linearReg * init(4)),
-          init(5) + args.lr * c(5) * ada * (g(1) - args.linearReg * init(5)),
-          init(6) + args.lr * c(6) * ada * (g(0) * 0.3f + g(2) * 0.3f - args.linearReg * init(6))
+          init(3) + args.lr * c(3) * (g(2) * 0.25f - args.linearReg * init(3)),
+          init(4) + args.lr * c(4) * (g(0) + g(2) - 2 * args.linearReg * init(4)),
+          init(5) + args.lr * c(5) * (g(1) - args.linearReg * init(5)),
+          init(6) + args.lr * c(6) * (g(0) * 0.3f + g(2) * 0.3f - 2 * args.linearReg * init(6))
         ))
       }
     }
