@@ -15,6 +15,8 @@ create_test_environment() {
   printf "${GREEN}Creating${RESET} new Spark test environment (container: ${BLUE}${WORKDIR}${RESET})...\n"
   docker run \
   --name $WORKDIR \
+  -p 4040:4040 \
+  -p 4041:4041 \
   -p 8080:8080 \
   -p 9999:9999 \
   -p 50070:50070 \

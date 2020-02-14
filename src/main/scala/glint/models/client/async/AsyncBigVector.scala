@@ -116,7 +116,7 @@ abstract class AsyncBigVector[@specialized V: Semiring : ClassTag, R: ClassTag, 
       case (partition, indices) =>
         val localKeys = indices.map(keys).map(partition.globalRowToLocal).toArray
         val vals = indices.map(values).toArray
-        val fsm = PushFSM[P]((id) => toPushMessage(id, localKeys, vals), models(partition.index))
+        val fsm = PushFSM[P]((id: Int) => toPushMessage(id, localKeys, vals), models(partition.index))
         fsm.run()
     }
 
@@ -148,7 +148,8 @@ abstract class AsyncBigVector[@specialized V: Semiring : ClassTag, R: ClassTag, 
 
     val pushes = partitioner.all().map {
       case partition =>
-        val fsm = PushFSM[PushSave](id => PushSave(id, hdfsPath, serHadoopConfig), models(partition.index))
+        val fsm = PushFSM[PushSave]((id: Int) =>
+          PushSave(id, hdfsPath, serHadoopConfig), models(partition.index), 1 minute)
         fsm.run()
     }.toIterator
     Future.sequence(pushes).transform(results => true, err => err)

@@ -206,5 +206,21 @@ object PushFSM {
       backoffMultiplier)
   }
 
+  /**
+   * Constructs a new FSM for given message and actor
+   * with a larger initial timeout
+   *
+   * @param message A function that takes an identifier and generates a message of type T
+   * @param actorRef The actor to send to
+   * @param initialTimeout The initial timeout
+   * @param ec The execution context
+   * @tparam T The type of message to send
+   * @return An new and initialized PushFSM
+   */
+  def apply[T](message: Int => T, actorRef: ActorRef, initialTimeout: FiniteDuration)
+              (implicit ec: ExecutionContext): PushFSM[T] = {
+    new PushFSM[T](message, actorRef, maximumAttempts, maximumLogicAttempts, initialTimeout, maximumTimeout,
+      backoffMultiplier)
+  }
 }
 

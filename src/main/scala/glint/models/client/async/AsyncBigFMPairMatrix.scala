@@ -13,6 +13,7 @@ import org.apache.hadoop.conf.Configuration
 import spire.implicits.cforRange
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
 class AsyncBigFMPairMatrix(partitioner: Partitioner,
                            matrices: Array[ActorRef],
@@ -45,8 +46,8 @@ class AsyncBigFMPairMatrix(partitioner: Partitioner,
     val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
     val pushes = partitioner.all().map {
       case partition =>
-        val fsm = PushFSM[PushSaveTrainable](id =>
-          PushSaveTrainable(id, hdfsPath, serHadoopConfig, trainable), matrices(partition.index))
+        val fsm = PushFSM[PushSaveTrainable]((id: Int) =>
+          PushSaveTrainable(id, hdfsPath, serHadoopConfig, trainable), matrices(partition.index), 1 minute)
         fsm.run()
     }.toIterator
     Future.sequence(pushes).transform(results => true, err => err)
