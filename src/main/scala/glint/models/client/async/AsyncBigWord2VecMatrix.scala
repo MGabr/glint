@@ -15,7 +15,6 @@ import org.apache.hadoop.conf.Configuration
 import spire.implicits.cforRange
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 
 /**
   * An asynchronous implementation of a [[glint.models.client.BigWord2VecMatrix BigWord2VecMatrix]].
@@ -69,8 +68,8 @@ class AsyncBigWord2VecMatrix(partitioner: Partitioner,
     val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
     val pushes = partitioner.all().map {
       case partition =>
-        val fsm = PushFSM[PushSaveTrainable]((id: Int) =>
-          PushSaveTrainable(id, hdfsPath, serHadoopConfig, trainable), matrices(partition.index), 1 minute)
+        val fsm = PushFSM[PushSaveTrainable](id =>
+          PushSaveTrainable(id, hdfsPath, serHadoopConfig, trainable), matrices(partition.index))
         fsm.run()
     }.toIterator
     Future.sequence(pushes).transform(results => true, err => err)

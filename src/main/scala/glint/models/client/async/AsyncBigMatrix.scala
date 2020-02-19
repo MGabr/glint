@@ -199,7 +199,7 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
         val localRows = indices.map(rows).map(partition.globalRowToLocal).toArray
         val localCols = indices.map(cols).map(partition.globalColToLocal).toArray
         val vals = indices.map(values).toArray
-        val fsm = PushFSM[P]((id: Int) => toPushMessage(id, localRows, localCols, vals), matrices(partition.index))
+        val fsm = PushFSM[P](id => toPushMessage(id, localRows, localCols, vals), matrices(partition.index))
         fsm.run()
     }
 
@@ -249,8 +249,7 @@ abstract class AsyncBigMatrix[@specialized V: Semiring : ClassTag, R: ClassTag, 
 
     val pushes = partitioner.all().map {
       case partition =>
-        val fsm = PushFSM[PushSave]((id: Int) =>
-          PushSave(id, hdfsPath, serHadoopConfig), matrices(partition.index), 1 minute)
+        val fsm = PushFSM[PushSave](id => PushSave(id, hdfsPath, serHadoopConfig), matrices(partition.index))
         fsm.run()
     }.toIterator
     Future.sequence(pushes).transform(results => true, err => err)

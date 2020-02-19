@@ -10,7 +10,6 @@ import glint.partitioning.Partitioner
 import glint.serialization.SerializableHadoopConfiguration
 import org.apache.hadoop.conf.Configuration
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class AsyncBigFMPairVector(partitioner: Partitioner,
@@ -42,8 +41,8 @@ class AsyncBigFMPairVector(partitioner: Partitioner,
     val serHadoopConfig = new SerializableHadoopConfiguration(hadoopConfig)
     val pushes = partitioner.all().map {
       case partition =>
-        val fsm = PushFSM[PushSaveTrainable]((id: Int) =>
-          PushSaveTrainable(id, hdfsPath, serHadoopConfig, trainable), models(partition.index), 1 minute)
+        val fsm = PushFSM[PushSaveTrainable](id =>
+          PushSaveTrainable(id, hdfsPath, serHadoopConfig, trainable), models(partition.index))
         fsm.run()
     }.toIterator
     Future.sequence(pushes).transform(results => true, err => err)
