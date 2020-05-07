@@ -1,9 +1,9 @@
 <!DOCTYPE html >
 <html>
         <head>
-          <title>AsyncBigWord2VecMatrix - Glint - glint.models.client.async.AsyncBigWord2VecMatrix</title>
-          <meta name="description" content="AsyncBigWord2VecMatrix - Glint - glint.models.client.async.AsyncBigWord2VecMatrix" />
-          <meta name="keywords" content="AsyncBigWord2VecMatrix Glint glint.models.client.async.AsyncBigWord2VecMatrix" />
+          <title>AsyncBigFMPairMatrix - Glint - glint.models.client.async.AsyncBigFMPairMatrix</title>
+          <meta name="description" content="AsyncBigFMPairMatrix - Glint - glint.models.client.async.AsyncBigFMPairMatrix" />
+          <meta name="keywords" content="AsyncBigFMPairMatrix Glint glint.models.client.async.AsyncBigFMPairMatrix" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -16,7 +16,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../../index.html';
-            var hash = 'glint.models.client.async.AsyncBigWord2VecMatrix';
+            var hash = 'glint.models.client.async.AsyncBigFMPairMatrix';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -30,10 +30,10 @@
       <div id="definition">
         <img alt="Class" src="../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../package.html" class="extype" name="glint">glint</a>.<a href="../../package.html" class="extype" name="glint.models">models</a>.<a href="../package.html" class="extype" name="glint.models.client">client</a>.<a href="package.html" class="extype" name="glint.models.client.async">async</a></p>
-        <h1>AsyncBigWord2VecMatrix</h1><h3><span class="morelinks"><div>Related Doc:
+        <h1>AsyncBigFMPairMatrix</h1><h3><span class="morelinks"><div>Related Doc:
             <a href="package.html" class="extype" name="glint.models.client.async">package async</a>
           </div></span></h3><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -45,15 +45,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">AsyncBigWord2VecMatrix</span><span class="result"> extends <span class="extype" name="glint.models.client.async.AsyncBigMatrixFloat">AsyncBigMatrixFloat</span> with <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></span>
+        <span class="name">AsyncBigFMPairMatrix</span><span class="result"> extends <span class="extype" name="glint.models.client.async.AsyncBigMatrixFloat">AsyncBigMatrixFloat</span> with <a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>An asynchronous implementation of a <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a>.
-You don't want to construct this object manually but instead use the methods provided in <a href="../../../Client.html" class="extype" name="glint.Client">Client</a>
-to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVocabCns, vectorSize, n)</pre></div><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a>, <span class="extype" name="glint.models.client.async.AsyncBigMatrixFloat">AsyncBigMatrixFloat</span>, <a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a>[<span class="extype" name="scala.Float">Float</span>, <span class="extype" name="glint.messages.server.response.ResponseFloat">ResponseFloat</span>, <span class="extype" name="glint.messages.server.request.PushMatrixFloat">PushMatrixFloat</span>], <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a>, <span class="extype" name="glint.models.client.async.AsyncBigMatrixFloat">AsyncBigMatrixFloat</span>, <a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a>[<span class="extype" name="scala.Float">Float</span>, <span class="extype" name="glint.messages.server.response.ResponseFloat">ResponseFloat</span>, <span class="extype" name="glint.messages.server.request.PushMatrixFloat">PushMatrixFloat</span>], <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -71,7 +69,7 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="glint.models.client.async.AsyncBigWord2VecMatrix"><span>AsyncBigWord2VecMatrix</span></li><li class="in" name="glint.models.client.BigWord2VecMatrix"><span>BigWord2VecMatrix</span></li><li class="in" name="glint.models.client.async.AsyncBigMatrixFloat"><span>AsyncBigMatrixFloat</span></li><li class="in" name="glint.models.client.async.AsyncBigMatrix"><span>AsyncBigMatrix</span></li><li class="in" name="glint.models.client.BigMatrix"><span>BigMatrix</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="glint.models.client.async.AsyncBigFMPairMatrix"><span>AsyncBigFMPairMatrix</span></li><li class="in" name="glint.models.client.BigFMPairMatrix"><span>BigFMPairMatrix</span></li><li class="in" name="glint.models.client.async.AsyncBigMatrixFloat"><span>AsyncBigMatrixFloat</span></li><li class="in" name="glint.models.client.async.AsyncBigMatrix"><span>AsyncBigMatrix</span></li><li class="in" name="glint.models.client.BigMatrix"><span>BigMatrix</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -90,23 +88,23 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="glint.models.client.async.AsyncBigWord2VecMatrix#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(partitioner:glint.partitioning.Partitioner,matrices:Array[akka.actor.ActorRef],config:com.typesafe.config.Config,aggregate:glint.models.server.aggregate.Aggregate,rows:Long,cols:Long,n:Int,trainable:Boolean):glint.models.client.async.AsyncBigWord2VecMatrix"></a>
-      <a id="&lt;init&gt;:AsyncBigWord2VecMatrix"></a>
+              <ol><li name="glint.models.client.async.AsyncBigFMPairMatrix#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(partitioner:glint.partitioning.Partitioner,matrices:Array[akka.actor.ActorRef],config:com.typesafe.config.Config,aggregate:glint.models.server.aggregate.Aggregate,rows:Long,cols:Long,trainable:Boolean):glint.models.client.async.AsyncBigFMPairMatrix"></a>
+      <a id="&lt;init&gt;:AsyncBigFMPairMatrix"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">AsyncBigWord2VecMatrix</span><span class="params">(<span name="partitioner">partitioner: <a href="../../../partitioning/Partitioner.html" class="extype" name="glint.partitioning.Partitioner">Partitioner</a></span>, <span name="matrices">matrices: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="akka.actor.ActorRef">ActorRef</span>]</span>, <span name="config">config: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="aggregate">aggregate: <a href="../../server/aggregate/Aggregate.html" class="extype" name="glint.models.server.aggregate.Aggregate">Aggregate</a></span>, <span name="rows">rows: <span class="extype" name="scala.Long">Long</span></span>, <span name="cols">cols: <span class="extype" name="scala.Long">Long</span></span>, <span name="n">n: <span class="extype" name="scala.Int">Int</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
+        <span class="name">AsyncBigFMPairMatrix</span><span class="params">(<span name="partitioner">partitioner: <a href="../../../partitioning/Partitioner.html" class="extype" name="glint.partitioning.Partitioner">Partitioner</a></span>, <span name="matrices">matrices: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="akka.actor.ActorRef">ActorRef</span>]</span>, <span name="config">config: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="aggregate">aggregate: <a href="../../server/aggregate/Aggregate.html" class="extype" name="glint.models.server.aggregate.Aggregate">Aggregate</a></span>, <span name="rows">rows: <span class="extype" name="scala.Long">Long</span></span>, <span name="cols">cols: <span class="extype" name="scala.Long">Long</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@&lt;init&gt;(partitioner:glint.partitioning.Partitioner,matrices:Array[akka.actor.ActorRef],config:com.typesafe.config.Config,aggregate:glint.models.server.aggregate.Aggregate,rows:Long,cols:Long,n:Int,trainable:Boolean):glint.models.client.async.AsyncBigWord2VecMatrix" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@&lt;init&gt;(partitioner:glint.partitioning.Partitioner,matrices:Array[akka.actor.ActorRef],config:com.typesafe.config.Config,aggregate:glint.models.server.aggregate.Aggregate,rows:Long,cols:Long,trainable:Boolean):glint.models.client.async.AsyncBigFMPairMatrix" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">partitioner</dt><dd class="cmt"><p>A partitioner to map rows to partitions</p></dd><dt class="param">matrices</dt><dd class="cmt"><p>The references to the partial matrices on the parameter servers</p></dd><dt class="param">config</dt><dd class="cmt"><p>The glint configuration (used for serialization/deserialization construction of actorsystems)</p></dd><dt class="param">aggregate</dt><dd class="cmt"><p>The type of aggregation to perform on this model (used only for saving this parameter)</p></dd><dt class="param">rows</dt><dd class="cmt"><p>The number of rows</p></dd><dt class="param">cols</dt><dd class="cmt"><p>The number of columns</p></dd><dt class="param">n</dt><dd class="cmt"><p>The number of random negative words for Word2Vec</p></dd><dt class="param">trainable</dt><dd class="cmt"><p>Whether the matrix is trainable</p></dd></dl></div>
+      
     </li></ol>
             </div>
 
@@ -128,7 +126,7 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@!=(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -145,7 +143,7 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@##():Int" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@##():Int" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -162,30 +160,30 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@==(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@==(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#adjust" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="adjust(gPlus:Array[Float],gMinus:Array[Float],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
-      <a id="adjust(Array[Float],Array[Float],Array[Int])(ExecutionContext):Future[Boolean]"></a>
+    </li><li name="glint.models.client.async.AsyncBigFMPairMatrix#adjust" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="adjust(g:Array[Float],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="adjust(Array[Float],Array[Int])(ExecutionContext):Future[Boolean]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">adjust</span><span class="params">(<span name="gPlus">gPlus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="gMinus">gMinus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="cacheKeys">cacheKeys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+        <span class="name">adjust</span><span class="params">(<span name="g">g: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="cacheKeys">cacheKeys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@adjust(gPlus:Array[Float],gMinus:Array[Float],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@adjust(g:Array[Float],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Adjusts the weights according to the received gradient updates
 </p><div class="fullcomment"><div class="comment cmt"><p>Adjusts the weights according to the received gradient updates
-</p></div><dl class="paramcmts block"><dt class="param">gPlus</dt><dd class="cmt"><p>The gradient updates for the input and output word combinations</p></dd><dt class="param">gMinus</dt><dd class="cmt"><p>The gradient updates for the input and random neighbour word combinations</p></dd><dt class="param">cacheKeys</dt><dd class="cmt"><p>The keys to retrieve the cached indices and weights</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a> → <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></dd></dl></div>
+</p></div><dl class="paramcmts block"><dt class="param">g</dt><dd class="cmt"><p>The general BPR gradient per training instance in the batch</p></dd><dt class="param">cacheKeys</dt><dd class="cmt"><p>The keys to retrieve the cached indices and weights</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigFMPairMatrix">AsyncBigFMPairMatrix</a> → <a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -198,7 +196,7 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@asInstanceOf[T0]:T0" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -215,7 +213,7 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@clone():Object" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@clone():Object" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -238,7 +236,7 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <span class="name">cols</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@cols:Long" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@cols:Long" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -255,32 +253,30 @@ to run them on Spark, as so</p><pre>Client.runWithWord2VecMatrixOnSpark(sc, bcVo
         <span class="name">destroy</span><span class="params">()</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@destroy()(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@destroy()(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Destroys the matrix on the parameter servers</p><div class="fullcomment"><div class="comment cmt"><p>Destroys the matrix on the parameter servers</p></div><dl class="paramcmts block"><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully destroyed</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a> → <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#dotprod" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float],Array[Int])]"></a>
-      <a id="dotprod(Array[Int],Array[Array[Int]],Long)(ExecutionContext):Future[(Array[Float],Array[Float],Array[Int])]"></a>
+    </li><li name="glint.models.client.async.AsyncBigFMPairMatrix#dotprod" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="dotprod(iUser:Array[Array[Int]],wUser:Array[Array[Float]],iItem:Array[Array[Int]],wItem:Array[Array[Float]],cache:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Int])]"></a>
+      <a id="dotprod(Array[Array[Int]],Array[Array[Float]],Array[Array[Int]],Array[Array[Float]],Boolean)(ExecutionContext):Future[(Array[Float],Array[Int])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">dotprod</span><span class="params">(<span name="wInput">wInput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="wOutput">wOutput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>])]</span>
+        <span class="name">dotprod</span><span class="params">(<span name="iUser">iUser: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="wUser">wUser: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="iItem">iItem: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="wItem">wItem: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="cache">cache: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">true</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>])]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float],Array[Int])]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@dotprod(iUser:Array[Array[Int]],wUser:Array[Array[Float]],iItem:Array[Array[Int]],wItem:Array[Array[Float]],cache:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Int])]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Computes the dot products to be used as gradient updates
-for the input and output word as well as the input and random negative words combinations
-</p><div class="fullcomment"><div class="comment cmt"><p>Computes the dot products to be used as gradient updates
-for the input and output word as well as the input and random negative words combinations
-</p></div><dl class="paramcmts block"><dt class="param">wInput</dt><dd class="cmt"><p>The indices of the input words</p></dd><dt class="param">wOutput</dt><dd class="cmt"><p>The indices of the output words per input word</p></dd><dt class="param">seed</dt><dd class="cmt"><p>The seed for generating random negative words</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the gradient updates</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a> → <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></dd></dl></div>
+      <p class="shortcomment cmt">Computes the dot products
+</p><div class="fullcomment"><div class="comment cmt"><p>Computes the dot products
+</p></div><dl class="paramcmts block"><dt class="param">iUser</dt><dd class="cmt"><p>The user feature indices</p></dd><dt class="param">wUser</dt><dd class="cmt"><p>The user feature weights</p></dd><dt class="param">iItem</dt><dd class="cmt"><p>The item feature indices</p></dd><dt class="param">wItem</dt><dd class="cmt"><p>The item feature weights</p></dd><dt class="param">cache</dt><dd class="cmt"><p>Whether the indices, weights and sums should be cached. Not required for recommendation</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the dot products and the cache keys for the adjust operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigFMPairMatrix">AsyncBigFMPairMatrix</a> → <a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -293,7 +289,7 @@ for the input and output word as well as the input and random negative words com
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -310,7 +306,7 @@ for the input and output word as well as the input and random negative words com
         <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@equals(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -327,7 +323,7 @@ for the input and output word as well as the input and random negative words com
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@finalize():Unit" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@finalize():Unit" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -350,7 +346,7 @@ for the input and output word as well as the input and random negative words com
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@getClass():Class[_]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@getClass():Class[_]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -367,7 +363,7 @@ for the input and output word as well as the input and random negative words com
         <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@hashCode():Int" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@hashCode():Int" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -384,7 +380,7 @@ for the input and output word as well as the input and random negative words com
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -401,7 +397,7 @@ for the input and output word as well as the input and random negative words com
         <span class="name">mapPartitions</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="params">(<span name="func">func: (<a href="../../../partitioning/Partition.html" class="extype" name="glint.partitioning.Partition">Partition</a>, <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Int">Int</span>]) ⇒ <span class="extype" name="glint.models.client.async.AsyncBigMatrix.mapPartitions.T">T</span></span>)</span><span class="result">: <span class="extype" name="scala.Iterable">Iterable</span>[<span class="extype" name="glint.models.client.async.AsyncBigMatrix.mapPartitions.T">T</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@mapPartitions[T](keys:Seq[Long])(func:(glint.partitioning.Partition,Seq[Int])=&gt;T):Iterable[T]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@mapPartitions[T](keys:Seq[Long])(func:(glint.partitioning.Partition,Seq[Int])=&gt;T):Iterable[T]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -413,42 +409,6 @@ type T
                 <span class="name">@inline</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#multiply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="multiply(vector:Array[Float],startRow:Int,endRow:Int)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]"></a>
-      <a id="multiply(Array[Float],Int,Int)(ExecutionContext):Future[Array[Float]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">multiply</span><span class="params">(<span name="vector">vector: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="startRow">startRow: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="endRow">endRow: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">rows.toInt</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@multiply(vector:Array[Float],startRow:Int,endRow:Int)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]" title="Permalink" target="_top">
-        <img src="../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      <p class="shortcomment cmt">Pulls the result of the matrix multiplication of the input weight matrix with the received vector
-</p><div class="fullcomment"><div class="comment cmt"><p>Pulls the result of the matrix multiplication of the input weight matrix with the received vector
-</p></div><dl class="paramcmts block"><dt class="param">vector</dt><dd class="cmt"><p>The vector with which to multiply the matrix</p></dd><dt class="param">startRow</dt><dd class="cmt"><p>The start row index of the matrix, to support multiplication with only a part of the matrix</p></dd><dt class="param">endRow</dt><dd class="cmt"><p>The exclusive end row index of the matrix</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the matrix multiplication result</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a> → <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#n" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="n:Int"></a>
-      <a id="n:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">n</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@n:Int" title="Permalink" target="_top">
-        <img src="../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      <p class="shortcomment cmt">The number of random negative words for Word2Vec</p>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -461,30 +421,11 @@ type T
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#norms" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="norms(startRow:Int,endRow:Int)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]"></a>
-      <a id="norms(Int,Int)(ExecutionContext):Future[Array[Float]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">norms</span><span class="params">(<span name="startRow">startRow: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="endRow">endRow: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">rows.toInt</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@norms(startRow:Int,endRow:Int)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[Float]]" title="Permalink" target="_top">
-        <img src="../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      <p class="shortcomment cmt">Pulls the euclidean norm of each input weight row
-</p><div class="fullcomment"><div class="comment cmt"><p>Pulls the euclidean norm of each input weight row
-</p></div><dl class="paramcmts block"><dt class="param">startRow</dt><dd class="cmt"><p>The start index of the range of rows whose euclidean norms to get</p></dd><dt class="param">endRow</dt><dd class="cmt"><p>The exclusive end index of the range of rows whose euclidean norms to get</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>The euclidean norms</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a> → <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></dd></dl></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -497,7 +438,7 @@ type T
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@notify():Unit" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@notify():Unit" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -514,7 +455,7 @@ type T
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@notifyAll():Unit" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@notifyAll():Unit" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -531,7 +472,7 @@ type T
         <span class="name">nrOfPartitions</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@nrOfPartitions:Int" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@nrOfPartitions:Int" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -548,7 +489,7 @@ type T
         <span class="name">pull</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="cols">cols: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@pull(rows:Array[Long],cols:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[V]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@pull(rows:Array[Long],cols:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[V]]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -567,32 +508,32 @@ type T
         <span class="name">pull</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="breeze.linalg.Vector">Vector</span>[<span class="extype" name="scala.Float">Float</span>]]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@pull(rows:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[V]]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@pull(rows:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[V]]]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Pulls a set of rows
 </p><div class="fullcomment"><div class="comment cmt"><p>Pulls a set of rows
 </p></div><dl class="paramcmts block"><dt class="param">rows</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the vectors representing the rows</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a> → <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#pullAverage" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="pullAverage(rows:Array[Array[Int]])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[Float]]]"></a>
-      <a id="pullAverage(Array[Array[Int]])(ExecutionContext):Future[Array[Vector[Float]]]"></a>
+    </li><li name="glint.models.client.async.AsyncBigFMPairMatrix#pullSum" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="pullSum(keys:Array[Array[Int]],weights:Array[Array[Float]],cache:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Array[Float]],Array[Int])]"></a>
+      <a id="pullSum(Array[Array[Int]],Array[Array[Float]],Boolean)(ExecutionContext):Future[(Array[Array[Float]],Array[Int])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">pullAverage</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="breeze.linalg.Vector">Vector</span>[<span class="extype" name="scala.Float">Float</span>]]]</span>
+        <span class="name">pullSum</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="weights">weights: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="cache">cache: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">true</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>])]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@pullAverage(rows:Array[Array[Int]])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[breeze.linalg.Vector[Float]]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@pullSum(keys:Array[Array[Int]],weights:Array[Array[Float]],cache:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Array[Float]],Array[Int])]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Pulls the average of each set of rows
-</p><div class="fullcomment"><div class="comment cmt"><p>Pulls the average of each set of rows
-</p></div><dl class="paramcmts block"><dt class="param">rows</dt><dd class="cmt"><p>The array of row indices to average</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the average vectors</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a> → <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></dd></dl></div>
+      <p class="shortcomment cmt">Pull the weighted sums of the feature indices
+</p><div class="fullcomment"><div class="comment cmt"><p>Pull the weighted sums of the feature indices
+</p></div><dl class="paramcmts block"><dt class="param">keys</dt><dd class="cmt"><p>The feature indices</p></dd><dt class="param">weights</dt><dd class="cmt"><p>The feature weights</p></dd><dt class="param">cache</dt><dd class="cmt"><p>Whether the indices and weights should be cached. Not required for recommendation</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the weighted sums of the feature indices</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigFMPairMatrix">AsyncBigFMPairMatrix</a> → <a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></dd></dl></div>
     </li><li name="glint.models.client.async.AsyncBigMatrix#push" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="push(rows:Array[Long],cols:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
       <a id="push(Array[Long],Array[Long],Array[Float])(ExecutionContext):Future[Boolean]"></a>
@@ -605,13 +546,32 @@ type T
         <span class="name">push</span><span class="params">(<span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="cols">cols: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@push(rows:Array[Long],cols:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@push(rows:Array[Long],cols:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Pushes a set of values
 </p><div class="fullcomment"><div class="comment cmt"><p>Pushes a set of values
 </p></div><dl class="paramcmts block"><dt class="param">rows</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">cols</dt><dd class="cmt"><p>The indices of the columns</p></dd><dt class="param">values</dt><dd class="cmt"><p>The values to update</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a> → <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.async.AsyncBigFMPairMatrix#pushSum" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="pushSum(g:Array[Array[Float]],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="pushSum(Array[Array[Float]],Array[Int])(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pushSum</span><span class="params">(<span name="g">g: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="cacheKeys">cacheKeys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@pushSum(g:Array[Array[Float]],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Adjusts the weights according to the received sum gradient updates
+</p><div class="fullcomment"><div class="comment cmt"><p>Adjusts the weights according to the received sum gradient updates
+</p></div><dl class="paramcmts block"><dt class="param">g</dt><dd class="cmt"><p>The BPR gradients per training instance in the batch</p></dd><dt class="param">cacheKeys</dt><dd class="cmt"><p>The keys to retrieve the cached indices and weights</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigFMPairMatrix">AsyncBigFMPairMatrix</a> → <a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></dd></dl></div>
     </li><li name="glint.models.client.async.AsyncBigMatrix#rows" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="rows:Long"></a>
       <a id="rows:Long"></a>
@@ -624,12 +584,12 @@ type T
         <span class="name">rows</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@rows:Long" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@rows:Long" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">The number of rows</p><div class="fullcomment"><div class="comment cmt"><p>The number of rows</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a> → <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#save" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="glint.models.client.async.AsyncBigFMPairMatrix#save" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
       <a id="save(String,Configuration,Boolean)(ExecutionContext):Future[Boolean]"></a>
       <h4 class="signature">
@@ -641,14 +601,14 @@ type T
         <span class="name">save</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Saves the matrix to HDFS
 </p><div class="fullcomment"><div class="comment cmt"><p>Saves the matrix to HDFS
-</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the matrix should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">trainable</dt><dd class="cmt"><p>Whether the saved matrix should be retrainable, requiring more data being saved</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully saved</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a> → <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#save" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the matrix should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">trainable</dt><dd class="cmt"><p>Whether the saved matrix should be retrainable, requiring more data being saved</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully saved</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigFMPairMatrix">AsyncBigFMPairMatrix</a> → <a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></dd></dl></div>
+    </li><li name="glint.models.client.async.AsyncBigFMPairMatrix#save" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
       <a id="save(String,Configuration)(ExecutionContext):Future[Boolean]"></a>
       <h4 class="signature">
@@ -660,13 +620,13 @@ type T
         <span class="name">save</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Saves the matrix to HDFS
 </p><div class="fullcomment"><div class="comment cmt"><p>Saves the matrix to HDFS
-</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the matrix should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully saved</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigWord2VecMatrix">AsyncBigWord2VecMatrix</a> → <a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a> → <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the matrix should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully saved</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.async.AsyncBigFMPairMatrix">AsyncBigFMPairMatrix</a> → <a href="AsyncBigMatrix.html" class="extype" name="glint.models.client.async.AsyncBigMatrix">AsyncBigMatrix</a> → <a href="../BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -679,7 +639,7 @@ type T
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -696,7 +656,7 @@ type T
         <span class="name">toPushMessage</span><span class="params">(<span name="id">id: <span class="extype" name="scala.Int">Int</span></span>, <span name="rows">rows: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="cols">cols: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="result">: <span class="extype" name="glint.messages.server.request.PushMatrixFloat">PushMatrixFloat</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@toPushMessage(id:Int,rows:Array[Int],cols:Array[Int],values:Array[Float]):glint.messages.server.request.PushMatrixFloat" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@toPushMessage(id:Int,rows:Array[Int],cols:Array[Int],values:Array[Float]):glint.messages.server.request.PushMatrixFloat" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -718,7 +678,7 @@ type T
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@toString():String" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@toString():String" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -735,7 +695,7 @@ type T
         <span class="name">toValue</span><span class="params">(<span name="response">response: <span class="extype" name="glint.messages.server.response.ResponseFloat">ResponseFloat</span></span>, <span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Float">Float</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@toValue(response:glint.messages.server.response.ResponseFloat,index:Int):Float" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@toValue(response:glint.messages.server.response.ResponseFloat,index:Int):Float" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -757,7 +717,7 @@ type T
         <span class="name">toVector</span><span class="params">(<span name="response">response: <span class="extype" name="glint.messages.server.response.ResponseFloat">ResponseFloat</span></span>, <span name="start">start: <span class="extype" name="scala.Int">Int</span></span>, <span name="end">end: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="breeze.linalg.Vector">Vector</span>[<span class="extype" name="scala.Float">Float</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@toVector(response:glint.messages.server.response.ResponseFloat,start:Int,end:Int):breeze.linalg.Vector[Float]" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@toVector(response:glint.messages.server.response.ResponseFloat,start:Int,end:Int):breeze.linalg.Vector[Float]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -767,7 +727,7 @@ type T
                 <span class="name">@inline</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="glint.models.client.async.AsyncBigWord2VecMatrix#trainable" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="glint.models.client.async.AsyncBigFMPairMatrix#trainable" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="trainable:Boolean"></a>
       <a id="trainable:Boolean"></a>
       <h4 class="signature">
@@ -779,11 +739,11 @@ type T
         <span class="name">trainable</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@trainable:Boolean" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@trainable:Boolean" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Whether the matrix is trainable</p>
+      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -796,7 +756,7 @@ type T
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@wait():Unit" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@wait():Unit" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -819,7 +779,7 @@ type T
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -842,7 +802,7 @@ type T
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#glint.models.client.async.AsyncBigWord2VecMatrix@wait(x$1:Long):Unit" title="Permalink" target="_top">
+      <a href="../../../../index.html#glint.models.client.async.AsyncBigFMPairMatrix@wait(x$1:Long):Unit" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -862,8 +822,8 @@ type T
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="glint.models.client.BigWord2VecMatrix">
-              <h3>Inherited from <a href="../BigWord2VecMatrix.html" class="extype" name="glint.models.client.BigWord2VecMatrix">BigWord2VecMatrix</a></h3>
+        <div class="parent" name="glint.models.client.BigFMPairMatrix">
+              <h3>Inherited from <a href="../BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></h3>
             </div><div class="parent" name="glint.models.client.async.AsyncBigMatrixFloat">
               <h3>Inherited from <span class="extype" name="glint.models.client.async.AsyncBigMatrixFloat">AsyncBigMatrixFloat</span></h3>
             </div><div class="parent" name="glint.models.client.async.AsyncBigMatrix">

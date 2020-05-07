@@ -428,6 +428,25 @@ than <code>maximumMessageSize</code>
 </p><div class="fullcomment"><div class="comment cmt"><p>Pushes a set of values while keeping individual network messages smaller
 than <code>maximumMessageSize</code>
 </p></div><dl class="paramcmts block"><dt class="param">keys</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">values</dt><dd class="cmt"><p>The values to update</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.granular.GranularBigVector">GranularBigVector</a> → <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></dd></dl></div>
+    </li><li name="glint.models.client.granular.GranularBigVector#save" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="save(String,Configuration)(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">save</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#glint.models.client.granular.GranularBigVector@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Saves the vector to HDFS
+</p><div class="fullcomment"><div class="comment cmt"><p>Saves the vector to HDFS
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the vector should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the vector was successfully saved</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="glint.models.client.granular.GranularBigVector">GranularBigVector</a> → <a href="../BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></dd></dl></div>
     </li><li name="glint.models.client.granular.GranularBigVector#size" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="size:Long"></a>
       <a id="size:Long"></a>

@@ -283,6 +283,66 @@ Use the companion object to construct a Client object from a configuration file.
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="glint.Client#fmpairMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="fmpairMatrix(args:glint.FMPairArguments,featureProbs:Array[Float],hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,avgActiveFeatures:Int,numParameterServers:Int):glint.models.client.BigFMPairMatrix"></a>
+      <a id="fmpairMatrix(FMPairArguments,Array[Float],Configuration,Int,Int,Int):BigFMPairMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fmpairMatrix</span><span class="params">(<span name="args">args: <a href="FMPairArguments.html" class="extype" name="glint.FMPairArguments">FMPairArguments</a></span>, <span name="featureProbs">featureProbs: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="numConcurrentBatches">numConcurrentBatches: <span class="extype" name="scala.Int">Int</span></span>, <span name="avgActiveFeatures">avgActiveFeatures: <span class="extype" name="scala.Int">Int</span></span>, <span name="numParameterServers">numParameterServers: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="models/client/BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.Client@fmpairMatrix(args:glint.FMPairArguments,featureProbs:Array[Float],hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,avgActiveFeatures:Int,numParameterServers:Int):glint.models.client.BigFMPairMatrix" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Construct a distributed FM-Pair matrix
+</p><div class="fullcomment"><div class="comment cmt"><p>Construct a distributed FM-Pair matrix
+</p></div><dl class="paramcmts block"><dt class="param">args</dt><dd class="cmt"><p>The <a href="FMPairArguments.html" class="extype" name="glint.FMPairArguments">FMPairArguments</a></p></dd><dt class="param">featureProbs</dt><dd class="cmt"><p>The probabilities of the features</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving featureProbs to HDFS</p></dd><dt class="param">numConcurrentBatches</dt><dd class="cmt"><p>The number of concurrent batch request / The number of workers and worker cores</p></dd><dt class="param">avgActiveFeatures</dt><dd class="cmt"><p>The average number of active features. Not an important parameter but used for
+                         determining good array pool sizes against garbage collection.</p></dd><dt class="param">numParameterServers</dt><dd class="cmt"><p>The number of parameter servers to which the matrix should be distributed</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></p></dd></dl></div>
+    </li><li name="glint.Client#fmpairMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="fmpairMatrix(args:glint.FMPairArguments,featureProbs:Array[Float],hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,avgActiveFeatures:Int):glint.models.client.BigFMPairMatrix"></a>
+      <a id="fmpairMatrix(FMPairArguments,Array[Float],Configuration,Int,Int):BigFMPairMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fmpairMatrix</span><span class="params">(<span name="args">args: <a href="FMPairArguments.html" class="extype" name="glint.FMPairArguments">FMPairArguments</a></span>, <span name="featureProbs">featureProbs: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="numConcurrentBatches">numConcurrentBatches: <span class="extype" name="scala.Int">Int</span></span>, <span name="avgActiveFeatures">avgActiveFeatures: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>)</span><span class="result">: <a href="models/client/BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.Client@fmpairMatrix(args:glint.FMPairArguments,featureProbs:Array[Float],hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,avgActiveFeatures:Int):glint.models.client.BigFMPairMatrix" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Construct a distributed FM-Pair matrix
+</p><div class="fullcomment"><div class="comment cmt"><p>Construct a distributed FM-Pair matrix
+</p></div><dl class="paramcmts block"><dt class="param">args</dt><dd class="cmt"><p>The <a href="FMPairArguments.html" class="extype" name="glint.FMPairArguments">FMPairArguments</a></p></dd><dt class="param">featureProbs</dt><dd class="cmt"><p>The probabilities of the features</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving featureProbs to HDFS</p></dd><dt class="param">numConcurrentBatches</dt><dd class="cmt"><p>The number of concurrent batch request / The number of workers and worker cores</p></dd><dt class="param">avgActiveFeatures</dt><dd class="cmt"><p>The average number of active features. Not an important parameter but used for
+                         determining good array pool sizes against garbage collection.</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></p></dd></dl></div>
+    </li><li name="glint.Client#fmpairVector" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="fmpairVector(args:glint.FMPairArguments,featureProbs:Array[Float],hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,avgActiveFeatures:Int):glint.models.client.BigFMPairVector"></a>
+      <a id="fmpairVector(FMPairArguments,Array[Float],Configuration,Int,Int):BigFMPairVector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fmpairVector</span><span class="params">(<span name="args">args: <a href="FMPairArguments.html" class="extype" name="glint.FMPairArguments">FMPairArguments</a></span>, <span name="featureProbs">featureProbs: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="numConcurrentBatches">numConcurrentBatches: <span class="extype" name="scala.Int">Int</span></span>, <span name="avgActiveFeatures">avgActiveFeatures: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>)</span><span class="result">: <a href="models/client/BigFMPairVector.html" class="extype" name="glint.models.client.BigFMPairVector">BigFMPairVector</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.Client@fmpairVector(args:glint.FMPairArguments,featureProbs:Array[Float],hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,avgActiveFeatures:Int):glint.models.client.BigFMPairVector" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Construct a distributed FM-Pair vector
+</p><div class="fullcomment"><div class="comment cmt"><p>Construct a distributed FM-Pair vector
+</p></div><dl class="paramcmts block"><dt class="param">args</dt><dd class="cmt"><p>The <a href="FMPairArguments.html" class="extype" name="glint.FMPairArguments">FMPairArguments</a></p></dd><dt class="param">featureProbs</dt><dd class="cmt"><p>The probabilities of the features</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving featureProbs to HDFS</p></dd><dt class="param">numConcurrentBatches</dt><dd class="cmt"><p>The number of concurrent batch request / The number of workers and worker cores</p></dd><dt class="param">avgActiveFeatures</dt><dd class="cmt"><p>The average number of active features. Not an important parameter but used for
+                         determining good array pool sizes against garbage collection.</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigFMPairVector.html" class="extype" name="glint.models.client.BigFMPairVector">BigFMPairVector</a></p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -334,6 +394,44 @@ Use the companion object to construct a Client object from a configuration file.
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="glint.Client#loadFMPairMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="loadFMPairMatrix(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,trainable:Boolean):glint.models.client.BigFMPairMatrix"></a>
+      <a id="loadFMPairMatrix(String,Configuration,Int,Boolean):BigFMPairMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadFMPairMatrix</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="numConcurrentBatches">numConcurrentBatches: <span class="extype" name="scala.Int">Int</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="models/client/BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.Client@loadFMPairMatrix(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,trainable:Boolean):glint.models.client.BigFMPairMatrix" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Loads a distributed FM-Pair matrix
+</p><div class="fullcomment"><div class="comment cmt"><p>Loads a distributed FM-Pair matrix
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path from which the matrix' initial data should be loaded from</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for loading the initial data from HDFS</p></dd><dt class="param">numConcurrentBatches</dt><dd class="cmt"><p>The number of concurrent batch request / The number of workers and worker cores</p></dd><dt class="param">trainable</dt><dd class="cmt"><p>Whether the loaded matrix should be retrainable, requiring more data being loaded</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigFMPairMatrix.html" class="extype" name="glint.models.client.BigFMPairMatrix">BigFMPairMatrix</a></p></dd></dl></div>
+    </li><li name="glint.Client#loadFMPairVector" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="loadFMPairVector(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,trainable:Boolean):glint.models.client.BigFMPairVector"></a>
+      <a id="loadFMPairVector(String,Configuration,Int,Boolean):BigFMPairVector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadFMPairVector</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="numConcurrentBatches">numConcurrentBatches: <span class="extype" name="scala.Int">Int</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="models/client/BigFMPairVector.html" class="extype" name="glint.models.client.BigFMPairVector">BigFMPairVector</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.Client@loadFMPairVector(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,numConcurrentBatches:Int,trainable:Boolean):glint.models.client.BigFMPairVector" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Loads a distributed FM-Pair vector
+</p><div class="fullcomment"><div class="comment cmt"><p>Loads a distributed FM-Pair vector
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path from which the vectors initial data should be loaded from</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for loading the initial data from HDFS</p></dd><dt class="param">numConcurrentBatches</dt><dd class="cmt"><p>The number of concurrent batch request / The number of workers and worker cores</p></dd><dt class="param">trainable</dt><dd class="cmt"><p>Whether the loaded matrix should be retrainable, requiring more data being loaded</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigFMPairVector.html" class="extype" name="glint.models.client.BigFMPairVector">BigFMPairVector</a></p></dd></dl></div>
     </li><li name="glint.Client#loadMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="loadMatrix[V](hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitevidence$7:glint.util.Numerical[V],implicitevidence$8:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigMatrix[V]"></a>
       <a id="loadMatrix[V](String,Configuration)(Numerical[V],scala.reflect.api.JavaUniverse.TypeTag[V]):BigMatrix[V]"></a>
@@ -350,10 +448,30 @@ Use the companion object to construct a Client object from a configuration file.
         <img src="../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      <p class="shortcomment cmt">Loads a saved distributed matrix (indexed by (row: Long, col: Long)) for specified type of values.</p><div class="fullcomment"><div class="comment cmt"><p>Loads a saved distributed matrix (indexed by (row: Long, col: Long)) for specified type of values.
+      <p class="shortcomment cmt">Loads a saved distributed matrix for specified type of values.</p><div class="fullcomment"><div class="comment cmt"><p>Loads a saved distributed matrix for specified type of values.
 Keep in mind that there will be no error thrown when specifying a wrong type
 but the loaded matrix will not work as intended.
 </p></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store, must be one of the following: Int, Long, Double or Float</p></dd><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path from which the matrix' initial data should be loaded from</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for loading the initial data from HDFS</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></p></dd></dl></div>
+    </li><li name="glint.Client#loadVector" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="loadVector[V](hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitevidence$15:glint.util.Numerical[V],implicitevidence$16:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]"></a>
+      <a id="loadVector[V](String,Configuration)(Numerical[V],scala.reflect.api.JavaUniverse.TypeTag[V]):BigVector[V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadVector</span><span class="tparams">[<span name="V">V</span>]</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="glint.util.Numerical">Numerical</span>[<span class="extype" name="glint.Client.loadVector.V">V</span>]</span>, <span name="arg1">arg1: <span class="extype" name="scala.reflect.api.TypeTags.TypeTag">scala.reflect.api.JavaUniverse.TypeTag</span>[<span class="extype" name="glint.Client.loadVector.V">V</span>]</span>)</span><span class="result">: <a href="models/client/BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="glint.Client.loadVector.V">V</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.Client@loadVector[V](hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitevidence$15:glint.util.Numerical[V],implicitevidence$16:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Loads a saved distributed vector for specified type of values.</p><div class="fullcomment"><div class="comment cmt"><p>Loads a saved distributed vector for specified type of values.
+Keep in mind that there will be no error thrown when specifying a wrong type
+but the loaded vector will not work as intended.
+</p></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store, must be one of the following: Int, Long, Double or Float</p></dd><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path from which the vectors initial data should be loaded from</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for loading the initial data from HDFS</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></p></dd></dl></div>
     </li><li name="glint.Client#loadWord2vecMatrix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="loadWord2vecMatrix(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean):glint.models.client.BigWord2VecMatrix"></a>
       <a id="loadWord2vecMatrix(String,Configuration,Boolean):BigWord2VecMatrix"></a>
@@ -553,7 +671,7 @@ Also stops the glint client itself
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="glint.Client#vector" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="vector[V](keys:Long,modelsPerServer:Int,createPartitioner:(Int,Long)=&gt;glint.partitioning.Partitioner)(implicitevidence$11:glint.util.Numerical[V],implicitevidence$12:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]"></a>
+      <a id="vector[V](keys:Long,modelsPerServer:Int,createPartitioner:(Int,Long)=&gt;glint.partitioning.Partitioner)(implicitevidence$13:glint.util.Numerical[V],implicitevidence$14:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]"></a>
       <a id="vector[V](Long,Int,(Int,Long)⇒Partitioner)(Numerical[V],scala.reflect.api.JavaUniverse.TypeTag[V]):BigVector[V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -564,7 +682,7 @@ Also stops the glint client itself
         <span class="name">vector</span><span class="tparams">[<span name="V">V</span>]</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Long">Long</span></span>, <span name="modelsPerServer">modelsPerServer: <span class="extype" name="scala.Int">Int</span></span>, <span name="createPartitioner">createPartitioner: (<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Long">Long</span>) ⇒ <a href="partitioning/Partitioner.html" class="extype" name="glint.partitioning.Partitioner">Partitioner</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="glint.util.Numerical">Numerical</span>[<span class="extype" name="glint.Client.vector.V">V</span>]</span>, <span name="arg1">arg1: <span class="extype" name="scala.reflect.api.TypeTags.TypeTag">scala.reflect.api.JavaUniverse.TypeTag</span>[<span class="extype" name="glint.Client.vector.V">V</span>]</span>)</span><span class="result">: <a href="models/client/BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="glint.Client.vector.V">V</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../index.html#glint.Client@vector[V](keys:Long,modelsPerServer:Int,createPartitioner:(Int,Long)=&gt;glint.partitioning.Partitioner)(implicitevidence$11:glint.util.Numerical[V],implicitevidence$12:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]" title="Permalink" target="_top">
+      <a href="../index.html#glint.Client@vector[V](keys:Long,modelsPerServer:Int,createPartitioner:(Int,Long)=&gt;glint.partitioning.Partitioner)(implicitevidence$13:glint.util.Numerical[V],implicitevidence$14:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]" title="Permalink" target="_top">
         <img src="../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -573,7 +691,7 @@ Also stops the glint client itself
 </p></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store, must be one of the following: Int, Long, Double or Float</p></dd><dt class="param">keys</dt><dd class="cmt"><p>The number of keys</p></dd><dt class="param">modelsPerServer</dt><dd class="cmt"><p>The number of partial models to store per parameter server</p></dd><dt class="param">createPartitioner</dt><dd class="cmt"><p>A function that creates a <a href="partitioning/Partitioner.html" class="extype" name="glint.partitioning.Partitioner">partitioner</a> that partitions
                          keys</p></dd><dt>returns</dt><dd class="cmt"><p>The constructed <a href="models/client/BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></p></dd></dl></div>
     </li><li name="glint.Client#vector" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="vector[V](keys:Long,modelsPerServer:Int)(implicitevidence$9:glint.util.Numerical[V],implicitevidence$10:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]"></a>
+      <a id="vector[V](keys:Long,modelsPerServer:Int)(implicitevidence$11:glint.util.Numerical[V],implicitevidence$12:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]"></a>
       <a id="vector[V](Long,Int)(Numerical[V],scala.reflect.api.JavaUniverse.TypeTag[V]):BigVector[V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -584,7 +702,7 @@ Also stops the glint client itself
         <span class="name">vector</span><span class="tparams">[<span name="V">V</span>]</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Long">Long</span></span>, <span name="modelsPerServer">modelsPerServer: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">1</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="glint.util.Numerical">Numerical</span>[<span class="extype" name="glint.Client.vector.V">V</span>]</span>, <span name="arg1">arg1: <span class="extype" name="scala.reflect.api.TypeTags.TypeTag">scala.reflect.api.JavaUniverse.TypeTag</span>[<span class="extype" name="glint.Client.vector.V">V</span>]</span>)</span><span class="result">: <a href="models/client/BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="glint.Client.vector.V">V</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../index.html#glint.Client@vector[V](keys:Long,modelsPerServer:Int)(implicitevidence$9:glint.util.Numerical[V],implicitevidence$10:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]" title="Permalink" target="_top">
+      <a href="../index.html#glint.Client@vector[V](keys:Long,modelsPerServer:Int)(implicitevidence$11:glint.util.Numerical[V],implicitevidence$12:reflect.runtime.universe.TypeTag[V]):glint.models.client.BigVector[V]" title="Permalink" target="_top">
         <img src="../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

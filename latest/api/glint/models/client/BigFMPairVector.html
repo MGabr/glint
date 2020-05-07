@@ -1,9 +1,9 @@
 <!DOCTYPE html >
 <html>
         <head>
-          <title>BigVector - Glint - glint.models.client.BigVector</title>
-          <meta name="description" content="BigVector - Glint - glint.models.client.BigVector" />
-          <meta name="keywords" content="BigVector Glint glint.models.client.BigVector" />
+          <title>BigFMPairVector - Glint - glint.models.client.BigFMPairVector</title>
+          <meta name="description" content="BigFMPairVector - Glint - glint.models.client.BigFMPairVector" />
+          <meta name="keywords" content="BigFMPairVector Glint glint.models.client.BigFMPairVector" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -16,7 +16,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../index.html';
-            var hash = 'glint.models.client.BigVector';
+            var hash = 'glint.models.client.BigFMPairVector';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -30,10 +30,10 @@
       <div id="definition">
         <img alt="Trait" src="../../../lib/trait_big.png" />
         <p id="owner"><a href="../../package.html" class="extype" name="glint">glint</a>.<a href="../package.html" class="extype" name="glint.models">models</a>.<a href="package.html" class="extype" name="glint.models.client">client</a></p>
-        <h1>BigVector</h1><h3><span class="morelinks"><div>Related Doc:
+        <h1>BigFMPairVector</h1><h3><span class="morelinks"><div>Related Doc:
             <a href="package.html" class="extype" name="glint.models.client">package client</a>
           </div></span></h3><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -45,19 +45,27 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <span class="name">BigVector</span><span class="tparams">[<span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">BigFMPairVector</span><span class="result"> extends <a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="scala.Float">Float</span>]</span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A big vector supporting basic parameter server element-wise operations</p><pre><span class="kw">val</span> vector: BigVector[<span class="std">Double</span>] = ...
-vector.pull(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">100</span>L, <span class="num">30000</span>L)) <span class="cmt">// Pull values from the vector</span>
-vector.push(<span class="std">Array</span>(<span class="num">0</span>L, <span class="num">100</span>L, <span class="num">30000</span>L), <span class="std">Array</span>(<span class="num">0.5</span>, <span class="num">3.14</span>, <span class="num">9.9</span>)) <span class="cmt">// Add values to the vector</span>
-vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the parameter server</span></pre></div><dl class="paramcmts block"><dt class="tparam">V</dt><dd class="cmt"><p>The type of values to store</p></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A big vector of floats and supporting specific parameter server operations
+for efficient distributed pairwise factorization machine training</p><pre><span class="kw">val</span> vector: BigFMPairVector = ...
+
+<span class="cmt">// item feature indices and weights for an exemplary batch size of 1</span>
+<span class="kw">val</span> indices = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">0</span>, <span class="num">7</span>, <span class="num">10</span>, <span class="num">21</span>, <span class="num">23</span>))
+<span class="kw">val</span> weights = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">1.0</span>, <span class="num">0.5</span>, <span class="num">0.5</span>, <span class="num">1.0</span>, -<span class="num">1.0</span>))
+
+<span class="kw">val</span> (f, cacheKeys) = vector.pullSum(indices, weights)
+<span class="kw">val</span> g = ...(f)  <span class="cmt">// compute BPR utility function gradient</span>
+vector.pushSum(g, cacheKeys)
+
+vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the parameter server</span></pre></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
             <span class="toggle">Known Subclasses</span>
-            <div class="subClasses hiddenContent"><a href="async/AsyncBigFMPairVector.html" class="extype" name="glint.models.client.async.AsyncBigFMPairVector">AsyncBigFMPairVector</a>, <a href="async/AsyncBigVector.html" class="extype" name="glint.models.client.async.AsyncBigVector">AsyncBigVector</a>, <a href="BigFMPairVector.html" class="extype" name="glint.models.client.BigFMPairVector">BigFMPairVector</a>, <a href="granular/GranularBigVector.html" class="extype" name="glint.models.client.granular.GranularBigVector">GranularBigVector</a>, <a href="retry/RetryBigVector.html" class="extype" name="glint.models.client.retry.RetryBigVector">RetryBigVector</a></div>
+            <div class="subClasses hiddenContent"><a href="async/AsyncBigFMPairVector.html" class="extype" name="glint.models.client.async.AsyncBigFMPairVector">AsyncBigFMPairVector</a></div>
           </div></div>
         
 
@@ -75,7 +83,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="glint.models.client.BigVector"><span>BigVector</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="glint.models.client.BigFMPairVector"><span>BigFMPairVector</span></li><li class="in" name="glint.models.client.BigVector"><span>BigVector</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -110,51 +118,108 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">destroy</span><span class="params">()</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@destroy()(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@destroy()(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Destroys the big vector and its resources on the parameter server
 </p><div class="fullcomment"><div class="comment cmt"><p>Destroys the big vector and its resources on the parameter server
-</p></div><dl class="paramcmts block"><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the vector was successfully destroyed</p></dd></dl></div>
+</p></div><dl class="paramcmts block"><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the vector was successfully destroyed</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></dd></dl></div>
     </li><li name="glint.models.client.BigVector#pull" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="pull(keys:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[V]]"></a>
-      <a id="pull(Array[Long])(ExecutionContext):Future[Array[V]]"></a>
+      <a id="pull(Array[Long])(ExecutionContext):Future[Array[Float]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">pull</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="glint.models.client.BigVector.V">V</span>]]</span>
+        <span class="name">pull</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@pull(keys:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[V]]" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@pull(keys:Array[Long])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Array[V]]" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Pulls a set of elements
 </p><div class="fullcomment"><div class="comment cmt"><p>Pulls a set of elements
-</p></div><dl class="paramcmts block"><dt class="param">keys</dt><dd class="cmt"><p>The indices of the elements</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the values of the elements at given rows, columns</p></dd></dl></div>
-    </li><li name="glint.models.client.BigVector#push" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="push(keys:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
-      <a id="push(Array[Long],Array[V])(ExecutionContext):Future[Boolean]"></a>
+</p></div><dl class="paramcmts block"><dt class="param">keys</dt><dd class="cmt"><p>The indices of the elements</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the values of the elements at given rows, columns</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></dd></dl></div>
+    </li><li name="glint.models.client.BigFMPairVector#pullSum" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="pullSum(keys:Array[Array[Int]],weights:Array[Array[Float]],cache:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Int)]"></a>
+      <a id="pullSum(Array[Array[Int]],Array[Array[Float]],Boolean)(ExecutionContext):Future[(Array[Float],Int)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">push</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="glint.models.client.BigVector.V">V</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+        <span class="name">pullSum</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="weights">weights: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="cache">cache: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">true</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Int">Int</span>)]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@push(keys:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@pullSum(keys:Array[Array[Int]],weights:Array[Array[Float]],cache:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Int)]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Pull the weighted sums of the feature indices
+</p><div class="fullcomment"><div class="comment cmt"><p>Pull the weighted sums of the feature indices
+</p></div><dl class="paramcmts block"><dt class="param">keys</dt><dd class="cmt"><p>The feature indices</p></dd><dt class="param">weights</dt><dd class="cmt"><p>The feature weights</p></dd><dt class="param">cache</dt><dd class="cmt"><p>Whether the indices and weights should be cached. Not required for recommendation</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing the weighted sums of the feature indices and the cache key for the adjust operation</p></dd></dl></div>
+    </li><li name="glint.models.client.BigVector#push" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="push(keys:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="push(Array[Long],Array[Float])(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">push</span><span class="params">(<span name="keys">keys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@push(keys:Array[Long],values:Array[V])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Pushes a set of values
 </p><div class="fullcomment"><div class="comment cmt"><p>Pushes a set of values
-</p></div><dl class="paramcmts block"><dt class="param">keys</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">values</dt><dd class="cmt"><p>The values to update</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl></div>
+</p></div><dl class="paramcmts block"><dt class="param">keys</dt><dd class="cmt"><p>The indices of the rows</p></dd><dt class="param">values</dt><dd class="cmt"><p>The values to update</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></dd></dl></div>
+    </li><li name="glint.models.client.BigFMPairVector#pushSum" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="pushSum(g:Array[Float],cacheKey:Int)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="pushSum(Array[Float],Int)(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pushSum</span><span class="params">(<span name="g">g: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="cacheKey">cacheKey: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@pushSum(g:Array[Float],cacheKey:Int)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Adjust the weights according to the received gradient updates
+</p><div class="fullcomment"><div class="comment cmt"><p>Adjust the weights according to the received gradient updates
+</p></div><dl class="paramcmts block"><dt class="param">g</dt><dd class="cmt"><p>The general BPR gradient per training instance in the batch</p></dd><dt class="param">cacheKey</dt><dd class="cmt"><p>The key to retrieve the cached indices and weights</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl></div>
+    </li><li name="glint.models.client.BigFMPairVector#save" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="save(String,Configuration,Boolean)(ExecutionContext):Future[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">save</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration,trainable:Boolean)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Saves the vector to HDFS
+</p><div class="fullcomment"><div class="comment cmt"><p>Saves the vector to HDFS
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the vector should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">trainable</dt><dd class="cmt"><p>Whether the saved vector should be retrainable, requiring more data being saved</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the vector was successfully saved</p></dd></dl></div>
     </li><li name="glint.models.client.BigVector#save" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
       <a id="save(String,Configuration)(ExecutionContext):Future[Boolean]"></a>
@@ -167,14 +232,14 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">save</span><span class="params">(<span name="hdfsPath">hdfsPath: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="hadoopConfig">hadoopConfig: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@save(hdfsPath:String,hadoopConfig:org.apache.hadoop.conf.Configuration)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Saves the vector to HDFS
 </p><div class="fullcomment"><div class="comment cmt"><p>Saves the vector to HDFS
-</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the vector should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the vector was successfully saved</p></dd></dl></div>
-    </li><li name="glint.models.client.BigVector#size" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+</p></div><dl class="paramcmts block"><dt class="param">hdfsPath</dt><dd class="cmt"><p>The HDFS base path where the vector should be saved</p></dd><dt class="param">hadoopConfig</dt><dd class="cmt"><p>The Hadoop configuration to use for saving the data to HDFS</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the vector was successfully saved</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></dd></dl></div>
+    </li><li name="glint.models.client.BigVector#size" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="size:Long"></a>
       <a id="size:Long"></a>
       <h4 class="signature">
@@ -186,11 +251,11 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">size</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@size:Long" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@size:Long" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -208,7 +273,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@!=(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -225,7 +290,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@##():Int" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@##():Int" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -242,7 +307,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@==(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@==(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -259,7 +324,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@asInstanceOf[T0]:T0" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -276,7 +341,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@clone():Object" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@clone():Object" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -299,7 +364,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -316,7 +381,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@equals(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -333,7 +398,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@finalize():Unit" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@finalize():Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -356,7 +421,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@getClass():Class[_]" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@getClass():Class[_]" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -373,7 +438,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@hashCode():Int" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@hashCode():Int" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -390,7 +455,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -407,7 +472,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -424,7 +489,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@notify():Unit" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@notify():Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -441,7 +506,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@notifyAll():Unit" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@notifyAll():Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -458,7 +523,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -475,7 +540,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@toString():String" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@toString():String" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -492,7 +557,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@wait():Unit" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@wait():Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -515,7 +580,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -538,7 +603,7 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigVector@wait(x$1:Long):Unit" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigFMPairVector@wait(x$1:Long):Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -558,7 +623,9 @@ vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the p
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.Serializable">
+        <div class="parent" name="glint.models.client.BigVector">
+              <h3>Inherited from <a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="scala.Float">Float</span>]</h3>
+            </div><div class="parent" name="scala.Serializable">
               <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
             </div><div class="parent" name="java.io.Serializable">
               <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>

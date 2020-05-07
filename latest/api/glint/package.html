@@ -85,6 +85,25 @@
       <p class="shortcomment cmt">The client provides the functions needed to spawn large distributed matrices and vectors on the parameter servers.</p><div class="fullcomment"><div class="comment cmt"><p>The client provides the functions needed to spawn large distributed matrices and vectors on the parameter servers.
 Use the companion object to construct a Client object from a configuration file.
 </p></div></div>
+    </li><li name="glint.FMPairArguments" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="FMPairArgumentsextendsProductwithSerializable"></a>
+      <a id="FMPairArguments:FMPairArguments"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="FMPairArguments.html"><span class="name">FMPairArguments</span></a><span class="params">(<span name="k">k: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">50</span></span>, <span name="batchSize">batchSize: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">4096</span></span>, <span name="lr">lr: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.1f</span></span>, <span name="linearReg">linearReg: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.6f</span></span>, <span name="factorsReg">factorsReg: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.006f</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../index.html#glint.package@FMPairArgumentsextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">FM-Pair arguments
+</p><div class="fullcomment"><div class="comment cmt"><p>FM-Pair arguments
+</p></div><dl class="paramcmts block"><dt class="param">k</dt><dd class="cmt"><p>The number of dimensions / latent factors</p></dd><dt class="param">batchSize</dt><dd class="cmt"><p>The minibatch size</p></dd><dt class="param">lr</dt><dd class="cmt"><p>The Adagrad learning rate</p></dd><dt class="param">linearReg</dt><dd class="cmt"><p>The regularization rate for the linear weights</p></dd><dt class="param">factorsReg</dt><dd class="cmt"><p>The regularization rate for the latent factors</p></dd></dl></div>
     </li><li name="glint.Word2VecArguments" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="Word2VecArgumentsextendsProductwithSerializable"></a>
       <a id="Word2VecArguments:Word2VecArguments"></a>

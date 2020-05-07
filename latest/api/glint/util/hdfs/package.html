@@ -89,7 +89,26 @@
 
         <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li name="glint.util.hdfs.MatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="glint.util.hdfs.FMPairMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FMPairMetadataextendsProductwithSerializable"></a>
+      <a id="FMPairMetadata:FMPairMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="FMPairMetadata.html"><span class="name">FMPairMetadata</span></a><span class="params">(<span name="args">args: <a href="../../FMPairArguments.html" class="extype" name="glint.FMPairArguments">FMPairArguments</a></span>, <span name="featureProbs">featureProbs: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="avgActiveFeatures">avgActiveFeatures: <span class="extype" name="scala.Int">Int</span></span>, <span name="trainable">trainable: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@FMPairMetadataextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Metadata of a FM-Pair matrix
+In combination with the matrix data it provides enough information to load it again
+</p>
+    </li><li name="glint.util.hdfs.MatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="MatrixMetadataextendsProductwithSerializable"></a>
       <a id="MatrixMetadata:MatrixMetadata"></a>
       <h4 class="signature">
@@ -107,6 +126,25 @@
     </span>
       <p class="shortcomment cmt">Metadata of a matrix
 In combination with the matrix data it provides enough information to load it again
+</p>
+    </li><li name="glint.util.hdfs.VectorMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="VectorMetadataextendsProductwithSerializable"></a>
+      <a id="VectorMetadata:VectorMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="VectorMetadata.html"><span class="name">VectorMetadata</span></a><span class="params">(<span name="size">size: <span class="extype" name="scala.Long">Long</span></span>, <span name="createPartitioner">createPartitioner: (<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Long">Long</span>) ⇒ <a href="../../partitioning/Partitioner.html" class="extype" name="glint.partitioning.Partitioner">Partitioner</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@VectorMetadataextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Metadata of a vector
+In combination with the vector data it provides enough information to load it again
 </p>
     </li><li name="glint.util.hdfs.Word2VecMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Word2VecMatrixMetadataextendsProductwithSerializable"></a>
@@ -151,6 +189,23 @@ In combination with the matrix data it provides enough information to load it ag
       </a>
     </span>
       
+    </li><li name="glint.util.hdfs#loadFMPairMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="loadFMPairMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.FMPairMetadata"></a>
+      <a id="loadFMPairMetadata(String,Configuration,String):FMPairMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadFMPairMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <a href="FMPairMetadata.html" class="extype" name="glint.util.hdfs.FMPairMetadata">FMPairMetadata</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@loadFMPairMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.FMPairMetadata" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="glint.util.hdfs#loadMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="loadMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.MatrixMetadata"></a>
       <a id="loadMatrixMetadata(String,Configuration,String):MatrixMetadata"></a>
@@ -185,6 +240,23 @@ In combination with the matrix data it provides enough information to load it ag
       </a>
     </span>
       
+    </li><li name="glint.util.hdfs#loadVectorMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="loadVectorMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.VectorMetadata"></a>
+      <a id="loadVectorMetadata(String,Configuration,String):VectorMetadata"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">loadVectorMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <a href="VectorMetadata.html" class="extype" name="glint.util.hdfs.VectorMetadata">VectorMetadata</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@loadVectorMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.VectorMetadata" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="glint.util.hdfs#loadWord2VecMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="loadWord2VecMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.Word2VecMatrixMetadata"></a>
       <a id="loadWord2VecMatrixMetadata(String,Configuration,String):Word2VecMatrixMetadata"></a>
@@ -198,6 +270,23 @@ In combination with the matrix data it provides enough information to load it ag
       </span>
       </h4><span class="permalink">
       <a href="../../../index.html#glint.util.hdfs.package@loadWord2VecMatrixMetadata(path:String,config:org.apache.hadoop.conf.Configuration,pathPostfix:String):glint.util.hdfs.Word2VecMatrixMetadata" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#saveFMPairMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveFMPairMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.FMPairMetadata,pathPostfix:String):Unit"></a>
+      <a id="saveFMPairMetadata(String,Configuration,FMPairMetadata,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveFMPairMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="metadata">metadata: <a href="FMPairMetadata.html" class="extype" name="glint.util.hdfs.FMPairMetadata">FMPairMetadata</a></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@saveFMPairMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.FMPairMetadata,pathPostfix:String):Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -236,6 +325,23 @@ In combination with the matrix data it provides enough information to load it ag
       </a>
     </span>
       
+    </li><li name="glint.util.hdfs#saveTmpFMPairMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveTmpFMPairMatrixMetadata(config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.FMPairMetadata):String"></a>
+      <a id="saveTmpFMPairMatrixMetadata(Configuration,FMPairMetadata):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveTmpFMPairMatrixMetadata</span><span class="params">(<span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="metadata">metadata: <a href="FMPairMetadata.html" class="extype" name="glint.util.hdfs.FMPairMetadata">FMPairMetadata</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@saveTmpFMPairMatrixMetadata(config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.FMPairMetadata):String" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="glint.util.hdfs#saveTmpWord2VecMatrixMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="saveTmpWord2VecMatrixMetadata(config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.Word2VecMatrixMetadata):String"></a>
       <a id="saveTmpWord2VecMatrixMetadata(Configuration,Word2VecMatrixMetadata):String"></a>
@@ -249,6 +355,23 @@ In combination with the matrix data it provides enough information to load it ag
       </span>
       </h4><span class="permalink">
       <a href="../../../index.html#glint.util.hdfs.package@saveTmpWord2VecMatrixMetadata(config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.Word2VecMatrixMetadata):String" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="glint.util.hdfs#saveVectorMetadata" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveVectorMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.VectorMetadata,pathPostfix:String):Unit"></a>
+      <a id="saveVectorMetadata(String,Configuration,VectorMetadata,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveVectorMetadata</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="config">config: <span class="extype" name="org.apache.hadoop.conf.Configuration">Configuration</span></span>, <span name="metadata">metadata: <a href="VectorMetadata.html" class="extype" name="glint.util.hdfs.VectorMetadata">VectorMetadata</a></span>, <span name="pathPostfix">pathPostfix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;/glint/metadata&quot;</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.util.hdfs.package@saveVectorMetadata(path:String,config:org.apache.hadoop.conf.Configuration,metadata:glint.util.hdfs.VectorMetadata,pathPostfix:String):Unit" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

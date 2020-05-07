@@ -66,7 +66,73 @@
 
         <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li name="glint.models.client.BigMatrix" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+              <ol><li name="glint.models.client.BigFMPairMatrix" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="BigFMPairMatrixextendsBigMatrix[Float]"></a>
+      <a id="BigFMPairMatrix:BigFMPairMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="BigFMPairMatrix.html"><span class="name">BigFMPairMatrix</span></a><span class="result"> extends <a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@BigFMPairMatrixextendsBigMatrix[Float]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A big matrix of floats and supporting specific parameter server operations
+for efficient distributed pairwise factorization machine training</p><div class="fullcomment"><div class="comment cmt"><p>A big matrix of floats and supporting specific parameter server operations
+for efficient distributed pairwise factorization machine training</p><pre><span class="kw">val</span> matrix: BigFMPairMatrix = ...
+
+<span class="cmt">// user and item feature indices and weights for an exemplary batch size of 1</span>
+<span class="kw">val</span> iUser = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">0</span>, <span class="num">7</span>))
+<span class="kw">val</span> wUser = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">1.0</span>, <span class="num">0.33</span>))
+<span class="kw">val</span> iItem = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">10</span>, <span class="num">15</span>, <span class="num">20</span>))
+<span class="kw">val</span> wItem = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">1.0</span>, <span class="num">0.25</span>, <span class="num">0.25</span>))
+
+<span class="cmt">// active feature aggregation method</span>
+<span class="kw">val</span> (s, cacheKeys) = matrix.pullSum(iUser ++ iItem, wUser ++ wItem)
+<span class="kw">val</span> g = ...(s) <span class="cmt">// compute cross-batch BPR gradient</span>
+matrix.pushSum(g, cacheKeys)
+
+<span class="cmt">// dimension aggregation method</span>
+<span class="kw">val</span> (f, cacheKeys) = matrix.dotprod(iUser, wUser, iItem, wItem)
+<span class="kw">val</span> g = ...(f) <span class="cmt">// compute BPR utility function gradient</span>
+matrix.adjust(g, cacheKeys)
+
+matrix.destroy() <span class="cmt">// Destroy matrix, freeing up memory on the parameter server</span></pre></div></div>
+    </li><li name="glint.models.client.BigFMPairVector" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="BigFMPairVectorextendsBigVector[Float]"></a>
+      <a id="BigFMPairVector:BigFMPairVector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="BigFMPairVector.html"><span class="name">BigFMPairVector</span></a><span class="result"> extends <a href="BigVector.html" class="extype" name="glint.models.client.BigVector">BigVector</a>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#glint.models.client.package@BigFMPairVectorextendsBigVector[Float]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A big vector of floats and supporting specific parameter server operations
+for efficient distributed pairwise factorization machine training</p><div class="fullcomment"><div class="comment cmt"><p>A big vector of floats and supporting specific parameter server operations
+for efficient distributed pairwise factorization machine training</p><pre><span class="kw">val</span> vector: BigFMPairVector = ...
+
+<span class="cmt">// item feature indices and weights for an exemplary batch size of 1</span>
+<span class="kw">val</span> indices = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">0</span>, <span class="num">7</span>, <span class="num">10</span>, <span class="num">21</span>, <span class="num">23</span>))
+<span class="kw">val</span> weights = <span class="std">Array</span>(<span class="std">Array</span>(<span class="num">1.0</span>, <span class="num">0.5</span>, <span class="num">0.5</span>, <span class="num">1.0</span>, -<span class="num">1.0</span>))
+
+<span class="kw">val</span> (f, cacheKeys) = vector.pullSum(indices, weights)
+<span class="kw">val</span> g = ...(f)  <span class="cmt">// compute BPR utility function gradient</span>
+vector.pushSum(g, cacheKeys)
+
+vector.destroy() <span class="cmt">// Destroy vector, freeing up memory on the parameter server</span></pre></div></div>
+    </li><li name="glint.models.client.BigMatrix" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="BigMatrix[V]extendsSerializable"></a>
       <a id="BigMatrix[V]:BigMatrix[V]"></a>
       <h4 class="signature">

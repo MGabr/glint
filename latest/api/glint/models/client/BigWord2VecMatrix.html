@@ -103,26 +103,24 @@ matrix.destroy() <span class="cmt">// Destroy matrix, freeing up memory on the p
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
               <ol><li name="glint.models.client.BigWord2VecMatrix#adjust" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="adjust(wInput:Array[Int],wOutput:Array[Array[Int]],gPlus:Array[Float],gMinus:Array[Float],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
-      <a id="adjust(Array[Int],Array[Array[Int]],Array[Float],Array[Float],Long)(ExecutionContext):Future[Boolean]"></a>
+      <a id="adjust(gPlus:Array[Float],gMinus:Array[Float],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]"></a>
+      <a id="adjust(Array[Float],Array[Float],Array[Int])(ExecutionContext):Future[Boolean]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">adjust</span><span class="params">(<span name="wInput">wInput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="wOutput">wOutput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="gPlus">gPlus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="gMinus">gMinus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+        <span class="name">adjust</span><span class="params">(<span name="gPlus">gPlus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="gMinus">gMinus: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="cacheKeys">cacheKeys: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@adjust(wInput:Array[Int],wOutput:Array[Array[Int]],gPlus:Array[Float],gMinus:Array[Float],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@adjust(gPlus:Array[Float],gMinus:Array[Float],cacheKeys:Array[Int])(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[Boolean]" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <p class="shortcomment cmt">Adjusts the weights according to the received gradient updates
-for the input and output word as well as the input and random negative words combinations
 </p><div class="fullcomment"><div class="comment cmt"><p>Adjusts the weights according to the received gradient updates
-for the input and output word as well as the input and random negative words combinations
-</p></div><dl class="paramcmts block"><dt class="param">wInput</dt><dd class="cmt"><p>The indices of the input words</p></dd><dt class="param">wOutput</dt><dd class="cmt"><p>The indices of the output words per input word</p></dd><dt class="param">gPlus</dt><dd class="cmt"><p>The gradient updates for the input and output word combinations</p></dd><dt class="param">gMinus</dt><dd class="cmt"><p>The gradient updates for the input and random neighbour word combinations</p></dd><dt class="param">seed</dt><dd class="cmt"><p>The same seed that was used for generating random negative words for the dot products</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl></div>
+</p></div><dl class="paramcmts block"><dt class="param">gPlus</dt><dd class="cmt"><p>The gradient updates for the input and output word combinations</p></dd><dt class="param">gMinus</dt><dd class="cmt"><p>The gradient updates for the input and random neighbour word combinations</p></dd><dt class="param">cacheKeys</dt><dd class="cmt"><p>The keys to retrieve the cached indices and weights</p></dd><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future containing either the success or failure of the operation</p></dd></dl></div>
     </li><li name="glint.models.client.BigMatrix#cols" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="cols:Long"></a>
       <a id="cols:Long"></a>
@@ -162,18 +160,18 @@ for the input and output word as well as the input and random negative words com
 </p><div class="fullcomment"><div class="comment cmt"><p>Destroys the big matrix and its resources on the parameter server
 </p></div><dl class="paramcmts block"><dt class="param">ec</dt><dd class="cmt"><p>The implicit execution context in which to execute the request</p></dd><dt>returns</dt><dd class="cmt"><p>A future whether the matrix was successfully destroyed</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BigMatrix.html" class="extype" name="glint.models.client.BigMatrix">BigMatrix</a></dd></dl></div>
     </li><li name="glint.models.client.BigWord2VecMatrix#dotprod" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float])]"></a>
-      <a id="dotprod(Array[Int],Array[Array[Int]],Long)(ExecutionContext):Future[(Array[Float],Array[Float])]"></a>
+      <a id="dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float],Array[Int])]"></a>
+      <a id="dotprod(Array[Int],Array[Array[Int]],Long)(ExecutionContext):Future[(Array[Float],Array[Float],Array[Int])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">dotprod</span><span class="params">(<span name="wInput">wInput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="wOutput">wOutput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>])]</span>
+        <span class="name">dotprod</span><span class="params">(<span name="wInput">wInput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="wOutput">wOutput: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ec">ec: <span class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</span></span>)</span><span class="result">: <span class="extype" name="scala.concurrent.Future">Future</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>])]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float])]" title="Permalink" target="_top">
+      <a href="../../../index.html#glint.models.client.BigWord2VecMatrix@dotprod(wInput:Array[Int],wOutput:Array[Array[Int]],seed:Long)(implicitec:scala.concurrent.ExecutionContext):scala.concurrent.Future[(Array[Float],Array[Float],Array[Int])]" title="Permalink" target="_top">
         <img src="../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
